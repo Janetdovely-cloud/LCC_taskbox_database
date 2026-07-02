@@ -105,8 +105,8 @@
   .c-blue { background: #CCEEFF; color: #0066FF; }
   .c-purple { background: #f3e8ff; color: #4400CC; }
   .c-orange { background: #FFEFD5; color: #BB5500; }
-  .c-gray { background: 	#DDDDDD; color: 	#888888; }
-  .c-brown { background: 	#D2B48C; color: 	#8B4513; }
+  .c-gray { background: #DDDDDD; color: #888888; }
+  .c-brown { background: #D2B48C; color: #8B4513; }
 
   /* 常用連結樣式 */
   .quick-link-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--goSoft); border-radius: 8px; transition: 0.2s; border: 1px solid transparent; }
@@ -123,9 +123,20 @@
     background: #fff; padding: 24px; border-radius: 12px; max-width: 400px; width: 90%;
     text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.15);
   }
+  
+  /* 浮動通知提示 */
+  #toastNotification {
+    position: fixed; bottom: 20px; right: 20px; background: #333; color: #fff; 
+    padding: 12px 24px; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transform: translateY(100px); opacity: 0; transition: all 0.3s ease; z-index: 10000;
+  }
+  #toastNotification.show { transform: translateY(0); opacity: 1; }
 </style>
 </head>
 <body>
+
+<!-- 浮動通知 -->
+<div id="toastNotification">通知訊息</div>
 
 <!-- 自訂對話框 -->
 <div id="customModalOverlay">
@@ -465,7 +476,7 @@
   </div>
 
   <!-- 系統與備份 -->
-  <div id="settings" class="view fade">
+  <div id="settings" class="view fade active">
     <div class="grid-2">
       <div class="card">
         <h3 style="margin-top:0;">💾 本機資料備份與還原</h3>
@@ -491,9 +502,26 @@
           <button class="btn" onclick="addLink()" style="width:100%;">➕ 新增連結</button>
         </div>
       </div>
+      
+      <!-- GitHub 私密備份設定區 (新功能) -->
+      <div class="card" style="margin-top: 16px; border-color: #c0ded6; grid-column: 1 / -1;">
+        <h3 style="margin-top:0; color:var(--go);">☁️ GitHub 圖片自動私密備份設定</h3>
+        <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">設定您的 Private 專案名稱與 Token，當您產出「百人戰報」或「廠商契約合併圖」時，系統會在背景自動上傳至您的私密空間歸檔。</p>
+        <div class="grid-2" style="margin-bottom: 12px;">
+          <div>
+            <label style="font-size:13px; font-weight:bold; color:var(--sub);">GitHub 帳號名稱 / 專案名稱</label>
+            <input type="text" id="ghRepo" placeholder="例: Janetdovely-cloud/LCC_Image_Backup">
+          </div>
+          <div>
+            <label style="font-size:13px; font-weight:bold; color:var(--sub);">Personal Access Token (需有 repo 權限)</label>
+            <input type="password" id="ghToken" placeholder="例: ghp_xxxxxxxxxxxxxxxxxxxx">
+          </div>
+        </div>
+        <button class="btn" onclick="saveGhConfig()" style="width: 100%;">💾 儲存 GitHub 備份設定</button>
+      </div>
 
       <!-- Telegram 設定區 -->
-      <div class="card" style="margin-top: 16px; border-color: #c0ded6;">
+      <div class="card" style="margin-top: 16px; border-color: #c0ded6; grid-column: 1 / -1;">
         <h3 style="margin-top:0; color:var(--go);">🤖 Telegram 自動推播提醒</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">設定您的 Telegram Bot Token 與 Chat ID。每天<b>首次開啟本網頁時</b>，系統會自動檢查並將「今天到期」或「逾期」的事項發送到您的 Telegram！</p>
         <div class="grid-2" style="margin-bottom: 12px;">
@@ -535,6 +563,14 @@
     document.getElementById('customModalOverlay').style.display = 'flex';
     document.getElementById('modalBtnOk').onclick = function() { document.getElementById('customModalOverlay').style.display = 'none'; };
   }
+  
+  // 浮動通知提示 (不會阻擋使用者操作)
+  function showToast(message) {
+    var toast = document.getElementById('toastNotification');
+    toast.innerText = message;
+    toast.classList.add('show');
+    setTimeout(function() { toast.classList.remove('show'); }, 4000);
+  }
 
   function showConfirm(message, onConfirm) {
     document.getElementById('modalMsg').innerText = message;
@@ -556,6 +592,57 @@
       document.getElementById(e.target.dataset.target).classList.add('active');
     });
   });
+  
+  // ==========================================
+  // 模組 0: GitHub 自動上傳引擎 (新功能)
+  // ==========================================
+  var ghConfig = safeGet('admin_gh_config', { token: '', repo: '' });
+  document.getElementById('ghRepo').value = ghConfig.repo || '';
+  document.getElementById('ghToken').value = ghConfig.token || '';
+
+  function saveGhConfig() {
+    ghConfig.repo = document.getElementById('ghRepo').value.trim();
+    ghConfig.token = document.getElementById('ghToken').value.trim();
+    safeSet('admin_gh_config', ghConfig);
+    showMsg('✅ GitHub 備份設定已儲存！');
+  }
+
+  // 背景上傳圖片到 GitHub 
+  async function uploadImageToGitHub(fileName, dataUrlBase64, customFolder) {
+    if (!ghConfig.token || !ghConfig.repo) return; // 如果沒設定，直接略過不執行
+    
+    showToast('☁️ 正在背景備份至 GitHub...');
+    
+    // 擷取 Base64 的純字串部分
+    var b64String = dataUrlBase64.split(',')[1];
+    var folder = customFolder || (new Date().getFullYear() + String(new Date().getMonth()+1).padStart(2, '0'));
+    var path = 'backups/' + folder + '/' + fileName;
+    var url = 'https://api.github.com/repos/' + ghConfig.repo + '/contents/' + encodeURIComponent(path);
+
+    try {
+      var res = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Authorization': 'token ' + ghConfig.token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: 'Auto-backup: ' + fileName,
+          content: b64String
+        })
+      });
+      if (res.ok) {
+        showToast('✅ 成功備份至 GitHub！');
+      } else {
+        console.error('GitHub API 錯誤', await res.text());
+        showToast('❌ GitHub 備份失敗，請檢查設定與權限。');
+      }
+    } catch (e) {
+      console.error(e);
+      showToast('❌ 網路連線錯誤，GitHub 備份失敗。');
+    }
+  }
+
 
   // ==========================================
   // 模組 1: 區域業績統計
@@ -840,8 +927,18 @@
   }
 
   function downloadPromo() {
-    var link = document.createElement('a'); link.download = '戰報_' + document.getElementById('pName').value + '.jpg';
-    link.href = document.getElementById('promoCanvas').toDataURL('image/jpeg', 0.95); link.click();
+    var stuName = document.getElementById('pName').value || '未命名';
+    var fileName = '戰報_' + stuName + '_' + Date.now() + '.jpg';
+    var dataUrl = document.getElementById('promoCanvas').toDataURL('image/jpeg', 0.95);
+    
+    // 1. 本地端下載
+    var link = document.createElement('a'); 
+    link.download = fileName;
+    link.href = dataUrl; 
+    link.click();
+    
+    // 2. 觸發自動上傳 GitHub (如果有設定)
+    uploadImageToGitHub(fileName, dataUrl, 'Poster_Backups');
   }
 
   // ==========================================
@@ -869,8 +966,18 @@
         var drawW2 = img2.width * scale2; var drawH2 = img2.height * scale2;
         ctx.drawImage(img2, halfW + (halfW - drawW2) / 2, (th - drawH2) / 2, drawW2, drawH2);
         
-        var link = document.createElement('a'); link.download = '合併契約書.jpg'; link.href = cv.toDataURL('image/jpeg', 0.95); link.click();
+        var fileName = '合併契約書_' + Date.now() + '.jpg';
+        var dataUrl = cv.toDataURL('image/jpeg', 0.95);
+        
+        // 1. 本地下載
+        var link = document.createElement('a'); 
+        link.download = fileName; 
+        link.href = dataUrl; 
+        link.click();
         status.innerText = '✓ 合併完成並自動下載！';
+        
+        // 2. 觸發自動上傳 GitHub
+        uploadImageToGitHub(fileName, dataUrl, 'Contract_Backups');
       };
     };
   }
@@ -892,8 +999,19 @@
       var img2 = new Image(); img2.src = URL.createObjectURL(f2);
       img2.onload = function() {
         ctx.drawImage(img2, 0, targetH_single, targetW, targetH_single);
-        var link = document.createElement('a'); link.download = '廠商契約_合併.jpg'; link.href = cv.toDataURL('image/jpeg', 0.95); link.click();
+        
+        var fileName = '廠商契約_合併_' + Date.now() + '.jpg';
+        var dataUrl = cv.toDataURL('image/jpeg', 0.95);
+        
+        // 1. 本地下載
+        var link = document.createElement('a'); 
+        link.download = fileName; 
+        link.href = dataUrl; 
+        link.click();
         status.innerText = '✅ 合併完成並自動下載！'; btn.disabled = false;
+        
+        // 2. 觸發自動上傳 GitHub
+        uploadImageToGitHub(fileName, dataUrl, 'Vendor_Contract_Backups');
       };
       img2.onerror = function() { status.innerText = '❌ 第二張圖片載入失敗。'; btn.disabled = false; };
     };
@@ -1028,7 +1146,13 @@
 
       if (backCoverImgData) { doc.addPage(); doc.addImage(backCoverImgData.dataUrl, 'JPEG', 0, 0, a4Width, a4Height); }
 
-      doc.save('結訓作品集.pdf'); statusEl.innerText = '✅ PDF 成功產生並已下載！';
+      // 產生並下載
+      var pdfTitle = document.getElementById('portTitle').value || '作品集';
+      doc.save('結訓作品集_' + pdfTitle + '.pdf'); 
+      statusEl.innerText = '✅ PDF 成功產生並已下載！';
+      
+      // (註：目前瀏覽器純前端無法直接把幾十MB的PDF塞進GitHub API，因此PDF功能維持僅本地下載，以防當機)
+
     } catch (err) {
       console.error(err); statusEl.innerText = '❌ 發生錯誤，可能是部分圖片或 PDF 損毀。';
     } finally {
@@ -1058,7 +1182,7 @@
       showMsg('✅ 記事已成功更新！'); cancelEditNote(); 
     } else {
       notes.push({ id: Date.now().toString(), title: title, body: body, due: date, color: color });
-      document.getElementById('newNoteTitle').value = ''; document.getElementById('newNoteBody').value = ''; document.getElementById('newNoteDate').value = ''; document.getElementById('newNoteColor').value = 'c-default';
+      document.getElementById('newNoteTitle').value = ''; document.getElementById('newNoteBody').value = ''; document.getElementById('newNoteDate').value = ''; document.getElementById('newNoteColor').value = 'c-green';
     }
     saveNotes();
   }
@@ -1072,7 +1196,7 @@
     document.getElementById('newNoteTitle').value = note.title;
     document.getElementById('newNoteBody').value = note.body || '';
     document.getElementById('newNoteDate').value = note.due || '';
-    document.getElementById('newNoteColor').value = note.color || 'c-default';
+    document.getElementById('newNoteColor').value = note.color || 'c-green';
     
     document.getElementById('saveNoteBtn').textContent = '更新儲存';
     document.getElementById('cancelNoteBtn').style.display = 'block';
@@ -1082,7 +1206,7 @@
   function cancelEditNote() {
     editingNoteId = null;
     document.getElementById('noteFormTitle').innerHTML = '新增記事/待辦';
-    document.getElementById('newNoteTitle').value = ''; document.getElementById('newNoteBody').value = ''; document.getElementById('newNoteDate').value = ''; document.getElementById('newNoteColor').value = 'c-default';
+    document.getElementById('newNoteTitle').value = ''; document.getElementById('newNoteBody').value = ''; document.getElementById('newNoteDate').value = ''; document.getElementById('newNoteColor').value = 'c-green';
     document.getElementById('saveNoteBtn').textContent = '儲存'; document.getElementById('cancelNoteBtn').style.display = 'none';
   }
 
@@ -1128,7 +1252,7 @@
       
       var dayNotes = notes.filter(function(n) { return n.due === dateStr; });
       dayNotes.forEach(function(n) {
-        var cls = 'cal-item ' + (n.color || 'c-default');
+        var cls = 'cal-item ' + (n.color || 'c-green');
         html += '<div class="' + cls + '" onclick="event.stopPropagation(); editNote(\'' + n.id + '\')" title="' + n.title + ' (點擊修改)">' + n.title + '</div>';
       });
       html += '</div>';
@@ -1165,7 +1289,7 @@
 
         var el = document.createElement('div'); el.className = 'note-card fade';
         // 標籤顏色條
-        var colorBar = document.createElement('div'); colorBar.className = note.color || 'c-default';
+        var colorBar = document.createElement('div'); colorBar.className = note.color || 'c-green';
         colorBar.style.cssText = 'position:absolute; left:0; top:0; bottom:0; width:6px; border-radius:12px 0 0 12px;';
         el.appendChild(colorBar);
         el.style.paddingLeft = '24px'; // 讓出顏色條空間
@@ -1180,7 +1304,7 @@
         var btnDiv = document.createElement('div'); btnDiv.style.marginTop = '12px'; btnDiv.style.textAlign = 'right'; btnDiv.style.borderTop = '1px solid #eee'; btnDiv.style.paddingTop = '10px';
         
         var editBtn = document.createElement('button'); editBtn.className = 'btn btn-outline'; editBtn.style.padding = '4px 8px'; editBtn.style.fontSize = '12px'; editBtn.style.marginRight = '8px'; editBtn.textContent = '✏️ 修改'; editBtn.onclick = function() { editNote(note.id); };
-        var delBtn = document.createElement('button'); delBtn.className = 'btn btn-outline'; delBtn.style.padding = '4px 8px'; delBtn.style.fontSize = '12px'; delBtn.textContent = '完成 / 刪除'; delBtn.onclick = function() { deleteNote(note.id); };
+        var delBtn = document.createElement('button'); delBtn.className = 'btn btn-outline'; delBtn.style.padding = '4px 8px'; editBtn.style.fontSize = '12px'; delBtn.textContent = '完成 / 刪除'; delBtn.onclick = function() { deleteNote(note.id); };
         
         btnDiv.appendChild(editBtn); btnDiv.appendChild(delBtn); el.appendChild(btnDiv); grid.appendChild(el);
       });
