@@ -4,9 +4,12 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>臻的行政百寶箱</title>
+<!-- 載入 jsPDF 用於結訓作品集 PDF 生成 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- 載入 PDF.js 用於解析學員上傳的 PDF 作品 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
+
 <style>
   :root {
     --paper: #F6F1E8; --card: #FFFFFF; --ink: #20251F; --sub: #7C766A; --line: #E7DFD0;
@@ -14,138 +17,1506 @@
     --danger: #B23A2E; --dangerSoft: #F6E2DE;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body { background: var(--paper); color: var(--ink); font-family: 'PingFang TC', sans-serif; margin: 0; min-height: 100vh; }
+  html, body { margin: 0; min-height: 100vh; }
+  body { 
+    background: var(--paper); color: var(--ink); 
+    font-family: 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', sans-serif; 
+    -webkit-font-smoothing: antialiased; 
+  }
+  
   .wrap { max-width: 1080px; margin: 0 auto; padding: 24px 18px 64px; }
+  .fade { animation: fade .45s ease both; }
+  @keyframes fade { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+
+  .top { margin-bottom: 24px; }
+  .kicker { font-size: 13px; letter-spacing: 0.15em; color: var(--go); font-weight: 700; margin-bottom: 4px; }
+  h1 { font-size: 28px; font-weight: 800; margin: 0 0 20px 0; }
+  
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+  .tab { 
+    border: 1px solid var(--line); background: var(--card); border-radius: 999px; 
+    padding: 10px 18px; font-weight: 700; font-size: 14px; cursor: pointer; 
+    transition: all 0.2s; color: var(--sub);
+  }
+  .tab:hover { border-color: var(--go); color: var(--go); }
+  .tab.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+
   .view { display: none; }
   .view.active { display: block; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
-  .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
-  .tab { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 10px 18px; font-weight: 700; cursor: pointer; color: var(--sub); }
-  .tab.on { background: var(--ink); color: #fff; border-color: var(--ink); }
-  .btn { background: var(--go); color: #fff; border: none; border-radius: 8px; padding: 10px 18px; cursor: pointer; }
+  .card { 
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px; 
+    padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); 
+  }
+  
+  input[type="text"], input[type="date"], input[type="file"], input[type="number"], textarea, select {
+    width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px; 
+    font-size: 15px; margin-bottom: 12px; background: #fafafa; font-family: inherit;
+  }
+  textarea { resize: vertical; min-height: 80px; }
+  input:focus, textarea:focus, select:focus { border-color: var(--go); outline: none; background: #fff; }
+  
+  .btn { 
+    background: var(--go); color: #fff; border: none; border-radius: 8px; 
+    padding: 10px 18px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn:hover { background: #0b6151; transform: translateY(-1px); }
+  .btn-danger { background: #fff; color: var(--danger); border: 1px solid var(--dangerSoft); padding: 8px 12px;}
+  .btn-danger:hover { background: var(--dangerSoft); }
   .btn-outline { background: #fff; color: var(--ink); border: 1px solid var(--line); }
-  /* 行事曆 */
-  .cal-wrap { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .btn-outline:hover { border-color: var(--ink); }
+  .btn:disabled { background: #ccc; cursor: not-allowed; }
+
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  
+  .note-card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+    display: flex; flex-direction: column; justify-content: space-between; position: relative;
+  }
+  .note-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .note-body { font-size: 14px; color: var(--sub); margin-bottom: 12px; white-space: pre-wrap; word-break: break-all; }
+  .note-due { font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 4px; display: inline-block; }
+  
+  .dashboard-stat { text-align: center; padding: 24px; background: #fff; border: 1px solid var(--line); border-radius: 12px; }
+  .dashboard-stat h2 { margin: 0; font-size: 36px; color: var(--go); }
+  .dashboard-stat p { margin: 8px 0 0; color: var(--sub); font-weight: 600; }
+  
+  .slider-group { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--sub); margin-bottom: 6px; }
+  .slider-group input { flex: 1; margin: 0; padding: 0; height: auto; }
+
+  /* 行事曆專用樣式 */
+  .cal-wrap { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+  .cal-header { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9f9f9; border-bottom: 1px solid var(--line); }
+  .cal-header button { background: none; border: 1px solid #ccc; border-radius: 4px; padding: 4px 12px; cursor: pointer; }
   .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); background: var(--line); gap: 1px; }
-  .cal-th { background: #f1f1f1; text-align: center; padding: 8px; font-size: 13px; font-weight: bold; }
-  .cal-td { background: #fff; min-height: 80px; padding: 4px; cursor: pointer; }
+  .cal-th { background: #f1f1f1; text-align: center; padding: 8px; font-size: 13px; font-weight: bold; color: var(--sub); }
+  .cal-td { background: #fff; min-height: 80px; padding: 4px; position: relative; cursor: pointer; transition: 0.2s;}
+  .cal-td:hover { background: #f0f7f5; }
+  .cal-td.empty { background: #fafafa; cursor: default; }
   .cal-td.today { background: var(--goldSoft); }
-  .cal-date { font-size: 12px; color: var(--sub); text-align: right; }
-  .cal-item { font-size: 11px; padding: 2px 4px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cal-date { font-size: 12px; color: var(--sub); margin-bottom: 4px; text-align: right; }
+  .cal-item { font-size: 11px; padding: 2px 4px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+  .cal-item:hover { opacity: 0.8; }
+  
+  /* 自訂顏色標籤 */
+  .c-green { background: #CCFF99; color: #55AA00; }
+  .c-danger { background: var(--dangerSoft); color: var(--danger); }
+  .c-blue { background: #CCEEFF; color: #0066FF; }
+  .c-purple { background: #f3e8ff; color: #4400CC; }
+  .c-orange { background: #FFEFD5; color: #BB5500; }
+  .c-gray { background: #DDDDDD; color: #888888; }
+  .c-brown { background: #D2B48C; color: #8B4513; }
+
+  /* 常用連結樣式 */
+  .quick-link-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--goSoft); border-radius: 8px; transition: 0.2s; border: 1px solid transparent; }
+  .quick-link-item:hover { border-color: var(--go); transform: translateY(-1px); }
+  .quick-link-item a { color: var(--go); font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 8px; flex: 1; }
+  .quick-link-item a:hover { text-decoration: underline; }
+
+  /* 安全自訂對話框 */
+  #customModalOverlay {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;
+  }
+  .modal-box {
+    background: #fff; padding: 24px; border-radius: 12px; max-width: 400px; width: 90%;
+    text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  }
+
+  /* 浮動通知提示 */
+  #toastNotification {
+    position: fixed; bottom: 20px; right: 20px; background: #333; color: #fff; 
+    padding: 12px 24px; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transform: translateY(100px); opacity: 0; transition: all 0.3s ease; z-index: 10000;
+  }
+  #toastNotification.show { transform: translateY(0); opacity: 1; }
 </style>
 </head>
 <body>
 
-<div class="wrap">
-  <h1>臻的行政百寶箱</h1>
-  <div class="tabs">
-    <button class="tab" data-target="settings">⚙️ 系統</button>
-    <button class="tab" data-target="notes">行事曆</button>
-    <button class="tab on" data-target="stats">區域業績統計</button>
-  </div>
+<!-- 浮動通知 -->
+<div id="toastNotification">通知訊息</div>
 
-  <div id="stats" class="view active">
-    <div class="card">
-        <h3>業績輸入</h3>
-        <div id="rosInputs"></div>
-        <button class="btn" onclick="renderRoster()">更新報表</button>
+<!-- 自訂對話框 -->
+<div id="customModalOverlay">
+  <div class="modal-box fade">
+    <div id="modalMsg" style="font-size: 16px; margin-bottom: 24px; color: var(--ink); line-height: 1.5;"></div>
+    <div style="display: flex; justify-content: center; gap: 12px;">
+      <button id="modalBtnCancel" class="btn btn-outline" style="display:none;">取消</button>
+      <button id="modalBtnOk" class="btn">確定</button>
     </div>
-    <div class="card">
-        <pre id="rosReport" style="white-space:pre-wrap;"></pre>
-        <div id="rosSubtotals"></div>
-    </div>
-  </div>
-
-  <div id="notes" class="view">
-    <div class="cal-wrap">
-      <div class="cal-header" style="display:flex; justify-content:space-between; padding:10px; background:#f9f9f9;">
-        <button onclick="changeMonth(-1)">◀</button>
-        <h3 id="calTitle" style="margin:0;"></h3>
-        <button onclick="changeMonth(1)">▶</button>
-      </div>
-      <div id="calGrid" class="cal-grid"></div>
-    </div>
-  </div>
-
-  <div id="settings" class="view">
-    <h3>系統設定</h3>
   </div>
 </div>
 
+<div class="wrap fade">
+  <div class="top">
+    <div class="kicker">MONTHLY ADMIN TOOLBOX</div>
+    <h1>臻的行政百寶箱</h1>
+    <div class="tabs">
+      <button class="tab" data-target="settings">⚙️ 系統與備份</button>
+      <button class="tab" data-target="notes">行事曆 <span id="noteBadge"></span></button>
+      <button class="tab on" data-target="stats">區域業績統計</button>
+      <button class="tab" data-target="poster">百人戰報宣傳圖</button>
+      <button class="tab" data-target="merge-jpg">契約書左右合併</button>
+      <button class="tab" data-target="vendor-contract">廠商契約</button>
+      <button class="tab" data-target="pdf-portfolio">結訓作品集</button>
+      <button class="tab" data-target="dashboard">指標儀表板</button>
+    </div>
+  </div>
+
+  <!-- 區域業績統計 -->
+  <div id="stats" class="view active fade">
+    <div class="grid-2">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="margin-top:0;">輸入業績</h3>
+          <input type="text" id="rosDate" placeholder="未輸入將自動抓今天日期 (含星期)" style="width:200px; padding:6px; margin-bottom:10px;">
+        </div>
+        
+        <div id="rosInputs"></div>
+        
+        <div style="display:flex; gap:10px; margin-top:16px;">
+          <button class="btn" onclick="renderRoster()" style="flex:1;">更新報表</button>
+          <button class="btn btn-outline" onclick="resetRoster()" style="padding:0 16px;">重置歸零</button>
+        </div>
+        
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line);">
+          <label style="font-size:13px; font-weight:bold; color:var(--sub);">貼上多筆文字一次帶入 (支援綽號與乘法)</label>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="rosQuick" placeholder="例：俊亨 行銷92400舊生64800*2" style="margin-bottom:0; flex:1;">
+            <button class="btn btn-outline" onclick="quickParse()">快速帶入</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+          <h3 style="margin:0;">報表預覽</h3>
+          <button class="btn btn-outline" onclick="copyReport()" style="font-weight:bold; color:var(--ink);">複製報表</button>
+        </div>
+        <pre id="rosReport" style="margin:0; white-space:pre-wrap; font-family:'PingFang TC', monospace; font-size:14px; line-height:1.6; background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:16px;"></pre>
+        <div id="rosSubtotals" style="margin-top:12px; font-size:13px; color:var(--sub); text-align:right;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 百人戰報宣傳圖 -->
+  <div id="poster" class="view fade">
+    <div class="card">
+      <h3 style="margin-top:0;">百人戰報宣傳圖 (自動套版)</h3>
+      <p style="color: var(--sub); font-size: 14px; margin-bottom: 20px;">上傳底圖與素材，系統將自動套用版型並輸出 1241×1754 宣傳圖。利用滑桿微調位置以精準對齊虛線框！</p>
+      
+      <div class="grid-2">
+        <div>
+          <label style="font-weight:bold; font-size:14px; color:var(--danger);">1. 宣傳圖底圖模板 (已預設載入)</label>
+          <div style="font-size: 12px; color: var(--sub); margin-bottom: 4px;">若預設底圖未顯示，請手動上傳「個人版制作(空白)_2.jpg」</div>
+          <input type="file" id="pTpl" accept="image/*">
+          
+          <label style="font-weight:bold; font-size:14px;">2. 感謝函文字內容 (置於上方)</label>
+          <textarea id="pQuote" rows="3" placeholder="例如：感謝聯成電腦..."></textarea>
+          <div class="slider-group"><span style="width:50px;">大小</span><input type="range" id="pQuoteSize" min="20" max="80" value="36"></div>
+          <div class="slider-group" style="margin-bottom:15px;"><span style="width:50px;">上下</span><input type="range" id="pQuoteY" min="-500" max="500" value="0"></div>
+
+          <label style="font-weight:bold; font-size:14px;">3. 學員姓名 (置於下方)</label>
+          <input type="text" id="pName" placeholder="例如：張小明" style="margin-bottom:6px;">
+          <div class="slider-group" style="margin-bottom:15px;"><span style="width:50px;">大小</span><input type="range" id="pNameSize" min="30" max="120" value="75"></div>
+          
+          <label style="font-weight:bold; font-size:14px;">4. 錄取廠商 (置於下方)</label>
+          <input type="text" id="pComp" placeholder="例如：網銀國際股份有限公司" style="margin-bottom:6px;">
+          <div class="slider-group"><span style="width:50px;">大小</span><input type="range" id="pCompSize" min="20" max="80" value="45"></div>
+
+          <div class="slider-group" style="margin-top:8px; margin-bottom:15px; padding-top:8px; border-top:1px dashed #ccc;">
+            <span style="width:110px; color:var(--go); font-weight:bold;">姓名/廠商 垂直微調</span>
+            <input type="range" id="pInfoY" min="-500" max="500" value="0">
+          </div>
+        </div>
+        
+        <div style="background: #fafafa; padding: 16px; border-radius: 8px; border: 1px solid var(--line);">
+          <label style="font-weight:bold; font-size:14px;">5. 感謝函圖片 (掃描檔)</label>
+          <input type="file" id="pLetter" accept="image/*">
+          <div class="slider-group"><span>縮放</span><input type="range" id="pLetterS" min="0.05" max="3" step="0.01" value="1"></div>
+          <div class="slider-group"><span>左右</span><input type="range" id="pLetterX" min="-800" max="800" value="0"></div>
+          <div class="slider-group"><span>上下</span><input type="range" id="pLetterY" min="-800" max="800" value="0"></div>
+          
+          <label style="font-weight:bold; font-size:14px; margin-top:20px; display:block;">6. 合照 (圓形裁切)</label>
+          <input type="file" id="pPhoto" accept="image/*">
+          
+          <div style="font-size:12px; color:var(--go); font-weight:bold; margin-top:10px; margin-bottom:4px;">➤ 照片內容微調 (在圓框內移動與縮放)</div>
+          <div class="slider-group"><span>照片縮放</span><input type="range" id="pPhotoS" min="0.05" max="3" step="0.01" value="1"></div>
+          <div class="slider-group"><span>照片左右</span><input type="range" id="pPhotoX" min="-1000" max="1000" value="0"></div>
+          <div class="slider-group"><span>照片上下</span><input type="range" id="pPhotoY" min="-1000" max="1000" value="0"></div>
+          
+          <div style="font-size:12px; color:var(--go); font-weight:bold; margin-top:10px; margin-bottom:4px;">➤ 圓框位置微調 (移動整個圓形)</div>
+          <div class="slider-group"><span>圓框左右</span><input type="range" id="pFrameX" min="-500" max="500" value="0"></div>
+          <div class="slider-group"><span>圓框上下</span><input type="range" id="pFrameY" min="-500" max="500" value="0"></div>
+
+          <button class="btn" onclick="drawPromo()" style="width:100%; margin-top: 20px;">🎨 預覽 / 更新畫面</button>
+        </div>
+      </div>
+      
+      <div style="margin-top: 20px; text-align: center;">
+        <canvas id="promoCanvas" width="1241" height="1754" style="display:none;"></canvas>
+        <img id="canvasPreview" alt="預覽將顯示於此" style="max-width:100%; max-height: 500px; border:1px solid var(--line); border-radius:8px; display:none;">
+        <br>
+        <button class="btn" id="downloadPosterBtn" style="display:none; margin-top: 16px; background: var(--ink);" onclick="downloadPromo()">📥 下載高畫質宣傳圖 JPG</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 契約書左右合併 -->
+  <div id="merge-jpg" class="view fade">
+    <div class="card">
+      <h3 style="margin-top:0;">契約書左右合併 (輸出 JPG)</h3>
+      <p style="color: var(--sub); font-size: 14px; margin-bottom: 20px;">上傳兩張契約書 JPG，自動產生指定尺寸的合併 JPG。</p>
+      
+      <div class="grid-2" style="margin-bottom: 16px;">
+        <div>
+          <label style="font-weight:bold; font-size:14px;">左側圖片 (第一頁)</label>
+          <input type="file" id="jpgF1" accept="image/*">
+        </div>
+        <div>
+          <label style="font-weight:bold; font-size:14px;">右側圖片 (第二頁)</label>
+          <input type="file" id="jpgF2" accept="image/*">
+        </div>
+      </div>
+      
+      <div style="display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap; margin-bottom:12px;">
+        <div style="flex:1; min-width:200px;">
+          <label style="font-weight:bold; font-size:14px;">學員姓名 (選填，用於存檔名)</label>
+          <input type="text" id="jpgStuName" placeholder="例如：張小明" style="margin-bottom:0;">
+        </div>
+        <div>
+          <label style="font-size:12px; color:var(--sub);">目標寬度 (px)</label>
+          <input type="number" id="jpgW" value="9926" style="width: 120px; margin-bottom:0;"> 
+        </div>
+        <div>
+          <label style="font-size:12px; color:var(--sub);">目標高度 (px)</label>
+          <input type="number" id="jpgH" value="7020" style="width: 120px; margin-bottom:0;">
+        </div>
+      </div>
+      
+      <button class="btn" onclick="mergeJPGs()" style="width:100%; margin-top:10px;">開始合併產生 JPG</button>
+      
+      <div id="jpgStatus" style="margin-top:12px; font-weight:bold; color:var(--go); font-size: 14px; text-align:center;"></div>
+      <canvas id="jpgCanvas" style="display:none;"></canvas>
+    </div>
+  </div>
+
+  <!-- 廠商契約 (上下合併) -->
+  <div id="vendor-contract" class="view fade">
+    <div class="card">
+      <h3 style="margin-top:0;">廠商契約 (上下合併輸出 JPG)</h3>
+      <p style="color: var(--sub); font-size: 14px; margin-bottom: 20px;">上傳兩張契約圖片，系統將自動調整為 1654x4680px 的 JPG。</p>
+      
+      <div class="grid-2" style="margin-bottom: 16px;">
+        <div>
+          <label style="font-weight:bold; font-size:14px;">第一張圖片 (上方)</label>
+          <input type="file" id="vcF1" accept="image/*">
+        </div>
+        <div>
+          <label style="font-weight:bold; font-size:14px;">第二張圖片 (下方)</label>
+          <input type="file" id="vcF2" accept="image/*">
+        </div>
+      </div>
+      
+      <label style="font-weight:bold; font-size:14px;">廠商名稱 (選填，用於存檔名)</label>
+      <input type="text" id="vcCompName" placeholder="例如：某某有限公司">
+      
+      <button class="btn" id="vcMergeBtn" onclick="mergeVendorContracts()" style="width:100%;">開始合併產生 JPG</button>
+      
+      <div id="vcStatus" style="margin-top:12px; font-weight:bold; color:var(--go); font-size: 14px; text-align: center;"></div>
+      <canvas id="vcCanvas" style="display:none;"></canvas>
+    </div>
+  </div>
+
+  <!-- 結訓作品集 -->
+  <div id="pdf-portfolio" class="view fade">
+    <div class="card">
+      <h3 style="margin-top:0;">結訓作品集 PDF (自動內頁標題版)</h3>
+      <p style="color: var(--sub); font-size: 14px;">系統會自動將上傳的圖片與 PDF 進行解析，並在<b>內頁上方自動打上作品原檔名當作標題</b>。</p>
+      
+      <label style="font-weight:bold; font-size:14px; color:var(--danger);">1. 專屬封面底圖 (可選，已支援雲端預設)</label>
+      <div style="font-size: 12px; color: var(--sub); margin-bottom: 4px;">若上傳，將取代預設封面。建議比例為 A4 橫式。</div>
+      <input type="file" id="portCover" accept="image/*">
+      
+      <label style="font-weight:bold; font-size:14px; color:var(--danger); margin-top:12px; display:block;">2. 專屬封底底圖 (可選，已支援雲端預設)</label>
+      <input type="file" id="portBackCover" accept="image/*" style="margin-bottom: 16px;">
+      
+      <div class="grid-2">
+        <div>
+          <label>班級 / 專案名稱 (做為 PDF 檔名)：</label>
+          <input type="text" id="portTitle" placeholder="例如：AutoCAD室內設計班">
+        </div>
+        <div>
+          <label>分校名稱：</label>
+          <input type="text" id="portBranch" value="中壢分校" placeholder="留白則不印出">
+        </div>
+      </div>
+      
+      <label>結訓日期：</label>
+      <input type="text" id="portDate" placeholder="例如：2026年7月 (留白則不印出)">
+      
+      <div style="background: #fafafa; padding: 16px; border-radius: 8px; border: 1px solid var(--line); margin-bottom: 16px; margin-top: 16px;">
+        <label style="font-weight:bold; font-size:14px; color:var(--go); margin-bottom: 12px; display:block;">✎ 封面文字排版微調</label>
+        <div class="grid-2">
+          <div>
+            <div class="slider-group">
+              <span style="width:70px;">大標題</span>
+              <input type="text" id="portMainTitle" value="" style="margin:0; padding:4px 8px; flex:1;" placeholder="留白則不印出">
+            </div>
+            <div class="slider-group">
+              <span style="width:70px;">對齊方式</span>
+              <select id="portTextAlign" style="margin:0; padding:4px 8px; flex:1;">
+                <option value="left" selected>靠左對齊</option>
+                <option value="center">置中對齊</option>
+                <option value="right">靠右對齊</option>
+              </select>
+            </div>
+            <div class="slider-group">
+              <span style="width:70px;">文字顏色</span>
+              <select id="portTextColor" style="margin:0; padding:4px 8px; flex:1;">
+                <option value="#333333" selected>深灰色</option>
+                <option value="#ffffff">純白色</option>
+                <option value="#0E7A66">聯成綠</option>
+                <option value="#000000">純黑色</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <div class="slider-group"><span style="width:60px;">字體大小</span><input type="range" id="portTextSize" min="40" max="200" value="80"></div>
+            <div class="slider-group"><span style="width:60px;">行距調整</span><input type="range" id="portTextGap" min="50" max="350" value="140"></div>
+            <div class="slider-group"><span style="width:60px;">左右平移</span><input type="range" id="portTextX" min="-1000" max="1000" value="600"></div>
+            <div class="slider-group"><span style="width:60px;">上下平移</span><input type="range" id="portTextY" min="-1000" max="1000" value="700"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 👀 封面即時預覽 -->
+      <div style="margin-top: 20px; text-align: center; border-top: 1px dashed var(--line); padding-top: 20px;">
+        <label style="font-weight:bold; font-size:14px; color:var(--go); margin-bottom: 12px; display:block;">👀 封面即時預覽 (PDF將依此畫面生成)</label>
+        <canvas id="portCoverPreview" width="2376" height="1680" style="max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);"></canvas>
+      </div>
+
+      <label style="color:var(--go); font-weight:bold; margin-top:20px; display:block;">上傳學員作品 (支援圖片或 PDF，系統將自動提取原檔名做為內頁大標題)：</label>
+      <input type="file" id="portImages" accept="image/*,application/pdf" multiple style="background:var(--goSoft);">
+      
+      <button class="btn" onclick="generatePortfolioPDF()" id="portBtn" style="margin-top:10px; width: 100%;">📚 開始產生作品集 PDF</button>
+      <div id="portStatus" style="margin-top:12px; font-weight:bold; color:var(--go); font-size: 14px; text-align: center;"></div>
+    </div>
+  </div>
+
+  <!-- 記事提醒 -->
+  <div id="notes" class="view fade">
+    <div id="dueBar"></div>
+    
+    <!-- 行事曆區塊 -->
+    <div class="cal-wrap">
+      <div class="cal-header">
+        <button onclick="changeMonth(-1)">◀ 上個月</button>
+        <h3 id="calTitle" style="margin:0; font-size:16px;"></h3>
+        <button onclick="changeMonth(1)">下個月 ▶</button>
+      </div>
+      <div id="calGrid" class="cal-grid"></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card" style="background: var(--goSoft); border-color: #c0ded6;">
+        <h3 id="noteFormTitle" style="margin-top:0; color: var(--go);">新增記事/待辦</h3>
+        
+        <div style="display:flex; gap:8px;">
+          <select id="newNoteColor" style="width:100px;">
+            <option value="c-green">就輔(綠)</option>
+            <option value="c-danger">緊急(紅)</option>
+            <option value="c-blue">會議(藍)</option>
+            <option value="c-purple">徵才(紫)</option>
+            <option value="c-orange">開班(橘)</option>
+            <option value="c-gray">結訓(灰)</option>
+            <option value="c-brown">其他(咖)</option>
+          </select>
+          <input type="text" id="newNoteTitle" placeholder="事項標題 (必填)">
+        </div>
+        
+        <textarea id="newNoteBody" placeholder="詳細內容 (選填)"></textarea>
+        <div style="display:flex; gap:10px;">
+          <input type="date" id="newNoteDate" style="flex:1;">
+          <button id="saveNoteBtn" class="btn" onclick="saveNoteAction()">儲存</button>
+          <button id="cancelNoteBtn" class="btn btn-outline" style="display:none;" onclick="cancelEditNote()">取消</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;">搜尋記事</h3>
+        <input type="text" id="searchNote" placeholder="輸入關鍵字..." onkeyup="renderNotes()">
+      </div>
+    </div>
+    
+    <div id="emptyState" style="text-align:center; padding: 40px; color: var(--sub); display:none;">找不到相關記事。</div>
+    <div class="grid-3" id="noteGrid"></div>
+  </div>
+
+  <!-- 指標儀表板 -->
+  <div id="dashboard" class="view fade">
+    <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+      <h3 style="margin:0;">本月營運指標</h3>
+      <button class="btn btn-outline" onclick="editDashboard()">編輯數據</button>
+    </div>
+    <div class="grid-3" id="dashGrid">
+      <div class="dashboard-stat"><h2 id="dash1">0</h2><p>本月輔導人次</p></div>
+      <div class="dashboard-stat"><h2 id="dash2">0</h2><p>結訓達標率 (%)</p></div>
+      <div class="dashboard-stat"><h2 id="dash3">0</h2><p>累計契約數量</p></div>
+    </div>
+    <div class="card" id="dashEditor" style="display:none; margin-top:16px; background:var(--goSoft); border-color:#c0ded6;">
+      <h4>更新指標數據</h4>
+      <div class="grid-3">
+        <input type="number" id="inputDash1" placeholder="本月輔導人次">
+        <input type="number" id="inputDash2" placeholder="結訓達標率 (%)">
+        <input type="number" id="inputDash3" placeholder="累計契約數量">
+      </div>
+      <div style="display:flex; gap:10px; margin-top:12px;">
+        <button class="btn" onclick="saveDashboard()">儲存</button>
+        <button class="btn btn-outline" onclick="document.getElementById('dashEditor').style.display='none'">取消</button>
+        <button class="btn btn-danger" onclick="resetDashboard()" style="margin-left:auto;">重置數據</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 系統與備份 -->
+  <div id="settings" class="view fade">
+    <div class="grid-2">
+      <!-- 離線備份 -->
+      <div class="card">
+        <h3 style="margin-top:0;">💾 離線資料備份與還原</h3>
+        <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">匯出 .json 檔案存放在您的電腦中，作為離線保險。</p>
+        <button class="btn btn-outline" onclick="exportData()" style="width:100%; margin-bottom:20px;">📥 匯出離線備份檔 (.json)</button>
+        
+        <label style="display:block; font-size:14px; font-weight:bold; margin-bottom:8px; color:var(--go);">上傳離線備份檔還原：</label>
+        <input type="file" id="importFile" accept=".json" style="margin-bottom:12px;">
+        <button class="btn btn-outline" onclick="importData()" style="width:100%;">📤 還原離線資料</button>
+      </div>
+
+      <!-- 常用連結 -->
+      <div class="card">
+        <h3 style="margin-top:0;">🔗 常用系統連結</h3>
+        <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">將公司的後台系統、報表或雲端硬碟網址存在這裡，當作您的專屬入口網站。</p>
+        
+        <div id="linksList" style="margin-bottom:16px; display:flex; flex-direction:column; gap:8px;"></div>
+        
+        <div style="border-top:1px dashed var(--line); padding-top:16px;">
+          <input type="text" id="newLinkName" placeholder="連結名稱 (例: 員工出勤系統)" style="margin-bottom:8px;">
+          <input type="text" id="newLinkUrl" placeholder="網址 (例: https://...)" style="margin-bottom:12px;">
+          <button class="btn" onclick="addLink()" style="width:100%;">➕ 新增連結</button>
+        </div>
+      </div>
+      
+      <!-- 🌟 GitHub 雲端備份設定區 -->
+      <div class="card" style="margin-top: 16px; border-color: #c0ded6; grid-column: 1 / -1; background: #fdfdfd;">
+        <h3 style="margin-top:0; color:var(--go);">☁️ GitHub 雲端資料同步與圖片自動備份</h3>
+        <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">
+          設定完成後，不僅圖片會自動上傳，每天首次開啟網頁時，也會自動將您的「行事曆、業績」等資料備份到 GitHub 裡！<br>
+          <strong style="color:var(--danger);">📱 手機同步解法：</strong>用手機打開網頁，按下方紅色的「從雲端下載覆蓋」，就能瞬間跟電腦同步！
+        </p>
+        
+        <div class="grid-2" style="margin-bottom: 12px;">
+          <div>
+            <label style="font-size:13px; font-weight:bold; color:var(--sub);">GitHub 帳號名稱 / Private 專案名稱</label>
+            <input type="text" id="ghRepo" placeholder="例: Janetdovely-cloud/LCC_Image_Backup">
+          </div>
+          <div>
+            <label style="font-size:13px; font-weight:bold; color:var(--sub);">Personal Access Token (需勾選 repo 權限)</label>
+            <input type="password" id="ghToken" placeholder="例: ghp_xxxxxxxxxxxxxxxxxxxx">
+          </div>
+        </div>
+        
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
+          <button class="btn" onclick="saveGhConfig()" style="flex:1;">💾 1. 先儲存雲端設定</button>
+          <button class="btn btn-outline" onclick="syncToCloud(false)" style="flex:1; border-color:var(--go); color:var(--go);">☁️ 2. 手動強制備份至雲端</button>
+          <button class="btn btn-outline" onclick="syncFromCloud()" style="flex:1; border-color:var(--danger); color:var(--danger);">📥 3. 從雲端下載並覆蓋本機 (手機用)</button>
+        </div>
+      </div>
+
+      <!-- Telegram 設定區 -->
+      <div class="card" style="margin-top: 16px; border-color: #c0ded6; grid-column: 1 / -1;">
+        <h3 style="margin-top:0; color:var(--go);">🤖 Telegram 自動推播提醒</h3>
+        <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">設定您的 Telegram Bot Token 與 Chat ID。每天<b>首次開啟本網頁時</b>，系統會自動檢查並將「今天到期」或「逾期」的事項發送到您的 Telegram！</p>
+        <div class="grid-2" style="margin-bottom: 12px;">
+          <div>
+            <label style="font-size:13px; font-weight:bold; color:var(--sub);">Bot Token</label>
+            <input type="text" id="tgToken" placeholder="例: 123456:ABC-DEF1234ghIkl-zyx...">
+          </div>
+          <div>
+            <label style="font-size:13px; font-weight:bold; color:var(--sub);">Chat ID</label>
+            <input type="text" id="tgChatId" placeholder="例: 123456789">
+          </div>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn" onclick="saveTgConfig()">💾 儲存 TG 設定</button>
+          <button class="btn btn-outline" onclick="testTgNotification()">🔔 發送測試推播</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
 <script>
-  // 1. 初始化資料結構
-  const REGIONS = [
+  // ==========================================
+  // ⚙️ 系統全域雲端設定區
+  // ==========================================
+  const CONFIG = {
+    PROMO_BG_URL: "https://raw.githubusercontent.com/Janetdovely-cloud/LCC_taskbox_database/main/%E5%80%8B%E4%BA%BA%E7%89%88%E5%88%B6%E4%BD%9C(%E7%A9%BA%E7%99%BD).jpg", 
+    PORTFOLIO_COVER_URL: "https://raw.githubusercontent.com/Janetdovely-cloud/LCC_taskbox_database/main/%E7%B5%90%E8%A8%93%E4%BD%9C%E5%93%81%E9%9B%86%E5%B0%81%E9%9D%A2.jpg", 
+    PORTFOLIO_BACKCOVER_URL: "https://raw.githubusercontent.com/Janetdovely-cloud/LCC_taskbox_database/main/%E7%B5%90%E8%A8%93%E4%BD%9C%E5%93%81%E9%9B%86%E5%B0%81%E5%BA%95.jpg",
+  };
+
+  function safeGet(key, def) { try { return JSON.parse(localStorage.getItem(key)) || def; } catch(e) { return def; } }
+  function safeSet(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) { console.warn("Storage restricted"); } }
+
+  function showMsg(message) {
+    document.getElementById('modalMsg').innerText = message;
+    document.getElementById('modalBtnCancel').style.display = 'none';
+    document.getElementById('customModalOverlay').style.display = 'flex';
+    document.getElementById('modalBtnOk').onclick = function() { document.getElementById('customModalOverlay').style.display = 'none'; };
+  }
+  
+  function showToast(message) {
+    var toast = document.getElementById('toastNotification');
+    toast.innerText = message;
+    toast.classList.add('show');
+    setTimeout(function() { toast.classList.remove('show'); }, 4000);
+  }
+
+  function showConfirm(message, onConfirm) {
+    document.getElementById('modalMsg').innerText = message;
+    document.getElementById('modalBtnCancel').style.display = 'inline-flex';
+    document.getElementById('customModalOverlay').style.display = 'flex';
+    document.getElementById('modalBtnCancel').onclick = function() { document.getElementById('customModalOverlay').style.display = 'none'; };
+    document.getElementById('modalBtnOk').onclick = function() { 
+      document.getElementById('customModalOverlay').style.display = 'none'; 
+      if (onConfirm) onConfirm(); 
+    };
+  }
+
+  document.querySelectorAll('.tab').forEach(function(tab) {
+    tab.addEventListener('click', function(e) {
+      document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('on'); });
+      document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
+      e.target.classList.add('on');
+      document.getElementById(e.target.dataset.target).classList.add('active');
+    });
+  });
+
+  // ==========================================
+  // 模組 0: GitHub 雲端資料同步與備份引擎
+  // ==========================================
+  var ghConfig = safeGet('admin_gh_config', { token: '', repo: '', lastJsonBackup: '' });
+  document.getElementById('ghRepo').value = ghConfig.repo || '';
+  document.getElementById('ghToken').value = ghConfig.token || '';
+
+  function utf8ToBase64(str) { return btoa(unescape(encodeURIComponent(str))); }
+  function base64ToUtf8(str) { return decodeURIComponent(escape(atob(str))); }
+
+  function saveGhConfig() {
+    ghConfig.repo = document.getElementById('ghRepo').value.trim();
+    ghConfig.token = document.getElementById('ghToken').value.trim();
+    safeSet('admin_gh_config', ghConfig);
+    showMsg('✅ GitHub 雲端設定已儲存！您現在可以點擊「強制備份至雲端」了！');
+  }
+
+  async function uploadImageToGitHub(fileName, dataUrlBase64, customFolder) {
+    if (!ghConfig.token || !ghConfig.repo) return; 
+    
+    showToast('☁️ 正在背景備份圖片至 GitHub...');
+    var b64String = dataUrlBase64.split(',')[1];
+    var folder = customFolder || (new Date().getFullYear() + String(new Date().getMonth()+1).padStart(2, '0'));
+    var path = 'backups/' + folder + '/' + fileName;
+    var url = 'https://api.github.com/repos/' + ghConfig.repo + '/contents/' + encodeURIComponent(path);
+
+    try {
+      var res = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Authorization': 'token ' + ghConfig.token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'Auto-backup Image: ' + fileName, content: b64String })
+      });
+      if (res.ok) showToast('✅ 圖片已成功歸檔至 GitHub 私密專案！');
+      else showToast('❌ 圖片備份失敗，請檢查設定與權限。');
+    } catch (e) { showToast('❌ 網路連線錯誤，GitHub 備份失敗。'); }
+  }
+
+  async function syncToCloud(isAuto) {
+    if (!ghConfig.token || !ghConfig.repo) return;
+    if (!isAuto) showToast('☁️ 正在打包資料並上傳至 GitHub 雲端...');
+    
+    var backupData = {
+      notes: safeGet('admin_notes_v4', []),
+      roster: safeGet('admin_roster_v8', {}),
+      dash: safeGet('admin_dash_v2', { d1:0, d2:0, d3:0 }),
+      links: safeGet('admin_links_v1', [])
+    };
+    var b64String = utf8ToBase64(JSON.stringify(backupData, null, 2));
+    var path = 'Toolbox_Cloud_Sync_Master.json';
+    var url = 'https://api.github.com/repos/' + ghConfig.repo + '/contents/' + path;
+
+    try {
+      var getRes = await fetch(url, { headers: { 'Authorization': 'token ' + ghConfig.token } });
+      var sha = null;
+      if (getRes.ok) { var fileData = await getRes.json(); sha = fileData.sha; }
+      
+      var bodyData = { message: 'Update Cloud Sync Data', content: b64String };
+      if (sha) bodyData.sha = sha;
+
+      var putRes = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Authorization': 'token ' + ghConfig.token, 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyData)
+      });
+      
+      if (putRes.ok) {
+        if (!isAuto) showToast('✅ 雲端同步完成！您的手機現在可以去下載了！');
+        else showToast('☁️ [每日任務] 資料已自動備份至 GitHub！');
+        
+        var today = new Date(); 
+        ghConfig.lastJsonBackup = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+        safeSet('admin_gh_config', ghConfig);
+      } else {
+        if (!isAuto) showToast('❌ 雲端同步失敗，請確認 Token 權限。');
+      }
+    } catch(e) { if (!isAuto) showToast('❌ 連線異常。'); }
+  }
+
+  async function syncFromCloud() {
+    if (!ghConfig.token || !ghConfig.repo) return showMsg('請先輸入並儲存 GitHub 專案名稱與 Token！');
+    showToast('☁️ 正在從 GitHub 尋找並下載雲端備份...');
+    
+    var path = 'Toolbox_Cloud_Sync_Master.json';
+    var url = 'https://api.github.com/repos/' + ghConfig.repo + '/contents/' + path;
+
+    try {
+      var res = await fetch(url, { headers: { 'Authorization': 'token ' + ghConfig.token, 'Cache-Control': 'no-cache' } });
+      if (res.ok) {
+        var fileData = await res.json();
+        var content = base64ToUtf8(fileData.content);
+        var data = JSON.parse(content);
+        
+        showConfirm('⚠️ 警告：這將會清除您設備上的目前資料，\n並用雲端的資料完全覆蓋。確定要還原嗎？', function() {
+          if(data.notes) safeSet('admin_notes_v4', data.notes); 
+          if(data.roster) safeSet('admin_roster_v8', data.roster);
+          if(data.dash) safeSet('admin_dash_v2', data.dash); 
+          if(data.links) safeSet('admin_links_v1', data.links);
+          
+          notes = safeGet('admin_notes_v4', []); renderNotes(); 
+          rosData = safeGet('admin_roster_v8', {}); buildInputs(); renderRoster();
+          dashData = safeGet('admin_dash_v2', { d1:0, d2:0, d3:0 }); renderDashboard(); 
+          linksData = safeGet('admin_links_v1', []); renderLinks();
+          
+          showToast('✅ 成功從雲端下載並還原所有資料！');
+        });
+      } else { showMsg('❌ 在雲端找不到備份檔。請確認您是否曾經在電腦端執行過「強制備份至雲端」！'); }
+    } catch(e) { showMsg('❌ 網路連線異常。'); }
+  }
+
+
+  // ==========================================
+  // 模組 1: 區域業績統計
+  // ==========================================
+  var REGIONS = [
     { key: '桃園', slogan: '桃園-桃園衝衝衝！做就對了！', people: ['譽人', '俊亨', '聖潔'] },
     { key: '中壢', slogan: '中壢-問心無愧 !!! 我全兜要 !!!', people: ['世勳', '旻儒', '慧君', '宇佑'] },
     { key: '新竹', slogan: '新竹-錢進新竹！勇奪第一', people: ['婷薇', '嘉祥', '思靜', '松源'] }
   ];
-  const SOURCES = ['行銷', '引流', '舊生', '未報', '招牌'];
-  let rosData = JSON.parse(localStorage.getItem('admin_roster_v8')) || {};
-  let notes = JSON.parse(localStorage.getItem('admin_notes_v4')) || [];
-  let currentCalDate = new Date();
-
-  // 2. 初始化頁面
-  window.onload = function() {
-      buildInputs();
-      renderRoster();
-      renderCalendar();
-      // 設定 Tab 切換
-      document.querySelectorAll('.tab').forEach(t => t.onclick = (e) => {
-          document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
-          document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
-          e.target.classList.add('on');
-          document.getElementById(e.target.dataset.target).classList.add('active');
-      });
-  };
+  var SOURCES = ['行銷', '引流', '舊生', '未報', '招牌'];
+  var rosData = safeGet('admin_roster_v8', {});
 
   function buildInputs() {
     var wrap = document.getElementById('rosInputs');
     wrap.innerHTML = '';
-    REGIONS.forEach(r => {
-      var h = document.createElement('div'); h.textContent = r.key + '區'; h.style.fontWeight = 'bold'; h.style.marginTop = '10px'; wrap.appendChild(h);
-      r.people.forEach(p => {
-        var div = document.createElement('div');
-        div.innerHTML = `<span style="display:inline-block; width:60px;">${p}</span><input type="number" id="amt_${p}" value="${rosData[p]?.amt || 0}" oninput="updateRos('${p}', this.value)">`;
-        wrap.appendChild(div);
+    
+    REGIONS.forEach(function(r) {
+      var h = document.createElement('div'); 
+      h.style.color = 'var(--go)'; h.style.fontWeight = 'bold'; h.style.margin = '15px 0 8px 0'; h.style.fontSize = '14px';
+      h.textContent = r.key + '區人員'; 
+      wrap.appendChild(h);
+      
+      r.people.forEach(function(p) {
+        var row = document.createElement('div'); 
+        row.style.display = 'flex'; row.style.gap = '10px'; row.style.marginBottom = '8px'; row.style.alignItems = 'center';
+        
+        var label = document.createElement('span'); 
+        label.textContent = p; label.style.width = '60px'; label.style.fontWeight = 'bold'; label.style.fontSize = '14px';
+        
+        var select = document.createElement('select');
+        select.style.width = '100px'; select.style.marginBottom = '0'; select.style.padding = '8px';
+        var emptyOpt = document.createElement('option'); emptyOpt.value = ''; emptyOpt.textContent = '來源'; select.appendChild(emptyOpt);
+        
+        SOURCES.forEach(function(opt) {
+          var o = document.createElement('option'); o.value = opt; o.textContent = opt;
+          if(rosData[p] && rosData[p].src === opt) o.selected = true;
+          select.appendChild(o);
+        });
+        
+        if (rosData[p] && rosData[p].src && !SOURCES.includes(rosData[p].src)) {
+          var customO = document.createElement('option'); customO.value = rosData[p].src; customO.textContent = rosData[p].src; customO.selected = true; select.appendChild(customO);
+        }
+        
+        var input = document.createElement('input'); input.type = 'number'; input.placeholder = '金額'; 
+        input.style.flex = '1'; input.style.marginBottom = '0'; input.style.padding = '8px';
+        if(rosData[p] && rosData[p].amt) input.value = rosData[p].amt;
+        
+        var updateData = function() { rosData[p] = { src: select.value, amt: input.value }; };
+        input.oninput = updateData; select.onchange = updateData;
+        
+        row.appendChild(label); row.appendChild(select); row.appendChild(input);
+        wrap.appendChild(row);
       });
     });
   }
 
-  function updateRos(p, val) { if(!rosData[p]) rosData[p]={amt:0}; rosData[p].amt = val; localStorage.setItem('admin_roster_v8', JSON.stringify(rosData)); renderRoster(); }
-
   function renderRoster() {
-    let report = '【熱情🌞、專業🏆、創新🚄】\n每日值班順序表 桃、中、竹\n日期：' + (document.getElementById('rosDate')?.value || new Date().toLocaleDateString()) + '\n\n';
-    REGIONS.forEach(r => {
-        report += r.slogan + '\n';
-        r.people.forEach((p, i) => report += (i+1) + '.' + p + '- ' + (rosData[p]?.amt || '') + '\n');
-        report += '\n';
+    var dateInput = document.getElementById('rosDate').value.trim();
+    if (!dateInput) {
+      var today = new Date();
+      var dayNames = ['日', '一', '二', '三', '四', '五', '六'];
+      dateInput = (today.getMonth() + 1) + '/' + today.getDate() + '(' + dayNames[today.getDay()] + ')';
+    }
+    
+    // 嚴格遵守您的範本格式
+    var report = '【熱情🌞、專業🏆、創新🚄】\n每日值班順序表 桃、中、竹\n日期：' + dateInput + '\n\n';
+    
+    var total = 0;
+    REGIONS.forEach(function(reg) {
+      report += reg.slogan + '\n';
+      reg.people.forEach(function(p, i) {
+        var d = rosData[p] || {src: '', amt: ''};
+        var tail = (d.src || '') + (d.amt ? d.amt : '');
+        report += (i+1) + '.' + p + '- ' + tail + '\n';
+        if(d.amt) total += parseInt(d.amt);
+      });
+      report += '\n';
     });
+    report += '區域總計：' + total + ' 元';
+    
     document.getElementById('rosReport').textContent = report;
+    safeSet('admin_roster_v8', rosData);
   }
 
-  function renderCalendar() {
-    var grid = document.getElementById('calGrid');
-    var year = currentCalDate.getFullYear();
-    var month = currentCalDate.getMonth();
-    document.getElementById('calTitle').textContent = year + '年 ' + (month + 1) + '月';
-    grid.innerHTML = ['日','一','二','三','四','五','六'].map(d => `<div class="cal-th">${d}</div>`).join('');
+  function quickParse() {
+    var str = document.getElementById('rosQuick').value;
+    if(!str.trim()) return;
     
-    var firstDay = new Date(year, month, 1).getDay();
-    var daysInMonth = new Date(year, month + 1, 0).getDate();
-    for(let i=0; i<firstDay; i++) grid.innerHTML += '<div class="cal-td"></div>';
-    for(let d=1; d<=daysInMonth; d++) {
-        grid.innerHTML += `<div class="cal-td"><div class="cal-date">${d}</div></div>`;
+    var allNames = [];
+    REGIONS.forEach(function(r) { r.people.forEach(function(p) { allNames.push(p); }); });
+    
+    var s = str;
+    s = s.replace(/miffy/gi, '婷薇').replace(/小花/g, '語桐').replace(/小米/g, '旻儒');
+    
+    var hits = [];
+    for(var i=0; i<s.length; i++){
+      for(var j=0; j<allNames.length; j++){
+        var name = allNames[j];
+        if(s.startsWith(name, i)) hits.push({name: name, start: i});
+      }
+    }
+    hits.sort(function(a,b){ return a.start - b.start; });
+    
+    for(var k=0; k<hits.length; k++) {
+      var startIdx = hits[k].start + hits[k].name.length;
+      var endIdx = (k+1 < hits.length) ? hits[k+1].start : s.length;
+      var dataStr = s.substring(startIdx, endIdx);
+      
+      var amt = 0;
+      var srcs = [];
+      var re = /([^\d]*)(\d[\d,]*)(?:\*(\d+))?/g;
+      var m;
+      while((m = re.exec(dataStr)) !== null) {
+        var srcRaw = m[1].replace(/[\-﹣－、,，\s]/g, '');
+        var baseNum = parseFloat(m[2].replace(/,/g, ''));
+        var mult = m[3] ? parseInt(m[3]) : 1;
+        if(!isNaN(baseNum) && baseNum > 0) {
+          amt += (baseNum * mult);
+          if(srcRaw) srcs.push(srcRaw);
+        }
+      }
+      
+      if(amt > 0) {
+        if(!rosData[hits[k].name]) rosData[hits[k].name] = {src: '', amt: 0};
+        var cur = rosData[hits[k].name];
+        cur.amt = (parseInt(cur.amt || 0) + amt).toString();
+        srcs.forEach(function(src) {
+          if(!cur.src.includes(src)) {
+            cur.src = cur.src ? cur.src + '、' + src : src;
+          }
+        });
+      }
+    }
+    
+    buildInputs();
+    renderRoster();
+    document.getElementById('rosQuick').value = '';
+    showToast('已快速帶入資料！');
+  }
+
+  function copyReport() {
+    var ta = document.createElement('textarea');
+    ta.value = document.getElementById('rosReport').textContent;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); showToast('✅ 報表已複製！'); } catch(e) {}
+    document.body.removeChild(ta);
+  }
+
+  function resetRoster() {
+    showConfirm('確定要清空今天的業績紀錄嗎？', function() {
+      rosData = {}; buildInputs(); renderRoster();
+    });
+  }
+
+  buildInputs();
+  renderRoster();
+
+  // ==========================================
+  // 模組 2: 圖片及宣傳圖生成模組
+  // ==========================================
+  var tplImg = null; var letterImg = null; var photoImg = null;
+  var defaultPortCoverImg = null;
+
+  window.addEventListener('DOMContentLoaded', function(event) {
+    var defaultTpl = new Image();
+    defaultTpl.crossOrigin = "Anonymous"; 
+    defaultTpl.onload = function() { tplImg = defaultTpl; drawPromo(); };
+    defaultTpl.src = CONFIG.PROMO_BG_URL ? CONFIG.PROMO_BG_URL : "個人版制作(空白)_2.jpg";
+
+    if (CONFIG.PORTFOLIO_COVER_URL) {
+      var defaultCover = new Image();
+      defaultCover.crossOrigin = "Anonymous";
+      defaultCover.onload = function() { defaultPortCoverImg = defaultCover; drawPortfolioCoverPreview(); };
+      defaultCover.src = CONFIG.PORTFOLIO_COVER_URL;
+    } else {
+      drawPortfolioCoverPreview();
+    }
+  });
+
+  document.getElementById('pTpl').onchange = function(e) {
+    var f = e.target.files[0];
+    if(f) { tplImg = new Image(); tplImg.onload = drawPromo; tplImg.src = URL.createObjectURL(f); }
+  };
+  document.getElementById('pLetter').onchange = function(e) {
+    var f = e.target.files[0];
+    if(f) { letterImg = new Image(); letterImg.onload = drawPromo; letterImg.src = URL.createObjectURL(f); }
+  };
+  document.getElementById('pPhoto').onchange = function(e) {
+    var f = e.target.files[0];
+    if(f) { photoImg = new Image(); photoImg.onload = drawPromo; photoImg.src = URL.createObjectURL(f); }
+  };
+
+  var promoInputs = ['pLetterS', 'pLetterX', 'pLetterY', 'pPhotoS', 'pPhotoX', 'pPhotoY', 'pFrameX', 'pFrameY', 'pQuoteSize', 'pQuoteY', 'pNameSize', 'pCompSize', 'pInfoY', 'pName', 'pComp', 'pQuote'];
+  promoInputs.forEach(function(id) { document.getElementById(id).addEventListener('input', drawPromo); });
+
+  // 作品集預覽連動
+  var portInputs = ['portTitle', 'portBranch', 'portDate', 'portMainTitle', 'portTextAlign', 'portTextColor', 'portTextSize', 'portTextGap', 'portTextX', 'portTextY'];
+  portInputs.forEach(function(id) { document.getElementById(id).addEventListener('input', drawPortfolioCoverPreview); });
+  
+  document.getElementById('portCover').onchange = function(e) {
+    var f = e.target.files[0];
+    if(f) { 
+      defaultPortCoverImg = new Image(); defaultPortCoverImg.onload = drawPortfolioCoverPreview; defaultPortCoverImg.src = URL.createObjectURL(f); 
+    } else {
+      defaultPortCoverImg = null; drawPortfolioCoverPreview();
+    }
+  };
+
+  function wrapTextPromo(context, text, x, y, maxWidth, lineHeight) {
+    var paragraphs = text.split('\n');
+    var currentY = y;
+    for(var i=0; i<paragraphs.length; i++) {
+      var words = paragraphs[i].split('');
+      var line = '';
+      for (var n = 0; n < words.length; n++) {
+        var testLine = line + words[n];
+        var metrics = context.measureText(testLine);
+        if (metrics.width > maxWidth && n > 0) {
+          context.fillText(line, x, currentY); line = words[n]; currentY += lineHeight;
+        } else { line = testLine; }
+      }
+      context.fillText(line, x, currentY); currentY += lineHeight;
     }
   }
+
+  function drawPromo() {
+    var cv = document.getElementById('promoCanvas'); var ctx = cv.getContext('2d');
+    ctx.clearRect(0,0,cv.width,cv.height);
+    
+    if (tplImg) { ctx.drawImage(tplImg, 0, 0, cv.width, cv.height); } 
+    else { ctx.fillStyle = '#f0e6d9'; ctx.fillRect(0,0,cv.width,cv.height); ctx.fillStyle = '#333'; ctx.font = '40px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('請先上傳版型底圖', cv.width/2, cv.height/2); }
+    
+    if (letterImg) {
+      var ls = parseFloat(document.getElementById('pLetterS').value); var ldx = parseFloat(document.getElementById('pLetterX').value); var ldy = parseFloat(document.getElementById('pLetterY').value);
+      var lcx = 850 + ldx; var lcy = 800 + ldy; var lw = letterImg.width * ls; var lh = letterImg.height * ls;
+      ctx.drawImage(letterImg, lcx - lw/2, lcy - lh/2, lw, lh);
+    }
+    
+    if (photoImg) {
+      var ps = parseFloat(document.getElementById('pPhotoS').value); var pdx = parseFloat(document.getElementById('pPhotoX').value); var pdy = parseFloat(document.getElementById('pPhotoY').value);
+      var fdx = parseFloat(document.getElementById('pFrameX').value); var fdy = parseFloat(document.getElementById('pFrameY').value);
+      var pcx = 880 + fdx; var pcy = 1380 + fdy; var pr = 230; 
+      
+      ctx.save(); ctx.beginPath(); ctx.arc(pcx, pcy, pr, 0, Math.PI*2); ctx.clip();
+      var baseS = Math.max((pr*2)/photoImg.width, (pr*2)/photoImg.height); var finalS = baseS * ps;
+      var pw = photoImg.width * finalS; var ph = photoImg.height * finalS;
+      ctx.drawImage(photoImg, pcx - pw/2 + pdx, pcy - ph/2 + pdy, pw, ph); ctx.restore();
+    }
+    
+    var name = document.getElementById('pName').value; var comp = document.getElementById('pComp').value; var quote = document.getElementById('pQuote').value;
+    var quoteSize = parseFloat(document.getElementById('pQuoteSize').value); var quoteY = parseFloat(document.getElementById('pQuoteY').value);
+    var nameSize = parseFloat(document.getElementById('pNameSize').value); var compSize = parseFloat(document.getElementById('pCompSize').value); var infoY = parseFloat(document.getElementById('pInfoY').value);
+    
+    var textX = 140; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    
+    if(quote) { ctx.font = quoteSize + 'px "PingFang TC", "Microsoft JhengHei"'; ctx.fillStyle = '#333333'; var lineHeight = quoteSize * 1.5; wrapTextPromo(ctx, quote, textX, 580 + quoteY, 480, lineHeight); }
+    
+    var currentInfoY = 950 + infoY;
+    if(name) { ctx.font = 'bold ' + nameSize + 'px "PingFang TC", "Microsoft JhengHei"'; ctx.fillStyle = '#005a8c'; ctx.fillText(name, textX, currentInfoY); currentInfoY += nameSize + 25; }
+    if(comp) { ctx.font = 'bold ' + compSize + 'px "PingFang TC", "Microsoft JhengHei"'; ctx.fillStyle = '#222222'; ctx.fillText(comp, textX, currentInfoY); }
+    
+    if (tplImg) {
+      var preview = document.getElementById('canvasPreview'); preview.src = cv.toDataURL('image/jpeg', 0.95); preview.style.display = 'inline-block';
+      document.getElementById('downloadPosterBtn').style.display = 'inline-block';
+    }
+  }
+
+  function downloadPromo() {
+    var stuName = document.getElementById('pName').value || '未命名';
+    var fileName = '百人戰報_[' + stuName + ']_' + Date.now() + '.jpg';
+    var dataUrl = document.getElementById('promoCanvas').toDataURL('image/jpeg', 0.95);
+    
+    var link = document.createElement('a'); 
+    link.download = fileName;
+    link.href = dataUrl; 
+    link.click();
+    
+    // 觸發自動上傳 GitHub
+    uploadImageToGitHub(fileName, dataUrl, 'Poster_Backups');
+  }
+
+  // ==========================================
+  // 模組 3: 契約書影像合併
+  // ==========================================
+  function mergeJPGs() {
+    var f1 = document.getElementById('jpgF1').files[0]; var f2 = document.getElementById('jpgF2').files[0];
+    var status = document.getElementById('jpgStatus');
+    if(!f1 || !f2) { return status.innerHTML = '<span style="color:var(--danger)">請先上傳兩張圖片！</span>'; }
+    status.innerText = '正在處理中，請稍候...';
+    
+    var cv = document.getElementById('jpgCanvas'); var ctx = cv.getContext('2d');
+    var tw = parseInt(document.getElementById('jpgW').value); var th = parseInt(document.getElementById('jpgH').value);
+    cv.width = tw; cv.height = th; ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, tw, th);
+    
+    var img1 = new Image(); img1.src = URL.createObjectURL(f1);
+    img1.onload = function() {
+      var halfW = tw / 2; var scale1 = Math.min(halfW / img1.width, th / img1.height);
+      var drawW1 = img1.width * scale1; var drawH1 = img1.height * scale1;
+      ctx.drawImage(img1, (halfW - drawW1) / 2, (th - drawH1) / 2, drawW1, drawH1);
+      
+      var img2 = new Image(); img2.src = URL.createObjectURL(f2);
+      img2.onload = function() {
+        var scale2 = Math.min(halfW / img2.width, th / img2.height);
+        var drawW2 = img2.width * scale2; var drawH2 = img2.height * scale2;
+        ctx.drawImage(img2, halfW + (halfW - drawW2) / 2, (th - drawH2) / 2, drawW2, drawH2);
+        
+        var stu = document.getElementById('jpgStuName').value.trim() || '未命名'; 
+        var fileName = '契約書+[' + stu + ']_' + Date.now() + '.jpg';
+        var dataUrl = cv.toDataURL('image/jpeg', 0.95);
+        
+        var link = document.createElement('a'); 
+        link.download = fileName; 
+        link.href = dataUrl; 
+        link.click();
+        
+        status.innerText = '✓ 合併完成並自動下載！';
+        uploadImageToGitHub(fileName, dataUrl, 'Contract_Backups');
+      };
+    };
+  }
+
+  function mergeVendorContracts() {
+    var f1 = document.getElementById('vcF1').files[0]; var f2 = document.getElementById('vcF2').files[0];
+    var status = document.getElementById('vcStatus'); var btn = document.getElementById('vcMergeBtn');
+    if(!f1 || !f2) { return showMsg('請先上傳上方與下方兩張圖片！'); }
+    
+    status.innerText = '正在處理中，請稍候...'; btn.disabled = true;
+    var cv = document.getElementById('vcCanvas'); var ctx = cv.getContext('2d');
+    var targetW = 1654; var targetH_single = 2340; var finalW = targetW; var finalH = targetH_single * 2; 
+    
+    cv.width = finalW; cv.height = finalH; ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, finalW, finalH);
+    
+    var img1 = new Image(); img1.src = URL.createObjectURL(f1);
+    img1.onload = function() {
+      ctx.drawImage(img1, 0, 0, targetW, targetH_single);
+      var img2 = new Image(); img2.src = URL.createObjectURL(f2);
+      img2.onload = function() {
+        ctx.drawImage(img2, 0, targetH_single, targetW, targetH_single);
+        
+        var comp = document.getElementById('vcCompName').value.trim() || '未命名'; 
+        var fileName = '廠商契約[' + comp + ']_' + Date.now() + '.jpg';
+        var dataUrl = cv.toDataURL('image/jpeg', 0.95);
+        
+        var link = document.createElement('a'); 
+        link.download = fileName; 
+        link.href = dataUrl; 
+        link.click();
+        
+        status.innerText = '✅ 合併完成並自動下載！'; btn.disabled = false;
+        uploadImageToGitHub(fileName, dataUrl, 'Vendor_Contract_Backups');
+      };
+      img2.onerror = function() { status.innerText = '❌ 第二張圖片載入失敗。'; btn.disabled = false; };
+    };
+    img1.onerror = function() { status.innerText = '❌ 第一張圖片載入失敗。'; btn.disabled = false; };
+  }
+
+  // ==========================================
+  // 模組 4: 結訓作品集 (即時預覽與 PDF 內頁自動標題)
+  // ==========================================
+  function drawPortfolioCoverPreview() {
+    var coverCvs = document.getElementById('portCoverPreview'); var cCtx = coverCvs.getContext('2d');
+    cCtx.clearRect(0, 0, 2376, 1680); 
+    var textColor = document.getElementById('portTextColor').value;
+
+    if (defaultPortCoverImg) {
+      cCtx.drawImage(defaultPortCoverImg, 0, 0, 2376, 1680); cCtx.fillStyle = textColor; 
+    } else {
+      cCtx.fillStyle = '#0e7a66'; cCtx.fillRect(0, 0, 2376, 1680); cCtx.fillStyle = '#ffffff';
+    }
+
+    var title = document.getElementById('portTitle').value.trim(); var branch = document.getElementById('portBranch').value.trim(); var date = document.getElementById('portDate').value.trim();
+    var mainTitle = document.getElementById('portMainTitle').value.trim(); var align = document.getElementById('portTextAlign').value;
+    var tSize = parseInt(document.getElementById('portTextSize').value); var tGap = parseInt(document.getElementById('portTextGap').value);
+    var tX = parseInt(document.getElementById('portTextX').value); var tY = parseInt(document.getElementById('portTextY').value);
+
+    cCtx.textAlign = align; cCtx.textBaseline = 'middle';
+    var baseX = 1188 + tX; 
+    if (align === 'left') baseX = 300 + tX; else if (align === 'right') baseX = 2076 + tX;
+    
+    var currentY = 600 + tY; 
+
+    if (mainTitle) {
+      cCtx.font = 'bold ' + Math.floor(tSize * 1.6) + 'px "PingFang TC", "Microsoft JhengHei", sans-serif';
+      cCtx.fillText(mainTitle, baseX, currentY); currentY += Math.floor(tGap * 1.25);
+    } else { currentY += 50; }
+
+    cCtx.font = 'bold ' + tSize + 'px "PingFang TC", "Microsoft JhengHei", sans-serif';
+    if(title) { cCtx.fillText(title, baseX, currentY); currentY += tGap; }
+    if(branch) { cCtx.fillText(branch, baseX, currentY); currentY += tGap; }
+    if(date) { cCtx.fillText(date, baseX, currentY); }
+  }
+
+  function getResizedImageData(file) {
+    return new Promise(function(resolve, reject) {
+      var img = new Image();
+      img.onload = function() {
+        var canvas = document.createElement('canvas'); var MAX_DIM = 1600; 
+        var w = img.width; var h = img.height;
+        if (w > h) { if (w > MAX_DIM) { h *= MAX_DIM / w; w = MAX_DIM; } } else { if (h > MAX_DIM) { w *= MAX_DIM / h; h = MAX_DIM; } }
+        canvas.width = w; canvas.height = h; var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h); ctx.drawImage(img, 0, 0, w, h);
+        resolve({ dataUrl: canvas.toDataURL('image/jpeg', 0.85), width: w, height: h });
+      };
+      img.onerror = reject; img.src = URL.createObjectURL(file);
+    });
+  }
+
+  async function parsePDFFileToImages(file) {
+    var fileReader = new FileReader();
+    return new Promise(function(resolve, reject) {
+      fileReader.onload = async function() {
+        try {
+          var typedarray = new Uint8Array(this.result);
+          var pdf = await pdfjsLib.getDocument(typedarray).promise;
+          var extractedImages = [];
+          for (var i = 1; i <= pdf.numPages; i++) {
+            var page = await pdf.getPage(i); var viewport = page.getViewport({scale: 1.5}); 
+            var canvas = document.createElement('canvas'); var ctx = canvas.getContext('2d');
+            canvas.width = viewport.width; canvas.height = viewport.height;
+            await page.render({canvasContext: ctx, viewport: viewport}).promise;
+            extractedImages.push({ dataUrl: canvas.toDataURL('image/jpeg', 0.85), width: canvas.width, height: canvas.height });
+          }
+          resolve(extractedImages);
+        } catch(e) { reject(e); }
+      };
+      fileReader.readAsArrayBuffer(file);
+    });
+  }
+
+  // 🌟 將內頁作品加上原檔名標題的網頁畫布引擎 (100% 支援中文標題不亂碼)
+  function combineTitleAndImage(srcDataUrl, titleText) {
+    return new Promise(function(resolve) {
+      var img = new Image();
+      img.onload = function() {
+        var canvas = document.createElement('canvas'); canvas.width = 1920; canvas.height = 1357; // 符合 A4 橫式精準比例
+        var ctx = canvas.getContext('2d');
+        
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height); // 白底
+        
+        // 繪製頂部作品大標題
+        ctx.fillStyle = '#20251F'; ctx.font = 'bold 42px "PingFang TC", "Microsoft JhengHei", sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        ctx.fillText(titleText, 80, 55);
+        
+        // 質感行政裝飾格線
+        ctx.strokeStyle = '#E7DFD0'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(80, 125); ctx.lineTo(1840, 125); ctx.stroke();
+        
+        // 計算縮放區塊並貼合剩下空間
+        var availW = 1760; var availH = 1130; var ratio = Math.min(availW / img.width, availH / img.height);
+        var finalW = img.width * ratio; var finalH = img.height * ratio;
+        ctx.drawImage(img, 80 + (availW - finalW)/2, 160 + (availH - finalH)/2, finalW, finalH);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.src = srcDataUrl;
+    });
+  }
+
+  async function generatePortfolioPDF() {
+    var fileInput = document.getElementById('portImages'); var backCoverInput = document.getElementById('portBackCover');
+    var statusEl = document.getElementById('portStatus'); var btn = document.getElementById('portBtn');
+    var files = fileInput.files; var backCoverFile = backCoverInput.files[0];
+
+    if (files.length === 0) return showMsg('請先選擇至少一個作品檔案 (圖片或PDF)！');
+
+    statusEl.innerText = '處理中... (正在為作品內頁生成專屬標題，這需要幾十秒鐘)'; btn.disabled = true;
+
+    try {
+      var jsPDF = window.jspdf.jsPDF; var doc = new jsPDF('l', 'mm', 'a4'); 
+      var a4Width = 297; var a4Height = 210; 
+
+      var previewCvs = document.getElementById('portCoverPreview');
+      if (previewCvs) { doc.addImage(previewCvs.toDataURL('image/jpeg', 0.85), 'JPEG', 0, 0, a4Width, a4Height); }
+
+      for (var i = 0; i < files.length; i++) {
+        var file = files[i];
+        var cleanName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+        
+        if (file.type === 'application/pdf') {
+          var pdfImages = await parsePDFFileToImages(file);
+          for(var j=0; j<pdfImages.length; j++) {
+            var pageTitle = cleanName + (pdfImages.length > 1 ? ' (P.' + (j+1) + ')' : '');
+            var combinedDataUrl = await combineTitleAndImage(pdfImages[j].dataUrl, pageTitle);
+            doc.addPage(); doc.addImage(combinedDataUrl, 'JPEG', 0, 0, a4Width, a4Height);
+          }
+        } else if (file.type.startsWith('image/')) {
+          var imgData = await getResizedImageData(file);
+          var combinedDataUrl = await combineTitleAndImage(imgData.dataUrl, cleanName);
+          doc.addPage(); doc.addImage(combinedDataUrl, 'JPEG', 0, 0, a4Width, a4Height);
+        }
+      }
+
+      var backCoverImgData = null;
+      if (backCoverFile) {
+        backCoverImgData = await getResizedImageData(backCoverFile);
+      } else if (CONFIG.PORTFOLIO_BACKCOVER_URL) {
+        try {
+          backCoverImgData = await new Promise(function(resolve, reject) {
+            var img = new Image(); img.crossOrigin = "Anonymous";
+            img.onload = function() {
+              var canvas = document.createElement('canvas'); canvas.width = img.width; canvas.height = img.height;
+              var ctx = canvas.getContext('2d'); ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,img.width,img.height); ctx.drawImage(img, 0, 0);
+              resolve({ dataUrl: canvas.toDataURL('image/jpeg', 0.85) });
+            };
+            img.onerror = reject; img.src = CONFIG.PORTFOLIO_BACKCOVER_URL;
+          });
+        } catch(e) {}
+      }
+
+      if (backCoverImgData) { doc.addPage(); doc.addImage(backCoverImgData.dataUrl, 'JPEG', 0, 0, a4Width, a4Height); }
+
+      var pdfTitle = document.getElementById('portTitle').value.trim() || '未命名班級';
+      doc.save('結訓班級[' + pdfTitle + '].pdf'); 
+      statusEl.innerText = '✅ PDF 成功產生並已下載！';
+
+    } catch (err) {
+      console.error(err); statusEl.innerText = '❌ 發生錯誤，可能是部分圖片或 PDF 損毀。';
+    } finally {
+      btn.disabled = false; setTimeout(function() { statusEl.innerText = ''; }, 4000);
+    }
+  }
+
+  // ==========================================
+  // 模組 5: 記事提醒 (含行事曆與標籤)
+  // ==========================================
+  var notes = safeGet('admin_notes_v4', []);
+  var editingNoteId = null; 
+  var currentCalDate = new Date(); 
+
+  function saveNotes() { safeSet('admin_notes_v4', notes); renderNotes(); }
+
+  function saveNoteAction() {
+    var title = document.getElementById('newNoteTitle').value.trim();
+    var body = document.getElementById('newNoteBody').value.trim();
+    var date = document.getElementById('newNoteDate').value;
+    var color = document.getElementById('newNoteColor').value;
+    if (!title) return showMsg('請輸入標題！');
+    
+    if (editingNoteId) {
+      var note = notes.find(function(n) { return n.id === editingNoteId; });
+      if (note) { note.title = title; note.body = body; note.due = date; note.color = color; }
+      showMsg('✅ 記事已成功更新！'); cancelEditNote(); 
+    } else {
+      notes.push({ id: Date.now().toString(), title: title, body: body, due: date, color: color });
+      document.getElementById('newNoteTitle').value = ''; document.getElementById('newNoteBody').value = ''; document.getElementById('newNoteDate').value = ''; document.getElementById('newNoteColor').value = 'c-green';
+    }
+    saveNotes();
+  }
+
+  function editNote(id) {
+    var note = notes.find(function(n) { return n.id === id; });
+    if (!note) return;
+    
+    editingNoteId = id;
+    document.getElementById('noteFormTitle').innerHTML = '✏️ 編輯記事/待辦';
+    document.getElementById('newNoteTitle').value = note.title;
+    document.getElementById('newNoteBody').value = note.body || '';
+    document.getElementById('newNoteDate').value = note.due || '';
+    document.getElementById('newNoteColor').value = note.color || 'c-green';
+    
+    document.getElementById('saveNoteBtn').textContent = '更新儲存';
+    document.getElementById('cancelNoteBtn').style.display = 'block';
+    document.getElementById('noteFormTitle').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function cancelEditNote() {
+    editingNoteId = null;
+    document.getElementById('noteFormTitle').innerHTML = '新增記事/待辦';
+    document.getElementById('newNoteTitle').value = ''; document.getElementById('newNoteBody').value = ''; document.getElementById('newNoteDate').value = ''; document.getElementById('newNoteColor').value = 'c-green';
+    document.getElementById('saveNoteBtn').textContent = '儲存'; document.getElementById('cancelNoteBtn').style.display = 'none';
+  }
+
+  function deleteNote(id) {
+    showConfirm('確定刪除這個事項嗎？', function() {
+      notes = notes.filter(function(n) { return n.id !== id; });
+      if (editingNoteId === id) cancelEditNote(); 
+      saveNotes();
+    });
+  }
+
+  // 點擊月曆格子觸發新增
+  function clickCalendarDay(dateStr) {
+    cancelEditNote();
+    document.getElementById('newNoteDate').value = dateStr;
+    document.getElementById('newNoteTitle').focus();
+    document.getElementById('noteFormTitle').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
   function changeMonth(delta) { currentCalDate.setMonth(currentCalDate.getMonth() + delta); renderCalendar(); }
+
+  function renderCalendar() {
+    var grid = document.getElementById('calGrid'); var title = document.getElementById('calTitle');
+    if(!grid || !title) return;
+
+    var year = currentCalDate.getFullYear(); var month = currentCalDate.getMonth();
+    title.textContent = year + '年 ' + (month + 1) + '月';
+
+    var days = ['日', '一', '二', '三', '四', '五', '六'];
+    var html = ''; days.forEach(function(d) { html += '<div class="cal-th">' + d + '</div>'; });
+
+    var firstDay = new Date(year, month, 1).getDay(); var daysInMonth = new Date(year, month + 1, 0).getDate();
+    for(var i=0; i<firstDay; i++) { html += '<div class="cal-td empty"></div>'; }
+
+    var today = new Date(); var todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+
+    for(var d=1; d<=daysInMonth; d++) {
+      var dateStr = year + '-' + String(month+1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+      var isToday = (dateStr === todayStr);
+      
+      html += '<div class="cal-td ' + (isToday ? 'today' : '') + '" onclick="clickCalendarDay(\'' + dateStr + '\')">';
+      html += '<div class="cal-date">' + d + '</div>';
+      
+      var dayNotes = notes.filter(function(n) { return n.due === dateStr; });
+      dayNotes.forEach(function(n) {
+        var cls = 'cal-item ' + (n.color || 'c-green');
+        html += '<div class="' + cls + '" onclick="event.stopPropagation(); editNote(\'' + n.id + '\')" title="' + n.title + ' (點擊修改)">' + n.title + '</div>';
+      });
+      html += '</div>';
+    }
+    grid.innerHTML = html;
+  }
+
+  function renderNotes() {
+    var grid = document.getElementById('noteGrid'); var emptyState = document.getElementById('emptyState'); var dueBar = document.getElementById('dueBar');
+    var query = document.getElementById('searchNote').value.toLowerCase(); var urgentCount = 0;
+    grid.innerHTML = '';
+    
+    var filtered = notes.filter(function(n) { if(!query) return true; return n.title.toLowerCase().includes(query) || (n.body||'').toLowerCase().includes(query); });
+
+    if (filtered.length === 0) { emptyState.style.display = 'block'; } 
+    else {
+      emptyState.style.display = 'none';
+      filtered.sort(function(a, b) {
+        if(!a.due && !b.due) return b.id - a.id; if(!a.due) return 1; if(!b.due) return -1;
+        return new Date(a.due) - new Date(b.due);
+      });
+
+      var today = new Date(); today.setHours(0,0,0,0);
+
+      filtered.forEach(function(note) {
+        var stateClass = 'due-safe'; var stateText = '無期限';
+        if(note.due) {
+          var dueDate = new Date(note.due); dueDate.setHours(0,0,0,0);
+          var diff = Math.ceil((dueDate - today) / 86400000);
+          if (diff < 0) { stateClass = 'due-over'; stateText = '逾期 ' + Math.abs(diff) + ' 天'; urgentCount++; }
+          else if (diff === 0) { stateClass = 'due-today'; stateText = '今天到期！'; urgentCount++; }
+          else { stateText = '剩餘 ' + diff + ' 天'; }
+        }
+
+        var el = document.createElement('div'); el.className = 'note-card fade';
+        // 標籤顏色條
+        var colorBar = document.createElement('div'); colorBar.className = note.color || 'c-green';
+        colorBar.style.cssText = 'position:absolute; left:0; top:0; bottom:0; width:6px; border-radius:12px 0 0 12px;';
+        el.appendChild(colorBar);
+        el.style.paddingLeft = '24px'; // 讓出顏色條空間
+        
+        var topDiv = document.createElement('div');
+        var titleDiv = document.createElement('div'); titleDiv.className = 'note-title'; titleDiv.textContent = note.title; topDiv.appendChild(titleDiv);
+        
+        if(note.body) { var bodyDiv = document.createElement('div'); bodyDiv.className = 'note-body'; bodyDiv.textContent = note.body; topDiv.appendChild(bodyDiv); }
+        
+        var dueDiv = document.createElement('div'); dueDiv.className = 'note-due ' + stateClass; dueDiv.textContent = note.due ? '📅 ' + note.due + ' (' + stateText + ')' : '📌 無期限'; topDiv.appendChild(dueDiv); el.appendChild(topDiv);
+        
+        var btnDiv = document.createElement('div'); btnDiv.style.marginTop = '12px'; btnDiv.style.textAlign = 'right'; btnDiv.style.borderTop = '1px solid #eee'; btnDiv.style.paddingTop = '10px';
+        
+        var editBtn = document.createElement('button'); editBtn.className = 'btn btn-outline'; editBtn.style.padding = '4px 8px'; editBtn.style.fontSize = '12px'; editBtn.style.marginRight = '8px'; editBtn.textContent = '✏️ 修改'; editBtn.onclick = function() { editNote(note.id); };
+        var delBtn = document.createElement('button'); delBtn.className = 'btn btn-outline'; delBtn.style.padding = '4px 8px'; delBtn.style.fontSize = '12px'; delBtn.textContent = '完成 / 刪除'; delBtn.onclick = function() { deleteNote(note.id); };
+        
+        btnDiv.appendChild(editBtn); btnDiv.appendChild(delBtn); el.appendChild(btnDiv); grid.appendChild(el);
+      });
+    }
+
+    var badge = document.getElementById('noteBadge');
+    if (urgentCount > 0 && !query) { 
+      var alertDiv = document.createElement('div'); alertDiv.className = 'card fade'; alertDiv.style.background = 'var(--dangerSoft)'; alertDiv.style.borderColor = '#e6c4be'; alertDiv.style.marginBottom = '16px'; alertDiv.style.padding = '12px 16px';
+      var alertSpan = document.createElement('span'); alertSpan.style.color = 'var(--danger)'; alertSpan.style.fontWeight = '700'; alertSpan.textContent = '⏰ 今天/逾期提醒（' + urgentCount + ' 筆待辦事項）';
+      alertDiv.appendChild(alertSpan); dueBar.innerHTML = ''; dueBar.appendChild(alertDiv);
+      badge.textContent = '(' + urgentCount + ')'; badge.style.color = 'var(--danger)';
+    } else { dueBar.innerHTML = ''; badge.textContent = ''; }
+    
+    renderCalendar(); 
+  }
+
+  // ==========================================
+  // 模組 6: 指標儀表板
+  // ==========================================
+  var dashData = safeGet('admin_dash_v2', { d1: 0, d2: 0, d3: 0 });
+  function renderDashboard() { document.getElementById('dash1').innerText = dashData.d1; document.getElementById('dash2').innerText = dashData.d2; document.getElementById('dash3').innerText = dashData.d3; }
+  function editDashboard() { document.getElementById('inputDash1').value = dashData.d1; document.getElementById('inputDash2').value = dashData.d2; document.getElementById('inputDash3').value = dashData.d3; document.getElementById('dashEditor').style.display = 'block'; }
+  function saveDashboard() { dashData = { d1: document.getElementById('inputDash1').value || 0, d2: document.getElementById('inputDash2').value || 0, d3: document.getElementById('inputDash3').value || 0 }; safeSet('admin_dash_v2', dashData); renderDashboard(); document.getElementById('dashEditor').style.display = 'none'; showMsg('指標數據已更新！'); }
+  function resetDashboard() { showConfirm('確定要將所有指標數據歸零嗎？', function() { dashData = { d1: 0, d2: 0, d3: 0 }; safeSet('admin_dash_v2', dashData); renderDashboard(); document.getElementById('dashEditor').style.display = 'none'; showMsg('指標數據已重置。'); }); }
+  renderDashboard();
+
+  // ==========================================
+  // 模組 7: 系統備份與常用連結
+  // ==========================================
+  var linksData = safeGet('admin_links_v1', [ { id: '1', name: '員工入口網', url: 'https://www.google.com' } ]);
+
+  function renderLinks() {
+    var list = document.getElementById('linksList'); if(!list) return; list.innerHTML = '';
+    if(linksData.length === 0) { list.innerHTML = '<div style="color:var(--sub); font-size:13px; text-align:center; padding:10px;">目前沒有設定任何連結</div>'; return; }
+    linksData.forEach(function(l) {
+      var div = document.createElement('div'); div.className = 'quick-link-item';
+      var a = document.createElement('a'); a.href = l.url; a.target = '_blank'; a.innerHTML = '🔗 ' + l.name;
+      var delBtn = document.createElement('button'); delBtn.textContent = '刪除'; delBtn.style.cssText = 'background:none; border:none; color:var(--danger); cursor:pointer; font-size:12px; font-weight:bold; padding:4px 8px;';
+      delBtn.onclick = function() { linksData = linksData.filter(function(item) { return item.id !== l.id; }); safeSet('admin_links_v1', linksData); renderLinks(); };
+      div.appendChild(a); div.appendChild(delBtn); list.appendChild(div);
+    });
+  }
+
+  function addLink() {
+    var name = document.getElementById('newLinkName').value.trim(); var url = document.getElementById('newLinkUrl').value.trim();
+    if(!name || !url) return showMsg('請輸入連結名稱與網址！'); if(!url.startsWith('http')) url = 'https://' + url;
+    linksData.push({ id: Date.now().toString(), name: name, url: url }); safeSet('admin_links_v1', linksData);
+    document.getElementById('newLinkName').value = ''; document.getElementById('newLinkUrl').value = ''; renderLinks(); showMsg('✅ 常用連結已新增！');
+  }
+  renderLinks();
+
+  function exportData() {
+    var backupData = { notes: safeGet('admin_notes_v4', []), roster: safeGet('admin_roster_v8', {}), dash: safeGet('admin_dash_v2', { d1:0, d2:0, d3:0 }), links: safeGet('admin_links_v1', []) };
+    var blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' }); var url = URL.createObjectURL(blob);
+    var a = document.createElement('a'); a.href = url; a.download = '行政工具箱備份檔_' + new Date().toISOString().split('T')[0] + '.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  }
+
+  function importData() {
+    var fileInput = document.getElementById('importFile'); if(!fileInput.files || fileInput.files.length === 0) return showMsg('請先選擇 .json 備份檔案！');
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var data = JSON.parse(e.target.result);
+        showConfirm('確定要還原備份資料嗎？\n這將會覆蓋您目前的紀錄！', function() {
+          if(data.notes) safeSet('admin_notes_v4', data.notes); if(data.roster) safeSet('admin_roster_v8', data.roster);
+          if(data.dash) safeSet('admin_dash_v2', data.dash); if(data.links) safeSet('admin_links_v1', data.links);
+          notes = safeGet('admin_notes_v4', []); renderNotes(); rosData = safeGet('admin_roster_v8', {}); buildInputs(); renderRoster();
+          dashData = safeGet('admin_dash_v2', { d1:0, d2:0, d3:0 }); renderDashboard(); linksData = safeGet('admin_links_v1', []); renderLinks();
+          fileInput.value = ''; showMsg('✅ 資料已成功還原！');
+        });
+      } catch (err) { showMsg('❌ 檔案格式錯誤，無法還原資料。'); }
+    };
+    reader.readAsText(fileInput.files[0]);
+  }
+
+  // ==========================================
+  // 模組 8: Telegram 自動推播與自動雲端備份啟動器
+  // ==========================================
+  var tgConfig = safeGet('admin_tg_config', { token: '', chatId: '', lastNotified: '' });
+  document.getElementById('tgToken').value = tgConfig.token || ''; document.getElementById('tgChatId').value = tgConfig.chatId || '';
+
+  function saveTgConfig() {
+    tgConfig.token = document.getElementById('tgToken').value.trim(); tgConfig.chatId = document.getElementById('tgChatId').value.trim();
+    safeSet('admin_tg_config', tgConfig); showMsg('✅ Telegram 設定已儲存！');
+  }
+
+  async function sendTelegramMessage(msg) {
+    if (!tgConfig.token || !tgConfig.chatId) return false;
+    try {
+      var res = await fetch('https://api.telegram.org/bot' + tgConfig.token + '/sendMessage', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: tgConfig.chatId, text: msg })
+      });
+      return res.ok;
+    } catch(e) { return false; }
+  }
+
+  async function testTgNotification() {
+    tgConfig.token = document.getElementById('tgToken').value.trim(); tgConfig.chatId = document.getElementById('tgChatId').value.trim();
+    safeSet('admin_tg_config', tgConfig); 
+    if (!tgConfig.token || !tgConfig.chatId) return showMsg('請先填寫 Token 與 Chat ID');
+    var ok = await sendTelegramMessage('🤖 這是一則來自【每月行政工具箱】的測試訊息！\n您的 Telegram 串接已成功！🎉');
+    if (ok) showMsg('✅ 測試推播已發送，請檢查您的 Telegram！'); else showMsg('❌ 發送失敗，請確認 Token 與 Chat ID。');
+  }
+
+  async function checkAndSendTodayRemindersAndBackup() {
+    var today = new Date(); var todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    
+    // 1. 執行 Telegram 自動推播檢查
+    if (tgConfig.token && tgConfig.chatId && tgConfig.lastNotified !== todayStr) {
+      today.setHours(0,0,0,0);
+      var urgentNotes = notes.filter(function(n) {
+        if(!n.due) return false; var dueDate = new Date(n.due); dueDate.setHours(0,0,0,0); return dueDate <= today;
+      });
+      if (urgentNotes.length > 0) {
+        var msg = '⚠️ 【每日行政提醒】 ⚠️\n\n';
+        urgentNotes.forEach(function(n) {
+          var dueDate = new Date(n.due); dueDate.setHours(0,0,0,0); var diff = Math.ceil((dueDate - today) / 86400000);
+          var statusStr = diff === 0 ? '🔔 [今天到期]' : '🚨 [逾期 ' + Math.abs(diff) + ' 天]'; msg += statusStr + ' ' + n.title + '\n';
+        });
+        var ok = await sendTelegramMessage(msg);
+        if (ok) { tgConfig.lastNotified = todayStr; safeSet('admin_tg_config', tgConfig); }
+      }
+    }
+    
+    // 2. 執行 GitHub JSON 資料自動雲端備份檢查
+    if (ghConfig.token && ghConfig.repo && ghConfig.lastJsonBackup !== todayStr) {
+      // 延遲執行避免卡住網頁載入
+      setTimeout(function() { syncToCloud(true); }, 2000);
+    }
+  }
+
+  // 網頁啟動時呼叫一次記事本渲染，確保行事曆立刻出現
+  renderNotes();
+  // 網頁載入 3 秒後，自動在背景執行備份與推播檢查
+  setTimeout(checkAndSendTodayRemindersAndBackup, 3000);
+
 </script>
 </body>
 </html>
-```
-
-### 為什麼這次一定會成功？
-1.  **確保 `renderCalendar()` 執行**：我在 `window.onload` (頁面載入完成時) 明確加入了 `renderCalendar()` 的呼叫。這保證了不管發生什麼狀況，只要網頁載入，日曆一定會出現。
-2.  **變數綁定**：將 `REGIONS`、`rosData` 等關鍵變數移到最上方定義，避免初始化順序錯誤。
-3.  **結構化渲染**：簡化了初始化邏輯，確保 DOM 元素 (如 `calGrid`) 確實存在後才進行渲染。
-
-請用這份代碼更新一次，行事曆就一定會回來了！
