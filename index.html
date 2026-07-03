@@ -701,13 +701,23 @@
     
     // 過濾防呆：移除可能輸入的完整網址，只保留 User/Repo
     var repoPath = ghConfig.repo.replace('https://github.com/', '').replace(/\/$/, '');
-    var url = 'https://api.github.com/repos/' + repoPath + '/contents/' + path;
+    
+    // 加入隨機參數，強制不使用快取
+    var url = 'https://api.github.com/repos/' + repoPath + '/contents/' + path + '?t=' + new Date().getTime();
 
     try {
-      var res = await fetch(url, { headers: { 'Authorization': 'token ' + ghConfig.token, 'Cache-Control': 'no-cache' } });
+      var res = await fetch(url, { 
+        headers: { 
+          'Authorization': 'token ' + ghConfig.token, 
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        } 
+      });
+      
       if (res.ok) {
         var fileData = await res.json();
-        // 將 GitHub 回傳的內容解碼 (加上取代換行符號以防報錯)
+        // 將 GitHub 回傳的內容解碼
         var content = base64ToUtf8(fileData.content);
         var data = JSON.parse(content);
         
@@ -724,10 +734,14 @@
           
           showToast('✅ 成功從雲端下載並還原所有資料！');
         });
-      } else { showMsg('❌ 在雲端找不到備份檔。請確認您是否曾經在電腦端執行過「強制備份至雲端」！\n(也請檢查專案名稱是否正確)'); }
+      } else if (res.status === 404) {
+         showMsg('❌ 在雲端找不到備份檔 (404)。\n這表示伺服器上目前沒有 Toolbox_Cloud_Sync_Master.json 這個檔案。\n請確認您是否已經成功執行過一次「強制備份至雲端」！');
+      } else { 
+         showMsg('❌ 讀取資料失敗 (狀態碼: ' + res.status + ')。\n請檢查：\n1. 專案名稱是否完全正確。\n2. Token 是否過期或權限不足。'); 
+      }
     } catch(e) { 
-      console.error(e);
-      showMsg('❌ 處理失敗，請檢查：\n1. 專案名稱格式是否正確 (如: User/Repo)\n2. Token 權限是否正確'); 
+      console.error("下載備份時發生錯誤：", e);
+      showMsg('❌ 解析資料時發生錯誤：\n可能是網路不穩或檔案內容損毀。\n請打開 F12 檢查 Console 獲取詳細錯誤訊息。'); 
     }
   }
 
