@@ -612,8 +612,9 @@
   document.getElementById('ghRepo').value = ghConfig.repo || '';
   document.getElementById('ghToken').value = ghConfig.token || '';
 
+  // 修正：去除空白與換行，防止 Base64 解析報錯
   function utf8ToBase64(str) { return btoa(unescape(encodeURIComponent(str))); }
-  function base64ToUtf8(str) { return decodeURIComponent(escape(atob(str))); }
+  function base64ToUtf8(str) { return decodeURIComponent(escape(atob(str.replace(/\s/g, '')))); }
 
   function saveGhConfig() {
     ghConfig.repo = document.getElementById('ghRepo').value.trim();
@@ -629,7 +630,10 @@
     var b64String = dataUrlBase64.split(',')[1];
     var folder = customFolder || (new Date().getFullYear() + String(new Date().getMonth()+1).padStart(2, '0'));
     var path = 'backups/' + folder + '/' + fileName;
-    var url = 'https://api.github.com/repos/' + ghConfig.repo + '/contents/' + encodeURIComponent(path);
+    
+    // 過濾防呆：移除可能輸入的完整網址，只保留 User/Repo
+    var repoPath = ghConfig.repo.replace('https://github.com/', '').replace(/\/$/, '');
+    var url = 'https://api.github.com/repos/' + repoPath + '/contents/' + encodeURIComponent(path);
 
     try {
       var res = await fetch(url, {
@@ -654,7 +658,10 @@
     };
     var b64String = utf8ToBase64(JSON.stringify(backupData, null, 2));
     var path = 'Toolbox_Cloud_Sync_Master.json';
-    var url = 'https://api.github.com/repos/' + ghConfig.repo + '/contents/' + path;
+    
+    // 過濾防呆
+    var repoPath = ghConfig.repo.replace('https://github.com/', '').replace(/\/$/, '');
+    var url = 'https://api.github.com/repos/' + repoPath + '/contents/' + path;
 
     try {
       var getRes = await fetch(url, { headers: { 'Authorization': 'token ' + ghConfig.token } });
@@ -678,9 +685,12 @@
         ghConfig.lastJsonBackup = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
         safeSet('admin_gh_config', ghConfig);
       } else {
-        if (!isAuto) showToast('❌ 雲端同步失敗，請確認 Token 權限。');
+        if (!isAuto) showMsg('❌ 雲端同步失敗，請確認 Token 權限與專案名稱是否正確。');
       }
-    } catch(e) { if (!isAuto) showToast('❌ 連線異常。'); }
+    } catch(e) { 
+      console.error(e);
+      if (!isAuto) showMsg('❌ 連線異常或設定錯誤。'); 
+    }
   }
 
   async function syncFromCloud() {
@@ -688,12 +698,16 @@
     showToast('☁️ 正在從 GitHub 尋找並下載雲端備份...');
     
     var path = 'Toolbox_Cloud_Sync_Master.json';
-    var url = 'https://api.github.com/repos/' + ghConfig.repo + '/contents/' + path;
+    
+    // 過濾防呆：移除可能輸入的完整網址，只保留 User/Repo
+    var repoPath = ghConfig.repo.replace('https://github.com/', '').replace(/\/$/, '');
+    var url = 'https://api.github.com/repos/' + repoPath + '/contents/' + path;
 
     try {
       var res = await fetch(url, { headers: { 'Authorization': 'token ' + ghConfig.token, 'Cache-Control': 'no-cache' } });
       if (res.ok) {
         var fileData = await res.json();
+        // 將 GitHub 回傳的內容解碼 (加上取代換行符號以防報錯)
         var content = base64ToUtf8(fileData.content);
         var data = JSON.parse(content);
         
@@ -710,8 +724,11 @@
           
           showToast('✅ 成功從雲端下載並還原所有資料！');
         });
-      } else { showMsg('❌ 在雲端找不到備份檔。請確認您是否曾經在電腦端執行過「強制備份至雲端」！'); }
-    } catch(e) { showMsg('❌ 網路連線異常。'); }
+      } else { showMsg('❌ 在雲端找不到備份檔。請確認您是否曾經在電腦端執行過「強制備份至雲端」！\n(也請檢查專案名稱是否正確)'); }
+    } catch(e) { 
+      console.error(e);
+      showMsg('❌ 處理失敗，請檢查：\n1. 專案名稱格式是否正確 (如: User/Repo)\n2. Token 權限是否正確'); 
+    }
   }
 
 
