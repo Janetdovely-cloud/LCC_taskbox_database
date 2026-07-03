@@ -478,14 +478,15 @@
   <!-- 系統與備份 -->
   <div id="settings" class="view fade active">
     <div class="grid-2">
+      <!-- 原本的手動備份區保留，作為離線備用 -->
       <div class="card">
-        <h3 style="margin-top:0;">💾 本機資料備份與還原</h3>
-        <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">由於目前資料皆儲存於您的瀏覽器本機中，若更換電腦或清除快取將導致資料遺失。強烈建議定期匯出備份！</p>
-        <button class="btn" onclick="exportData()" style="width:100%; margin-bottom:20px; background:var(--ink);">📥 匯出工具箱備份檔 (.json)</button>
+        <h3 style="margin-top:0;">💾 離線資料備份與還原</h3>
+        <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">匯出 .json 檔案存放在您的電腦中，作為離線保險。</p>
+        <button class="btn btn-outline" onclick="exportData()" style="width:100%; margin-bottom:20px;">📥 匯出離線備份檔 (.json)</button>
         
-        <label style="display:block; font-size:14px; font-weight:bold; margin-bottom:8px; color:var(--go);">上傳備份檔還原資料：</label>
+        <label style="display:block; font-size:14px; font-weight:bold; margin-bottom:8px; color:var(--go);">上傳離線備份檔還原：</label>
         <input type="file" id="importFile" accept=".json" style="margin-bottom:12px;">
-        <button class="btn btn-outline" onclick="importData()" style="width:100%;">📤 開始還原資料</button>
+        <button class="btn btn-outline" onclick="importData()" style="width:100%;">📤 還原離線資料</button>
       </div>
 
       <div class="card">
@@ -503,21 +504,30 @@
         </div>
       </div>
       
-      <!-- GitHub 私密備份設定區 (新功能) -->
-      <div class="card" style="margin-top: 16px; border-color: #c0ded6; grid-column: 1 / -1;">
-        <h3 style="margin-top:0; color:var(--go);">☁️ GitHub 圖片自動私密備份設定</h3>
-        <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">設定您的 Private 專案名稱與 Token，當您產出「百人戰報」或「廠商契約合併圖」時，系統會在背景自動上傳至您的私密空間歸檔。</p>
+      <!-- 🌟 GitHub 私密備份設定區 (終極升級版) -->
+      <div class="card" style="margin-top: 16px; border-color: #c0ded6; grid-column: 1 / -1; background: #fdfdfd;">
+        <h3 style="margin-top:0; color:var(--go);">☁️ GitHub 雲端資料同步與圖片自動備份</h3>
+        <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">
+          設定完成後，不僅圖片會自動上傳，每天首次開啟網頁時，也會自動將您的「行事曆、業績」等資料備份到 GitHub 裡！<br>
+          <strong style="color:var(--danger);">📱 手機同步解法：</strong>用手機打開網頁，按下方紅色的「從雲端下載覆蓋」，就能瞬間跟電腦同步！
+        </p>
+        
         <div class="grid-2" style="margin-bottom: 12px;">
           <div>
-            <label style="font-size:13px; font-weight:bold; color:var(--sub);">GitHub 帳號名稱 / 專案名稱</label>
+            <label style="font-size:13px; font-weight:bold; color:var(--sub);">GitHub 帳號名稱 / Private 專案名稱</label>
             <input type="text" id="ghRepo" placeholder="例: Janetdovely-cloud/LCC_Image_Backup">
           </div>
           <div>
-            <label style="font-size:13px; font-weight:bold; color:var(--sub);">Personal Access Token (需有 repo 權限)</label>
+            <label style="font-size:13px; font-weight:bold; color:var(--sub);">Personal Access Token (需勾選 repo 權限)</label>
             <input type="password" id="ghToken" placeholder="例: ghp_xxxxxxxxxxxxxxxxxxxx">
           </div>
         </div>
-        <button class="btn" onclick="saveGhConfig()" style="width: 100%;">💾 儲存 GitHub 備份設定</button>
+        
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
+          <button class="btn" onclick="saveGhConfig()" style="flex:1;">💾 1. 先儲存雲端設定</button>
+          <button class="btn btn-outline" onclick="syncToCloud(false)" style="flex:1; border-color:var(--go); color:var(--go);">☁️ 2. 手動強制備份至雲端</button>
+          <button class="btn btn-outline" onclick="syncFromCloud()" style="flex:1; border-color:var(--danger); color:var(--danger);">📥 3. 從雲端下載並覆蓋本機 (手機用)</button>
+        </div>
       </div>
 
       <!-- Telegram 設定區 -->
@@ -594,26 +604,28 @@
   });
   
   // ==========================================
-  // 模組 0: GitHub 自動上傳引擎 (新功能)
+  // 模組 0: GitHub 雲端資料同步與備份引擎
   // ==========================================
-  var ghConfig = safeGet('admin_gh_config', { token: '', repo: '' });
+  var ghConfig = safeGet('admin_gh_config', { token: '', repo: '', lastJsonBackup: '' });
   document.getElementById('ghRepo').value = ghConfig.repo || '';
   document.getElementById('ghToken').value = ghConfig.token || '';
+
+  // 處理 Unicode Base64 編碼
+  function utf8ToBase64(str) { return btoa(unescape(encodeURIComponent(str))); }
+  function base64ToUtf8(str) { return decodeURIComponent(escape(atob(str))); }
 
   function saveGhConfig() {
     ghConfig.repo = document.getElementById('ghRepo').value.trim();
     ghConfig.token = document.getElementById('ghToken').value.trim();
     safeSet('admin_gh_config', ghConfig);
-    showMsg('✅ GitHub 備份設定已儲存！');
+    showMsg('✅ GitHub 雲端設定已儲存！您現在可以點擊「強制備份至雲端」了！');
   }
 
   // 背景上傳圖片到 GitHub 
   async function uploadImageToGitHub(fileName, dataUrlBase64, customFolder) {
-    if (!ghConfig.token || !ghConfig.repo) return; // 如果沒設定，直接略過不執行
+    if (!ghConfig.token || !ghConfig.repo) return; 
     
-    showToast('☁️ 正在背景備份至 GitHub...');
-    
-    // 擷取 Base64 的純字串部分
+    showToast('☁️ 正在背景備份圖片至 GitHub...');
     var b64String = dataUrlBase64.split(',')[1];
     var folder = customFolder || (new Date().getFullYear() + String(new Date().getMonth()+1).padStart(2, '0'));
     var path = 'backups/' + folder + '/' + fileName;
@@ -622,24 +634,92 @@
     try {
       var res = await fetch(url, {
         method: 'PUT',
-        headers: {
-          'Authorization': 'token ' + ghConfig.token,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          message: 'Auto-backup: ' + fileName,
-          content: b64String
-        })
+        headers: { 'Authorization': 'token ' + ghConfig.token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'Auto-backup Image: ' + fileName, content: b64String })
       });
-      if (res.ok) {
-        showToast('✅ 成功備份至 GitHub！');
+      if (res.ok) showToast('✅ 圖片已成功歸檔至 GitHub 私密專案！');
+      else showToast('❌ 圖片備份失敗，請檢查設定與權限。');
+    } catch (e) { showToast('❌ 網路連線錯誤，GitHub 備份失敗。'); }
+  }
+
+  // 將資料 (JSON) 同步至 GitHub 雲端
+  async function syncToCloud(isAuto) {
+    if (!ghConfig.token || !ghConfig.repo) return;
+    if (!isAuto) showToast('☁️ 正在打包資料並上傳至 GitHub 雲端...');
+    
+    var backupData = {
+      notes: safeGet('admin_notes_v4', []),
+      roster: safeGet('admin_roster_v8', {}),
+      dash: safeGet('admin_dash_v2', { d1:0, d2:0, d3:0 }),
+      links: safeGet('admin_links_v1', [])
+    };
+    var jsonString = JSON.stringify(backupData, null, 2);
+    var b64String = utf8ToBase64(jsonString);
+    var path = 'Toolbox_Cloud_Sync_Master.json';
+    var url = 'https://api.github.com/repos/' + ghConfig.repo + '/contents/' + path;
+
+    try {
+      // 1. 先取得舊檔案的 SHA 碼 (才能覆蓋)
+      var getRes = await fetch(url, { headers: { 'Authorization': 'token ' + ghConfig.token } });
+      var sha = null;
+      if (getRes.ok) { var fileData = await getRes.json(); sha = fileData.sha; }
+      
+      // 2. 執行覆蓋上傳
+      var bodyData = { message: 'Update Cloud Sync Data', content: b64String };
+      if (sha) bodyData.sha = sha;
+
+      var putRes = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Authorization': 'token ' + ghConfig.token, 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyData)
+      });
+      
+      if (putRes.ok) {
+        if (!isAuto) showToast('✅ 雲端同步完成！您的手機現在可以去下載了！');
+        else showToast('☁️ [每日任務] 資料已自動備份至 GitHub！');
+        
+        var today = new Date(); 
+        ghConfig.lastJsonBackup = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+        safeSet('admin_gh_config', ghConfig);
       } else {
-        console.error('GitHub API 錯誤', await res.text());
-        showToast('❌ GitHub 備份失敗，請檢查設定與權限。');
+        if (!isAuto) showToast('❌ 雲端同步失敗，請確認 Token 權限。');
       }
-    } catch (e) {
-      console.error(e);
-      showToast('❌ 網路連線錯誤，GitHub 備份失敗。');
+    } catch(e) { if (!isAuto) showToast('❌ 連線異常。'); }
+  }
+
+  // 從 GitHub 雲端下載並還原本機
+  async function syncFromCloud() {
+    if (!ghConfig.token || !ghConfig.repo) return showMsg('請先輸入並儲存 GitHub 專案名稱與 Token！');
+    showToast('☁️ 正在從 GitHub 尋找並下載雲端備份...');
+    
+    var path = 'Toolbox_Cloud_Sync_Master.json';
+    var url = 'https://api.github.com/repos/' + ghConfig.repo + '/contents/' + path;
+
+    try {
+      var res = await fetch(url, { headers: { 'Authorization': 'token ' + ghConfig.token, 'Cache-Control': 'no-cache' } });
+      if (res.ok) {
+        var fileData = await res.json();
+        var content = base64ToUtf8(fileData.content);
+        var data = JSON.parse(content);
+        
+        showConfirm('⚠️ 警告：這將會清除您設備上的目前資料，\n並用雲端的資料完全覆蓋。確定要還原嗎？', function() {
+          if(data.notes) safeSet('admin_notes_v4', data.notes); 
+          if(data.roster) safeSet('admin_roster_v8', data.roster);
+          if(data.dash) safeSet('admin_dash_v2', data.dash); 
+          if(data.links) safeSet('admin_links_v1', data.links);
+          
+          notes = safeGet('admin_notes_v4', []); renderNotes(); 
+          rosData = safeGet('admin_roster_v8', {}); buildInputs(); renderRoster();
+          dashData = safeGet('admin_dash_v2', { d1:0, d2:0, d3:0 }); renderDashboard(); 
+          linksData = safeGet('admin_links_v1', []); renderLinks();
+          
+          showToast('✅ 成功從雲端下載並還原所有資料！');
+        });
+      } else {
+        showMsg('❌ 在雲端找不到備份檔。請確認您是否曾經在電腦端執行過「強制備份至雲端」！');
+      }
+    } catch(e) {
+      showMsg('❌ 網路連線異常。');
     }
   }
 
@@ -1304,7 +1384,7 @@
         var btnDiv = document.createElement('div'); btnDiv.style.marginTop = '12px'; btnDiv.style.textAlign = 'right'; btnDiv.style.borderTop = '1px solid #eee'; btnDiv.style.paddingTop = '10px';
         
         var editBtn = document.createElement('button'); editBtn.className = 'btn btn-outline'; editBtn.style.padding = '4px 8px'; editBtn.style.fontSize = '12px'; editBtn.style.marginRight = '8px'; editBtn.textContent = '✏️ 修改'; editBtn.onclick = function() { editNote(note.id); };
-        var delBtn = document.createElement('button'); delBtn.className = 'btn btn-outline'; delBtn.style.padding = '4px 8px'; editBtn.style.fontSize = '12px'; delBtn.textContent = '完成 / 刪除'; delBtn.onclick = function() { deleteNote(note.id); };
+        var delBtn = document.createElement('button'); delBtn.className = 'btn btn-outline'; delBtn.style.padding = '4px 8px'; delBtn.style.fontSize = '12px'; delBtn.textContent = '完成 / 刪除'; delBtn.onclick = function() { deleteNote(note.id); };
         
         btnDiv.appendChild(editBtn); btnDiv.appendChild(delBtn); el.appendChild(btnDiv); grid.appendChild(el);
       });
@@ -1382,7 +1462,7 @@
   }
 
   // ==========================================
-  // 模組 8: Telegram 自動推播
+  // 模組 8: 每日自動檢查與執行推播 / 備份
   // ==========================================
   var tgConfig = safeGet('admin_tg_config', { token: '', chatId: '', lastNotified: '' });
   document.getElementById('tgToken').value = tgConfig.token || ''; document.getElementById('tgChatId').value = tgConfig.chatId || '';
@@ -1410,29 +1490,35 @@
     if (ok) showMsg('✅ 測試推播已發送，請檢查您的 Telegram！'); else showMsg('❌ 發送失敗，請確認 Token 與 Chat ID。');
   }
 
-  async function checkAndSendTodayReminders() {
-    if (!tgConfig.token || !tgConfig.chatId) return;
+  async function checkAndSendTodayRemindersAndBackup() {
     var today = new Date(); var todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
-    if (tgConfig.lastNotified === todayStr) return; 
     
-    today.setHours(0,0,0,0);
-    var urgentNotes = notes.filter(function(n) {
-      if(!n.due) return false; var dueDate = new Date(n.due); dueDate.setHours(0,0,0,0); return dueDate <= today;
-    });
-
-    if (urgentNotes.length > 0) {
-      var msg = '⚠️ 【每月行政工具箱】今日提醒 ⚠️\n\n';
-      urgentNotes.forEach(function(n) {
-        var dueDate = new Date(n.due); dueDate.setHours(0,0,0,0); var diff = Math.ceil((dueDate - today) / 86400000);
-        var statusStr = diff === 0 ? '🔔 [今天到期]' : '🚨 [逾期 ' + Math.abs(diff) + ' 天]'; msg += statusStr + ' ' + n.title + '\n';
+    // 1. 執行 Telegram 自動推播檢查
+    if (tgConfig.token && tgConfig.chatId && tgConfig.lastNotified !== todayStr) {
+      today.setHours(0,0,0,0);
+      var urgentNotes = notes.filter(function(n) {
+        if(!n.due) return false; var dueDate = new Date(n.due); dueDate.setHours(0,0,0,0); return dueDate <= today;
       });
-      msg += '\n👉 祝您工作順利！';
-      var ok = await sendTelegramMessage(msg);
-      if (ok) { tgConfig.lastNotified = todayStr; safeSet('admin_tg_config', tgConfig); }
+      if (urgentNotes.length > 0) {
+        var msg = '⚠️ 【每日行政提醒】 ⚠️\n\n';
+        urgentNotes.forEach(function(n) {
+          var dueDate = new Date(n.due); dueDate.setHours(0,0,0,0); var diff = Math.ceil((dueDate - today) / 86400000);
+          var statusStr = diff === 0 ? '🔔 [今天到期]' : '🚨 [逾期 ' + Math.abs(diff) + ' 天]'; msg += statusStr + ' ' + n.title + '\n';
+        });
+        var ok = await sendTelegramMessage(msg);
+        if (ok) { tgConfig.lastNotified = todayStr; safeSet('admin_tg_config', tgConfig); }
+      }
+    }
+    
+    // 2. 執行 GitHub JSON 資料自動雲端備份檢查
+    if (ghConfig.token && ghConfig.repo && ghConfig.lastJsonBackup !== todayStr) {
+      // 延遲執行避免卡住網頁載入
+      setTimeout(function() { syncToCloud(true); }, 2000);
     }
   }
 
-  setTimeout(checkAndSendTodayReminders, 3000);
+  // 網頁載入 3 秒後，自動在背景執行檢查
+  setTimeout(checkAndSendTodayRemindersAndBackup, 3000);
 
 </script>
 </body>
