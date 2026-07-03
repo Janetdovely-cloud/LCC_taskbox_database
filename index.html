@@ -612,9 +612,24 @@
   document.getElementById('ghRepo').value = ghConfig.repo || '';
   document.getElementById('ghToken').value = ghConfig.token || '';
 
-  // 修正：去除空白與換行，防止 Base64 解析報錯
-  function utf8ToBase64(str) { return btoa(unescape(encodeURIComponent(str))); }
-  function base64ToUtf8(str) { return decodeURIComponent(escape(atob(str.replace(/\s/g, '')))); }
+  // 修正：使用更現代、穩定的 TextEncoder/TextDecoder 來處理中文與 Emoji Base64 轉換
+  function utf8ToBase64(str) {
+    var bytes = new TextEncoder().encode(str);
+    var binary = '';
+    for (var i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  }
+
+  function base64ToUtf8(str) {
+    var binary = atob(str.replace(/\s/g, ''));
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return new TextDecoder().decode(bytes);
+  }
 
   function saveGhConfig() {
     ghConfig.repo = document.getElementById('ghRepo').value.trim();
@@ -1410,7 +1425,7 @@
         var btnDiv = document.createElement('div'); btnDiv.style.marginTop = '12px'; btnDiv.style.textAlign = 'right'; btnDiv.style.borderTop = '1px solid #eee'; btnDiv.style.paddingTop = '10px';
         
         var editBtn = document.createElement('button'); editBtn.className = 'btn btn-outline'; editBtn.style.padding = '4px 8px'; editBtn.style.fontSize = '12px'; editBtn.style.marginRight = '8px'; editBtn.textContent = '✏️ 修改'; editBtn.onclick = function() { editNote(note.id); };
-        var delBtn = document.createElement('button'); delBtn.className = 'btn btn-outline'; delBtn.style.padding = '4px 8px'; delBtn.style.fontSize = '12px'; delBtn.textContent = '完成 / 刪除'; delBtn.onclick = function() { deleteNote(note.id); };
+        var delBtn = document.createElement('button'); delBtn.className = 'btn btn-outline'; delBtn.style.padding = '4px 8px'; editBtn.style.fontSize = '12px'; delBtn.textContent = '完成 / 刪除'; delBtn.onclick = function() { deleteNote(note.id); };
         
         btnDiv.appendChild(editBtn); btnDiv.appendChild(delBtn); el.appendChild(btnDiv); grid.appendChild(el);
       });
