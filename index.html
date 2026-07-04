@@ -52,7 +52,6 @@
     width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px; 
     font-size: 15px; margin-bottom: 12px; background: #fafafa; font-family: inherit;
   }
-  
   textarea { resize: vertical; min-height: 80px; }
   input:focus, textarea:focus, select:focus { border-color: var(--go); outline: none; background: #fff; }
   
@@ -613,22 +612,19 @@
   document.getElementById('ghRepo').value = ghConfig.repo || '';
   document.getElementById('ghToken').value = ghConfig.token || '';
 
-  // 修正：使用更現代、穩定的 TextEncoder/TextDecoder 來處理中文與 Emoji Base64 轉換
+  // 🛠️ 更新這裡的編碼解碼函式 🛠️
+  // 使用更現代、穩定的 TextEncoder / TextDecoder 來處理中文與特殊字元
   function utf8ToBase64(str) {
     var bytes = new TextEncoder().encode(str);
-    var binary = '';
-    for (var i = 0; i < bytes.length; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary);
+    var binString = String.fromCodePoint(...bytes);
+    return btoa(binString);
   }
 
-  function base64ToUtf8(str) {
-    var binary = atob(str.replace(/\s/g, ''));
-    var bytes = new Uint8Array(binary.length);
-    for (var i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
+  function base64ToUtf8(b64) {
+    // 移除可能存在的換行符號
+    var cleanB64 = b64.replace(/\s/g, '');
+    var binString = atob(cleanB64);
+    var bytes = Uint8Array.from(binString, function(m) { return m.codePointAt(0); });
     return new TextDecoder().decode(bytes);
   }
 
@@ -1426,7 +1422,7 @@
         var btnDiv = document.createElement('div'); btnDiv.style.marginTop = '12px'; btnDiv.style.textAlign = 'right'; btnDiv.style.borderTop = '1px solid #eee'; btnDiv.style.paddingTop = '10px';
         
         var editBtn = document.createElement('button'); editBtn.className = 'btn btn-outline'; editBtn.style.padding = '4px 8px'; editBtn.style.fontSize = '12px'; editBtn.style.marginRight = '8px'; editBtn.textContent = '✏️ 修改'; editBtn.onclick = function() { editNote(note.id); };
-        var delBtn = document.createElement('button'); delBtn.className = 'btn btn-outline'; delBtn.style.padding = '4px 8px'; editBtn.style.fontSize = '12px'; delBtn.textContent = '完成 / 刪除'; delBtn.onclick = function() { deleteNote(note.id); };
+        var delBtn = document.createElement('button'); delBtn.className = 'btn btn-outline'; delBtn.style.padding = '4px 8px'; delBtn.style.fontSize = '12px'; delBtn.textContent = '完成 / 刪除'; delBtn.onclick = function() { deleteNote(note.id); };
         
         btnDiv.appendChild(editBtn); btnDiv.appendChild(delBtn); el.appendChild(btnDiv); grid.appendChild(el);
       });
