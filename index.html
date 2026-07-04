@@ -141,7 +141,7 @@
 <!-- 自訂對話框 -->
 <div id="customModalOverlay">
   <div class="modal-box fade">
-    <div id="modalMsg" style="font-size: 16px; margin-bottom: 24px; color: var(--ink); line-height: 1.5;"></div>
+    <div id="modalMsg" style="font-size: 16px; margin-bottom: 24px; color: var(--ink); line-height: 1.5; white-space: pre-wrap;"></div>
     <div style="display: flex; justify-content: center; gap: 12px;">
       <button id="modalBtnCancel" class="btn btn-outline" style="display:none;">取消</button>
       <button id="modalBtnOk" class="btn">確定</button>
@@ -481,7 +481,7 @@
   </div>
 
   <!-- 系統與備份 -->
-  <div id="settings" class="view fade">
+  <div id="settings" class="view fade active">
     <div class="grid-2">
       <!-- 離線備份 -->
       <div class="card">
@@ -606,27 +606,33 @@
   });
 
   // ==========================================
-  // 模組 0: GitHub 雲端資料同步與備份引擎
+  // 模組 0: 升級版 UTF-8 Base64 編解碼引擎
+  // ==========================================
+  // 100% 防止 Emoji 或特殊中文字元在 GitHub API 上傳時變成亂碼
+  function utf8ToBase64(str) {
+    const bytes = new TextEncoder().encode(str);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  }
+
+  function base64ToUtf8(str) {
+    const binary = atob(str.replace(/\s/g, ''));
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return new TextDecoder().decode(bytes);
+  }
+
+  // ==========================================
+  // GitHub 雲端同步邏輯
   // ==========================================
   var ghConfig = safeGet('admin_gh_config', { token: '', repo: '', lastJsonBackup: '' });
   document.getElementById('ghRepo').value = ghConfig.repo || '';
   document.getElementById('ghToken').value = ghConfig.token || '';
-
-  // 🛠️ 更新這裡的編碼解碼函式 🛠️
-  // 使用更現代、穩定的 TextEncoder / TextDecoder 來處理中文與特殊字元
-  function utf8ToBase64(str) {
-    var bytes = new TextEncoder().encode(str);
-    var binString = String.fromCodePoint(...bytes);
-    return btoa(binString);
-  }
-
-  function base64ToUtf8(b64) {
-    // 移除可能存在的換行符號
-    var cleanB64 = b64.replace(/\s/g, '');
-    var binString = atob(cleanB64);
-    var bytes = Uint8Array.from(binString, function(m) { return m.codePointAt(0); });
-    return new TextDecoder().decode(bytes);
-  }
 
   function saveGhConfig() {
     ghConfig.repo = document.getElementById('ghRepo').value.trim();
@@ -643,7 +649,6 @@
     var folder = customFolder || (new Date().getFullYear() + String(new Date().getMonth()+1).padStart(2, '0'));
     var path = 'backups/' + folder + '/' + fileName;
     
-    // 過濾防呆：移除可能輸入的完整網址，只保留 User/Repo
     var repoPath = ghConfig.repo.replace('https://github.com/', '').replace(/\/$/, '');
     var url = 'https://api.github.com/repos/' + repoPath + '/contents/' + encodeURIComponent(path);
 
@@ -670,8 +675,6 @@
     };
     var b64String = utf8ToBase64(JSON.stringify(backupData, null, 2));
     var path = 'Toolbox_Cloud_Sync_Master.json';
-    
-    // 過濾防呆
     var repoPath = ghConfig.repo.replace('https://github.com/', '').replace(/\/$/, '');
     var url = 'https://api.github.com/repos/' + repoPath + '/contents/' + path;
 
@@ -710,26 +713,18 @@
     showToast('☁️ 正在從 GitHub 尋找並下載雲端備份...');
     
     var path = 'Toolbox_Cloud_Sync_Master.json';
-    
-    // 過濾防呆：移除可能輸入的完整網址，只保留 User/Repo
     var repoPath = ghConfig.repo.replace('https://github.com/', '').replace(/\/$/, '');
-    
-    // 加入隨機參數，強制不使用快取
-    var url = 'https://api.github.com/repos/' + repoPath + '/contents/' + path + '?t=' + new Date().getTime();
+    var url = 'https://api.github.com/repos/' + repoPath + '/contents/' + path;
 
     try {
-      var res = await fetch(url, { 
-        headers: { 
-          'Authorization': 'token ' + ghConfig.token, 
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        } 
-      });
+      // 加上時間戳記防止 GitHub API 抓到舊的快取
+      var fetchUrl = url + '?timestamp=' + new Date().getTime();
+      var res = await fetch(fetchUrl, { headers: { 'Authorization': 'token ' + ghConfig.token, 'Cache-Control': 'no-cache' } });
       
       if (res.ok) {
         var fileData = await res.json();
-        // 將 GitHub 回傳的內容解碼
+        
+        // 這裡套用我們升級後的最強解碼引擎
         var content = base64ToUtf8(fileData.content);
         var data = JSON.parse(content);
         
@@ -746,14 +741,12 @@
           
           showToast('✅ 成功從雲端下載並還原所有資料！');
         });
-      } else if (res.status === 404) {
-         showMsg('❌ 在雲端找不到備份檔 (404)。\n這表示伺服器上目前沒有 Toolbox_Cloud_Sync_Master.json 這個檔案。\n請確認您是否已經成功執行過一次「強制備份至雲端」！');
       } else { 
-         showMsg('❌ 讀取資料失敗 (狀態碼: ' + res.status + ')。\n請檢查：\n1. 專案名稱是否完全正確。\n2. Token 是否過期或權限不足。'); 
+        showMsg('❌ 在雲端找不到備份檔。請確認您是否曾經在電腦端執行過「強制備份至雲端」！'); 
       }
     } catch(e) { 
-      console.error("下載備份時發生錯誤：", e);
-      showMsg('❌ 解析資料時發生錯誤：\n可能是網路不穩或檔案內容損毀。\n請打開 F12 檢查 Console 獲取詳細錯誤訊息。'); 
+      console.error(e);
+      showMsg('❌ 雲端資料解析失敗！\n\n原因：目前 GitHub 上的備份檔可能因為之前的亂碼問題損毀了。\n\n👉 解決方案：\n請回到您的【電腦端】網頁，點擊「手動強制備份至雲端」，將健康的檔案重新覆蓋上去後，手機端再來下載即可！\n\n詳細錯誤: ' + e.message); 
     }
   }
 
