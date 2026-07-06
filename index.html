@@ -721,7 +721,7 @@
     }
   }
 
-  async function syncFromCloud() {
+async function syncFromCloud() {
     if (!ghConfig.token || !ghConfig.repo) return showMsg('請先輸入並儲存 GitHub 專案名稱與 Token！');
     showToast('☁️ 正在從 GitHub 尋找並下載雲端備份...');
     
@@ -730,39 +730,40 @@
     var url = 'https://api.github.com/repos/' + repoPath + '/contents/' + path;
 
     try {
-      // 加上時間戳記防止 GitHub API 抓到舊的快取
-      var fetchUrl = url + '?timestamp=' + new Date().getTime();
-      var res = await fetch(fetchUrl, { headers: { 'Authorization': 'token ' + ghConfig.token, 'Cache-Control': 'no-cache' } });
+      // 修正：移除網址後方的問號參數，改用標準 Headers 進行反快取，防止 GitHub 阻斷連線
+      var res = await fetch(url, { 
+        method: 'GET',
+        headers: { 
+          'Authorization': 'token ' + ghConfig.token, 
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        } 
+      });
       
       if (res.ok) {
         var fileData = await res.json();
+        var content = base64ToUtf8(fileData.content);
+        var data = JSON.parse(content);
         
-        try {
-          // 使用全新的安全解碼器
-          var data = decodeDataFromBase64(fileData.content);
+        showConfirm('⚠️ 警告：這將會清除您設備上的目前資料，\n並用雲端的資料完全覆蓋。確定要還原嗎？', function() {
+          if(data.notes) safeSet('admin_notes_v4', data.notes); 
+          if(data.roster) safeSet('admin_roster_v8', data.roster);
+          if(data.dash) safeSet('admin_dash_v2', data.dash); 
+          if(data.links) safeSet('admin_links_v1', data.links);
           
-          showConfirm('⚠️ 警告：這將會清除您設備上的目前資料，\n並用雲端的資料完全覆蓋。確定要還原嗎？', function() {
-            if(data.notes) safeSet('admin_notes_v4', data.notes); 
-            if(data.roster) safeSet('admin_roster_v8', data.roster);
-            if(data.dash) safeSet('admin_dash_v2', data.dash); 
-            if(data.links) safeSet('admin_links_v1', data.links);
-            
-            notes = safeGet('admin_notes_v4', []); renderNotes(); 
-            rosData = safeGet('admin_roster_v8', {}); buildInputs(); renderRoster();
-            dashData = safeGet('admin_dash_v2', { d1:0, d2:0, d3:0 }); renderDashboard(); 
-            linksData = safeGet('admin_links_v1', []); renderLinks();
-            
-            showToast('✅ 成功從雲端下載並還原所有資料！');
-          });
-        } catch (decodeErr) {
-          showMsg('❌ 雲端資料解析失敗！\n\n原因：雲端上的備份檔目前仍然是壞掉的狀態。\n\n👉 解決方案：\n請務必回到您的【電腦端】網頁，點擊「手動強制備份至雲端」，讓系統把健康的檔案重新覆蓋上去後，手機端再來下載即可！');
-        }
+          notes = safeGet('admin_notes_v4', []); renderNotes(); 
+          rosData = safeGet('admin_roster_v8', {}); buildInputs(); renderRoster();
+          dashData = safeGet('admin_dash_v2', { d1:0, d2:0, d3:0 }); renderDashboard(); 
+          linksData = safeGet('admin_links_v1', []); renderLinks();
+          
+          showToast('✅ 成功從雲端下載並還原所有資料！');
+        });
       } else { 
         showMsg('❌ 在雲端找不到備份檔。請確認您是否曾經在電腦端執行過「強制備份至雲端」！'); 
       }
     } catch(e) { 
       console.error(e);
-      showMsg('❌ 網路連線異常或設定錯誤。\n詳細錯誤: ' + e.message); 
+      showMsg('❌ 雲端連線失敗！請確認專案名稱格式（如：User/Repo）或 Token 是否正確。'); 
     }
   }
 
