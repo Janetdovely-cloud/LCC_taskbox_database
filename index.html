@@ -731,18 +731,16 @@ async function syncFromCloud() {
     var url = 'https://api.github.com/repos/' + repoPath + '/contents/' + path;
 
     try {
-      // 修正：移除網址後方的問號參數，改用標準 Headers 進行反快取，防止 GitHub 阻斷連線
+      // 🌟 最終修正：使用瀏覽器原生 cache: 'no-store'，不添加自訂 Header，完美避開 GitHub CORS 安全阻擋
       var res = await fetch(url, { 
         method: 'GET',
-        headers: { 
-          'Authorization': 'token ' + ghConfig.token, 
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        } 
+        headers: { 'Authorization': 'token ' + ghConfig.token },
+        cache: 'no-store' 
       });
       
       if (res.ok) {
         var fileData = await res.json();
+        // 使用最強 UTF-8 解碼引擎解析內容
         var content = base64ToUtf8(fileData.content);
         var data = JSON.parse(content);
         
@@ -764,7 +762,7 @@ async function syncFromCloud() {
       }
     } catch(e) { 
       console.error(e);
-      showMsg('❌ 雲端連線失敗！請確認專案名稱格式（如：User/Repo）或 Token 是否正確。'); 
+      showMsg('❌ 雲端連線失敗！\n1. 請確認專案名稱格式 (如：User/Repo)\n2. 確認 Token 權限正確\n3. 網路是否正常連線'); 
     }
   }
 
