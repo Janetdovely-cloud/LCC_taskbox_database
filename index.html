@@ -606,25 +606,34 @@
   });
 
   // ==========================================
-  // 模組 0: 升級版 UTF-8 Base64 編解碼引擎
+  // 模組 0: 終極防護編解碼引擎 (防止 JSON 解析損毀)
   // ==========================================
-  // 100% 防止 Emoji 或特殊中文字元在 GitHub API 上傳時變成亂碼
-  function utf8ToBase64(str) {
-    const bytes = new TextEncoder().encode(str);
-    let binary = '';
-    for (let i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
+  // 編碼：將資料轉為安全的 Base64 格式
+  function encodeDataToBase64(dataObj) {
+    try {
+      var jsonString = JSON.stringify(dataObj);
+      // 使用 encodeURIComponent 將可能造成問題的特殊字元轉換為 URI 格式
+      var encodedString = encodeURIComponent(jsonString);
+      // 將 URI 格式轉為 base64 存檔
+      return btoa(encodedString);
+    } catch (e) {
+      console.error("資料打包失敗", e);
+      return "";
     }
-    return btoa(binary);
   }
 
-  function base64ToUtf8(str) {
-    const binary = atob(str.replace(/\s/g, ''));
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
+  // 解碼：從安全的 Base64 還原為物件
+  function decodeDataFromBase64(base64String) {
+    try {
+      // 確保移除不必要的換行符號
+      var cleanB64 = base64String.replace(/[\r\n]/g, '');
+      var encodedString = atob(cleanB64);
+      var jsonString = decodeURIComponent(encodedString);
+      return JSON.parse(jsonString);
+    } catch (e) {
+      console.error("資料解碼失敗", e);
+      throw e; // 拋出錯誤讓外層捕捉
     }
-    return new TextDecoder().decode(bytes);
   }
 
   // ==========================================
@@ -673,7 +682,11 @@
       dash: safeGet('admin_dash_v2', { d1:0, d2:0, d3:0 }),
       links: safeGet('admin_links_v1', [])
     };
-    var b64String = utf8ToBase64(JSON.stringify(backupData, null, 2));
+    
+    // 使用全新的安全編碼器
+    var b64String = encodeDataToBase64(backupData);
+    if (!b64String) return showMsg("資料打包失敗，請檢查是否有特殊無法辨識的字元。");
+    
     var path = 'Toolbox_Cloud_Sync_Master.json';
     var repoPath = ghConfig.repo.replace('https://github.com/', '').replace(/\/$/, '');
     var url = 'https://api.github.com/repos/' + repoPath + '/contents/' + path;
@@ -683,7 +696,7 @@
       var sha = null;
       if (getRes.ok) { var fileData = await getRes.json(); sha = fileData.sha; }
       
-      var bodyData = { message: 'Update Cloud Sync Data', content: b64String };
+      var bodyData = { message: 'Update Cloud Sync Data (Secured)', content: b64String };
       if (sha) bodyData.sha = sha;
 
       var putRes = await fetch(url, {
@@ -724,29 +737,32 @@
       if (res.ok) {
         var fileData = await res.json();
         
-        // 這裡套用我們升級後的最強解碼引擎
-        var content = base64ToUtf8(fileData.content);
-        var data = JSON.parse(content);
-        
-        showConfirm('⚠️ 警告：這將會清除您設備上的目前資料，\n並用雲端的資料完全覆蓋。確定要還原嗎？', function() {
-          if(data.notes) safeSet('admin_notes_v4', data.notes); 
-          if(data.roster) safeSet('admin_roster_v8', data.roster);
-          if(data.dash) safeSet('admin_dash_v2', data.dash); 
-          if(data.links) safeSet('admin_links_v1', data.links);
+        try {
+          // 使用全新的安全解碼器
+          var data = decodeDataFromBase64(fileData.content);
           
-          notes = safeGet('admin_notes_v4', []); renderNotes(); 
-          rosData = safeGet('admin_roster_v8', {}); buildInputs(); renderRoster();
-          dashData = safeGet('admin_dash_v2', { d1:0, d2:0, d3:0 }); renderDashboard(); 
-          linksData = safeGet('admin_links_v1', []); renderLinks();
-          
-          showToast('✅ 成功從雲端下載並還原所有資料！');
-        });
+          showConfirm('⚠️ 警告：這將會清除您設備上的目前資料，\n並用雲端的資料完全覆蓋。確定要還原嗎？', function() {
+            if(data.notes) safeSet('admin_notes_v4', data.notes); 
+            if(data.roster) safeSet('admin_roster_v8', data.roster);
+            if(data.dash) safeSet('admin_dash_v2', data.dash); 
+            if(data.links) safeSet('admin_links_v1', data.links);
+            
+            notes = safeGet('admin_notes_v4', []); renderNotes(); 
+            rosData = safeGet('admin_roster_v8', {}); buildInputs(); renderRoster();
+            dashData = safeGet('admin_dash_v2', { d1:0, d2:0, d3:0 }); renderDashboard(); 
+            linksData = safeGet('admin_links_v1', []); renderLinks();
+            
+            showToast('✅ 成功從雲端下載並還原所有資料！');
+          });
+        } catch (decodeErr) {
+          showMsg('❌ 雲端資料解析失敗！\n\n原因：雲端上的備份檔目前仍然是壞掉的狀態。\n\n👉 解決方案：\n請務必回到您的【電腦端】網頁，點擊「手動強制備份至雲端」，讓系統把健康的檔案重新覆蓋上去後，手機端再來下載即可！');
+        }
       } else { 
         showMsg('❌ 在雲端找不到備份檔。請確認您是否曾經在電腦端執行過「強制備份至雲端」！'); 
       }
     } catch(e) { 
       console.error(e);
-      showMsg('❌ 雲端資料解析失敗！\n\n原因：目前 GitHub 上的備份檔可能因為之前的亂碼問題損毀了。\n\n👉 解決方案：\n請回到您的【電腦端】網頁，點擊「手動強制備份至雲端」，將健康的檔案重新覆蓋上去後，手機端再來下載即可！\n\n詳細錯誤: ' + e.message); 
+      showMsg('❌ 網路連線異常或設定錯誤。\n詳細錯誤: ' + e.message); 
     }
   }
 
