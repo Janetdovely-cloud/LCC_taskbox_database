@@ -108,6 +108,7 @@
   .c-gray { background: #DDDDDD; color: #888888; }
   .c-brown { background: #D2B48C; color: #8B4513; }
   .c-pink { background: #FFE4E1; color: #C71585; }  
+  .c-completed { background: #ffffff !important; color: #aaaaaa !important; border: 1px dashed #cccccc !important; text-decoration: line-through; }
 
   /* 常用連結樣式 */
   .quick-link-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--goSoft); border-radius: 8px; transition: 0.2s; border: 1px solid transparent; }
@@ -1305,13 +1306,22 @@
     
     if (editingNoteId) {
       var note = notes.find(function(n) { return n.id === editingNoteId; });
-      if (note) { note.title = title; note.body = body; note.due = date; note.color = color; }
+      if (note) { note.title = title; note.body = body; note.due = date; note.color = color; note.completed = false; }
       showMsg('✅ 記事已成功更新！'); cancelEditNote(); 
     } else {
-      notes.push({ id: Date.now().toString(), title: title, body: body, due: date, color: color });
+      notes.push({ id: Date.now().toString(), title: title, body: body, due: date, color: color, completed: false });
       document.getElementById('newNoteTitle').value = ''; document.getElementById('newNoteBody').value = ''; document.getElementById('newNoteDate').value = ''; document.getElementById('newNoteColor').value = 'c-green';
     }
     saveNotes();
+  }
+
+  function completeNote(id) {
+    var note = notes.find(function(n) { return n.id === id; });
+    if (note) {
+      note.completed = true;
+      saveNotes();
+      showToast('✅ 記事已標示為完成！');
+    }
   }
 
   function editNote(id) {
@@ -1379,8 +1389,8 @@
       
       var dayNotes = notes.filter(function(n) { return n.due === dateStr; });
       dayNotes.forEach(function(n) {
-        var cls = 'cal-item ' + (n.color || 'c-green');
-        html += '<div class="' + cls + '" onclick="event.stopPropagation(); editNote(\'' + n.id + '\')" title="' + n.title + ' (點擊修改)">' + n.title + '</div>';
+        var cls = 'cal-item ' + (n.completed ? 'c-completed' : (n.color || 'c-green'));
+        html += '<div class="' + cls + '" onclick="event.stopPropagation(); editNote(\'' + n.id + '\')" title="' + n.title + (n.completed ? ' (已完成)' : ' (點擊修改)') + '">' + n.title + '</div>';
       });
       html += '</div>';
     }
@@ -1392,7 +1402,11 @@
     var query = document.getElementById('searchNote').value.toLowerCase(); var urgentCount = 0;
     grid.innerHTML = '';
     
-    var filtered = notes.filter(function(n) { if(!query) return true; return n.title.toLowerCase().includes(query) || (n.body||'').toLowerCase().includes(query); });
+    var filtered = notes.filter(function(n) { 
+      if (n.completed) return false; 
+      if (!query) return true; 
+      return n.title.toLowerCase().includes(query) || (n.body||'').toLowerCase().includes(query); 
+    });
 
     if (filtered.length === 0) { emptyState.style.display = 'block'; } 
     else {
@@ -1431,9 +1445,10 @@
         var btnDiv = document.createElement('div'); btnDiv.style.marginTop = '12px'; btnDiv.style.textAlign = 'right'; btnDiv.style.borderTop = '1px solid #eee'; btnDiv.style.paddingTop = '10px';
         
         var editBtn = document.createElement('button'); editBtn.className = 'btn btn-outline'; editBtn.style.padding = '4px 8px'; editBtn.style.fontSize = '12px'; editBtn.style.marginRight = '8px'; editBtn.textContent = '✏️ 修改'; editBtn.onclick = function() { editNote(note.id); };
-        var delBtn = document.createElement('button'); delBtn.className = 'btn btn-outline'; delBtn.style.padding = '4px 8px'; delBtn.style.fontSize = '12px'; delBtn.textContent = '完成 / 刪除'; delBtn.onclick = function() { deleteNote(note.id); };
+        var completeBtn = document.createElement('button'); completeBtn.className = 'btn btn-outline'; completeBtn.style.padding = '4px 8px'; completeBtn.style.fontSize = '12px'; completeBtn.style.marginRight = '8px'; completeBtn.style.color = 'var(--go)'; completeBtn.style.borderColor = 'var(--go)'; completeBtn.textContent = '✅ 完成'; completeBtn.onclick = function() { completeNote(note.id); };
+        var delBtn = document.createElement('button'); delBtn.className = 'btn btn-outline'; delBtn.style.padding = '4px 8px'; delBtn.style.fontSize = '12px'; delBtn.style.color = 'var(--danger)'; delBtn.textContent = '🗑️ 刪除'; delBtn.onclick = function() { deleteNote(note.id); };
         
-        btnDiv.appendChild(editBtn); btnDiv.appendChild(delBtn); el.appendChild(btnDiv); grid.appendChild(el);
+        btnDiv.appendChild(editBtn); btnDiv.appendChild(completeBtn); btnDiv.appendChild(delBtn); el.appendChild(btnDiv); grid.appendChild(el);
       });
     }
 
@@ -1544,7 +1559,7 @@
     if (tgConfig.token && tgConfig.chatId && tgConfig.lastNotified !== todayStr) {
       today.setHours(0,0,0,0);
       var urgentNotes = notes.filter(function(n) {
-        if(!n.due) return false; var dueDate = new Date(n.due); dueDate.setHours(0,0,0,0); return dueDate <= today;
+        if(!n.due || n.completed) return false; var dueDate = new Date(n.due); dueDate.setHours(0,0,0,0); return dueDate <= today;
       });
       if (urgentNotes.length > 0) {
         var msg = '⚠️ 【每日行政提醒】 ⚠️\n\n';
