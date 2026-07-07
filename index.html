@@ -4,9 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>臻的行政百寶箱</title>
-<!-- 載入 jsPDF 用於結訓作品集 PDF 生成 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<!-- 載入 PDF.js 用於解析學員上傳的 PDF 作品 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
 
@@ -70,13 +68,23 @@
   .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
   .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
   
+  /* 艾森豪四象限矩陣設計 */
+  .matrix-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 16px; }
+  .matrix-quadrant { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; min-height: 250px;}
+  .quad-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between;}
+  .q1-title { color: var(--danger); border-bottom-color: var(--dangerSoft); } 
+  .q2-title { color: #BE842B; border-bottom-color: var(--goldSoft); } 
+  .q3-title { color: #0066FF; border-bottom-color: #CCEEFF; } 
+  .q4-title { color: var(--sub); } 
+
   .note-card {
-    background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+    background: #fafafa; border: 1px solid var(--line); border-radius: 8px; padding: 12px;
     display: flex; flex-direction: column; justify-content: space-between; position: relative;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.02);
   }
-  .note-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
-  .note-body { font-size: 14px; color: var(--sub); margin-bottom: 12px; white-space: pre-wrap; word-break: break-all; }
-  .note-due { font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 4px; display: inline-block; }
+  .note-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; color: var(--ink); }
+  .note-body { font-size: 13px; color: var(--sub); margin-bottom: 8px; white-space: pre-wrap; word-break: break-all; }
+  .note-due { font-size: 11px; font-weight: 600; padding: 3px 6px; border-radius: 4px; display: inline-block; }
   
   .dashboard-stat { text-align: center; padding: 24px; background: #fff; border: 1px solid var(--line); border-radius: 12px; }
   .dashboard-stat h2 { margin: 0; font-size: 36px; color: var(--go); }
@@ -96,7 +104,8 @@
   .cal-td.empty { background: #fafafa; cursor: default; }
   .cal-td.today { background: var(--goldSoft); }
   .cal-date { font-size: 12px; color: var(--sub); margin-bottom: 4px; text-align: right; }
-  .cal-item { font-size: 11px; padding: 2px 4px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+  .cal-item { font-size: 11px; padding: 2px 4px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: grab; }
+  .cal-item:active { cursor: grabbing; opacity: 0.6; }
   .cal-item:hover { opacity: 0.8; }
   
   /* 自訂顏色標籤 */
@@ -137,10 +146,8 @@
 </head>
 <body>
 
-<!-- 浮動通知 -->
 <div id="toastNotification">通知訊息</div>
 
-<!-- 自訂對話框 -->
 <div id="customModalOverlay">
   <div class="modal-box fade">
     <div id="modalMsg" style="font-size: 16px; margin-bottom: 24px; color: var(--ink); line-height: 1.5; white-space: pre-wrap;"></div>
@@ -157,8 +164,8 @@
     <h1>臻的行政百寶箱</h1>
     <div class="tabs">
       <button class="tab" data-target="settings">⚙️ 系統與備份</button>
-      <button class="tab" data-target="notes">行事曆 <span id="noteBadge"></span></button>
-      <button class="tab on" data-target="stats">區域業績統計</button>
+      <button class="tab on" data-target="notes">行事曆 <span id="noteBadge"></span></button>
+      <button class="tab" data-target="stats">區域業績統計</button>
       <button class="tab" data-target="poster">百人戰報宣傳圖</button>
       <button class="tab" data-target="merge-jpg">契約書左右合併</button>
       <button class="tab" data-target="vendor-contract">廠商契約</button>
@@ -167,8 +174,7 @@
     </div>
   </div>
 
-  <!-- 區域業績統計 -->
-  <div id="stats" class="view active fade">
+  <div id="stats" class="view fade">
     <div class="grid-2">
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -203,7 +209,6 @@
     </div>
   </div>
 
-  <!-- 百人戰報宣傳圖 -->
   <div id="poster" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">百人戰報宣傳圖 (自動套版)</h3>
@@ -266,7 +271,6 @@
     </div>
   </div>
 
-  <!-- 契約書左右合併 -->
   <div id="merge-jpg" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">契約書左右合併 (輸出 JPG)</h3>
@@ -305,7 +309,6 @@
     </div>
   </div>
 
-  <!-- 廠商契約 (上下合併) -->
   <div id="vendor-contract" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">廠商契約 (上下合併輸出 JPG)</h3>
@@ -332,7 +335,6 @@
     </div>
   </div>
 
-  <!-- 結訓作品集 -->
   <div id="pdf-portfolio" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">結訓作品集 PDF (自動內頁標題版)</h3>
@@ -394,7 +396,6 @@
         </div>
       </div>
       
-      <!-- 👀 封面即時預覽 -->
       <div style="margin-top: 20px; text-align: center; border-top: 1px dashed var(--line); padding-top: 20px;">
         <label style="font-weight:bold; font-size:14px; color:var(--go); margin-bottom: 12px; display:block;">👀 封面即時預覽 (PDF將依此畫面生成)</label>
         <canvas id="portCoverPreview" width="2376" height="1680" style="max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);"></canvas>
@@ -408,11 +409,9 @@
     </div>
   </div>
 
-  <!-- 記事提醒 -->
-  <div id="notes" class="view fade">
+  <div id="notes" class="view active fade">
     <div id="dueBar"></div>
     
-    <!-- 行事曆區塊 -->
     <div class="cal-wrap">
       <div class="cal-header">
         <button onclick="changeMonth(-1)">◀ 上個月</button>
@@ -426,8 +425,8 @@
       <div class="card" style="background: var(--goSoft); border-color: #c0ded6;">
         <h3 id="noteFormTitle" style="margin-top:0; color: var(--go);">新增記事/待辦</h3>
         
-        <div style="display:flex; gap:8px;">
-          <select id="newNoteColor" style="width:100px;">
+        <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+          <select id="newNoteColor" style="width:90px; margin-bottom:0; padding:8px;">
             <option value="c-green">就輔(綠)</option>
             <option value="c-danger">緊急(紅)</option>
             <option value="c-blue">會議(藍)</option>
@@ -437,7 +436,15 @@
             <option value="c-pink">排課(粉)</option>
             <option value="c-brown">其他(咖)</option>
           </select>
-          <input type="text" id="newNoteTitle" placeholder="事項標題 (必填)">
+          <select id="newNoteImp" style="width:90px; margin-bottom:0; padding:8px;">
+            <option value="true">🔥 重要</option>
+            <option value="false">⚪ 不重要</option>
+          </select>
+          <select id="newNoteUrg" style="width:90px; margin-bottom:0; padding:8px;">
+            <option value="true">⚡ 緊急</option>
+            <option value="false">⏳ 不急</option>
+          </select>
+          <input type="text" id="newNoteTitle" placeholder="事項標題 (必填)" style="flex:1; margin-bottom:0; padding:8px;">
         </div>
         
         <textarea id="newNoteBody" placeholder="詳細內容 (選填)"></textarea>
@@ -454,10 +461,9 @@
     </div>
     
     <div id="emptyState" style="text-align:center; padding: 40px; color: var(--sub); display:none;">找不到相關記事。</div>
-    <div class="grid-3" id="noteGrid"></div>
+    <div id="noteGrid"></div>
   </div>
 
-  <!-- 指標儀表板 -->
   <div id="dashboard" class="view fade">
     <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
       <h3 style="margin:0;">本月營運指標</h3>
@@ -483,10 +489,8 @@
     </div>
   </div>
 
-  <!-- 系統與備份 -->
-  <div id="settings" class="view fade active">
+  <div id="settings" class="view fade">
     <div class="grid-2">
-      <!-- 離線備份 -->
       <div class="card">
         <h3 style="margin-top:0;">💾 離線資料備份與還原</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">匯出 .json 檔案存放在您的電腦中，作為離線保險。</p>
@@ -497,7 +501,6 @@
         <button class="btn btn-outline" onclick="importData()" style="width:100%;">📤 還原離線資料</button>
       </div>
 
-      <!-- 常用連結 -->
       <div class="card">
         <h3 style="margin-top:0;">🔗 常用系統連結</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">將公司的後台系統、報表或雲端硬碟網址存在這裡，當作您的專屬入口網站。</p>
@@ -511,7 +514,6 @@
         </div>
       </div>
       
-      <!-- 🌟 GitHub 雲端備份設定區 -->
       <div class="card" style="margin-top: 16px; border-color: #c0ded6; grid-column: 1 / -1; background: #fdfdfd;">
         <h3 style="margin-top:0; color:var(--go);">☁️ GitHub 雲端資料同步與圖片自動備份</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">
@@ -537,7 +539,6 @@
         </div>
       </div>
 
-      <!-- Telegram 設定區 -->
       <div class="card" style="margin-top: 16px; border-color: #c0ded6; grid-column: 1 / -1;">
         <h3 style="margin-top:0; color:var(--go);">🤖 Telegram 自動推播提醒</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">設定您的 Telegram Bot Token 與 Chat ID。每天<b>首次開啟本網頁時</b>，系統會自動檢查並將「今天到期」或「逾期」的事項發送到您的 Telegram！</p>
@@ -684,7 +685,6 @@
     var b64String = encodeDataToBase64(backupData);
     if (!b64String) return showMsg("資料打包失敗，請檢查是否有特殊無法辨識的字元。");
     
-    // 🌟 變更檔名為 V2，直接產生一個全新健康的檔案，無視舊的壞檔
     var path = 'Toolbox_Cloud_Sync_V2.json';
     var repoPath = ghConfig.repo.replace('https://github.com/', '').replace(/\/$/, '');
     var url = 'https://api.github.com/repos/' + repoPath + '/contents/' + path;
@@ -723,13 +723,11 @@
     if (!ghConfig.token || !ghConfig.repo) return showMsg('請先輸入並儲存 GitHub 專案名稱與 Token！');
     showToast('☁️ 正在從 GitHub 尋找並下載雲端備份...');
     
-    // 🌟 配合抓取全新健康的 V2 檔案
     var path = 'Toolbox_Cloud_Sync_V2.json';
     var repoPath = ghConfig.repo.replace('https://github.com/', '').replace(/\/$/, '');
     var url = 'https://api.github.com/repos/' + repoPath + '/contents/' + path;
 
     try {
-      // 完美避開 CORS 阻擋 (不自訂標頭，僅使用 fetch 的 cache 屬性)
       var res = await fetch(url, { 
         method: 'GET',
         headers: { 'Authorization': 'token ' + ghConfig.token },
@@ -831,7 +829,6 @@
       dateInput = (today.getMonth() + 1) + '/' + today.getDate() + '(' + dayNames[today.getDay()] + ')';
     }
     
-    // 嚴格遵守您的範本格式
     var report = '【熱情🌞、專業🏆、創新🚄】\n每日值班順序表 桃、中、竹\n日期：' + dateInput + '\n\n';
     
     var total = 0;
@@ -963,7 +960,6 @@
   var promoInputs = ['pLetterS', 'pLetterX', 'pLetterY', 'pPhotoS', 'pPhotoX', 'pPhotoY', 'pFrameX', 'pFrameY', 'pQuoteSize', 'pQuoteY', 'pNameSize', 'pCompSize', 'pInfoY', 'pName', 'pComp', 'pQuote'];
   promoInputs.forEach(function(id) { document.getElementById(id).addEventListener('input', drawPromo); });
 
-  // 作品集預覽連動
   var portInputs = ['portTitle', 'portBranch', 'portDate', 'portMainTitle', 'portTextAlign', 'portTextColor', 'portTextSize', 'portTextGap', 'portTextX', 'portTextY'];
   portInputs.forEach(function(id) { document.getElementById(id).addEventListener('input', drawPortfolioCoverPreview); });
   
@@ -1045,7 +1041,6 @@
     link.href = dataUrl; 
     link.click();
     
-    // 觸發自動上傳 GitHub
     uploadImageToGitHub(fileName, dataUrl, 'Poster_Backups');
   }
 
@@ -1197,24 +1192,20 @@
     });
   }
 
-  // 🌟 將內頁作品加上原檔名標題的網頁畫布引擎 (100% 支援中文標題不亂碼)
   function combineTitleAndImage(srcDataUrl, titleText) {
     return new Promise(function(resolve) {
       var img = new Image();
       img.onload = function() {
-        var canvas = document.createElement('canvas'); canvas.width = 1920; canvas.height = 1357; // 符合 A4 橫式精準比例
+        var canvas = document.createElement('canvas'); canvas.width = 1920; canvas.height = 1357; 
         var ctx = canvas.getContext('2d');
         
-        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height); // 白底
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height); 
         
-        // 繪製頂部作品大標題
         ctx.fillStyle = '#20251F'; ctx.font = 'bold 42px "PingFang TC", "Microsoft JhengHei", sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
         ctx.fillText(titleText, 80, 55);
         
-        // 質感行政裝飾格線
         ctx.strokeStyle = '#E7DFD0'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(80, 125); ctx.lineTo(1840, 125); ctx.stroke();
         
-        // 計算縮放區塊並貼合剩下空間
         var availW = 1760; var availH = 1130; var ratio = Math.min(availW / img.width, availH / img.height);
         var finalW = img.width * ratio; var finalH = img.height * ratio;
         ctx.drawImage(img, 80 + (availW - finalW)/2, 160 + (availH - finalH)/2, finalW, finalH);
@@ -1289,7 +1280,7 @@
   }
 
   // ==========================================
-  // 模組 5: 記事提醒 (含行事曆與標籤)
+  // 模組 5: 記事提醒 (含行事曆、四象限與拖拉)
   // ==========================================
   var notes = safeGet('admin_notes_v4', []);
   var editingNoteId = null; 
@@ -1302,26 +1293,27 @@
     var body = document.getElementById('newNoteBody').value.trim();
     var date = document.getElementById('newNoteDate').value;
     var color = document.getElementById('newNoteColor').value;
+    var isImp = document.getElementById('newNoteImp').value === 'true';
+    var isUrg = document.getElementById('newNoteUrg').value === 'true';
     if (!title) return showMsg('請輸入標題！');
     
     if (editingNoteId) {
       var note = notes.find(function(n) { return n.id === editingNoteId; });
-      if (note) { note.title = title; note.body = body; note.due = date; note.color = color; note.completed = false; }
+      if (note) { 
+        note.title = title; note.body = body; note.due = date; note.color = color; 
+        note.important = isImp; note.urgent = isUrg; note.completed = false; 
+      }
       showMsg('✅ 記事已成功更新！'); cancelEditNote(); 
     } else {
-      notes.push({ id: Date.now().toString(), title: title, body: body, due: date, color: color, completed: false });
-      document.getElementById('newNoteTitle').value = ''; document.getElementById('newNoteBody').value = ''; document.getElementById('newNoteDate').value = ''; document.getElementById('newNoteColor').value = 'c-green';
+      notes.push({ id: Date.now().toString(), title: title, body: body, due: date, color: color, important: isImp, urgent: isUrg, completed: false });
+      document.getElementById('newNoteTitle').value = ''; document.getElementById('newNoteBody').value = ''; document.getElementById('newNoteDate').value = ''; 
     }
     saveNotes();
   }
 
   function completeNote(id) {
     var note = notes.find(function(n) { return n.id === id; });
-    if (note) {
-      note.completed = true;
-      saveNotes();
-      showToast('✅ 記事已標示為完成！');
-    }
+    if (note) { note.completed = true; saveNotes(); showToast('✅ 記事已標示為完成！'); }
   }
 
   function editNote(id) {
@@ -1334,6 +1326,8 @@
     document.getElementById('newNoteBody').value = note.body || '';
     document.getElementById('newNoteDate').value = note.due || '';
     document.getElementById('newNoteColor').value = note.color || 'c-green';
+    document.getElementById('newNoteImp').value = note.important !== false ? 'true' : 'false';
+    document.getElementById('newNoteUrg').value = note.urgent !== false ? 'true' : 'false';
     
     document.getElementById('saveNoteBtn').textContent = '更新儲存';
     document.getElementById('cancelNoteBtn').style.display = 'block';
@@ -1344,6 +1338,7 @@
     editingNoteId = null;
     document.getElementById('noteFormTitle').innerHTML = '新增記事/待辦';
     document.getElementById('newNoteTitle').value = ''; document.getElementById('newNoteBody').value = ''; document.getElementById('newNoteDate').value = ''; document.getElementById('newNoteColor').value = 'c-green';
+    document.getElementById('newNoteImp').value = 'true'; document.getElementById('newNoteUrg').value = 'true';
     document.getElementById('saveNoteBtn').textContent = '儲存'; document.getElementById('cancelNoteBtn').style.display = 'none';
   }
 
@@ -1355,12 +1350,33 @@
     });
   }
 
-  // 點擊月曆格子觸發新增
   function clickCalendarDay(dateStr) {
     cancelEditNote();
     document.getElementById('newNoteDate').value = dateStr;
     document.getElementById('newNoteTitle').focus();
     document.getElementById('noteFormTitle').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // --- 拖拉 (Drag & Drop) 事件 ---
+  function handleDragStart(e, id) { e.dataTransfer.setData('text/plain', id); }
+  function handleDragOver(e) { e.preventDefault(); e.currentTarget.style.background = '#f0f7f5'; }
+  function handleDragLeave(e) { e.currentTarget.style.background = ''; }
+  function handleDrop(e, dateStr) {
+    e.preventDefault(); e.currentTarget.style.background = '';
+    var id = e.dataTransfer.getData('text/plain'); if(!id) return;
+    
+    var noteIdx = notes.findIndex(function(n) { return n.id === id; });
+    if(noteIdx > -1) {
+      var note = notes[noteIdx];
+      if (e.ctrlKey || e.metaKey) {
+        var newNote = Object.assign({}, note);
+        newNote.id = Date.now().toString(); newNote.due = dateStr; newNote.completed = false;
+        notes.push(newNote); showToast('✅ 事項已成功複製！');
+      } else {
+        note.due = dateStr; showToast('✅ 事項已成功移動！');
+      }
+      saveNotes();
+    }
   }
 
   function changeMonth(delta) { currentCalDate.setMonth(currentCalDate.getMonth() + delta); renderCalendar(); }
@@ -1384,13 +1400,14 @@
       var dateStr = year + '-' + String(month+1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
       var isToday = (dateStr === todayStr);
       
-      html += '<div class="cal-td ' + (isToday ? 'today' : '') + '" onclick="clickCalendarDay(\'' + dateStr + '\')">';
+      html += '<div class="cal-td ' + (isToday ? 'today' : '') + '" onclick="clickCalendarDay(\'' + dateStr + '\')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, \'' + dateStr + '\')">';
       html += '<div class="cal-date">' + d + '</div>';
       
       var dayNotes = notes.filter(function(n) { return n.due === dateStr; });
       dayNotes.forEach(function(n) {
         var cls = 'cal-item ' + (n.completed ? 'c-completed' : (n.color || 'c-green'));
-        html += '<div class="' + cls + '" onclick="event.stopPropagation(); editNote(\'' + n.id + '\')" title="' + n.title + (n.completed ? ' (已完成)' : ' (點擊修改)') + '">' + n.title + '</div>';
+        var dragTip = n.completed ? ' (已完成)' : ' (💡按住可拖曳移動，+Ctrl鍵拖曳可複製)';
+        html += '<div class="' + cls + '" draggable="true" ondragstart="handleDragStart(event, \'' + n.id + '\')" onclick="event.stopPropagation(); editNote(\'' + n.id + '\')" title="' + n.title + dragTip + '">' + n.title + '</div>';
       });
       html += '</div>';
     }
@@ -1400,56 +1417,95 @@
   function renderNotes() {
     var grid = document.getElementById('noteGrid'); var emptyState = document.getElementById('emptyState'); var dueBar = document.getElementById('dueBar');
     var query = document.getElementById('searchNote').value.toLowerCase(); var urgentCount = 0;
-    grid.innerHTML = '';
     
-    var filtered = notes.filter(function(n) { 
+    var activeNotes = notes.filter(function(n) { 
       if (n.completed) return false; 
       if (!query) return true; 
       return n.title.toLowerCase().includes(query) || (n.body||'').toLowerCase().includes(query); 
     });
 
-    if (filtered.length === 0) { emptyState.style.display = 'block'; } 
-    else {
+    if (activeNotes.length === 0 && !query) { 
+      emptyState.style.display = 'block'; grid.innerHTML = '';
+    } else {
       emptyState.style.display = 'none';
-      filtered.sort(function(a, b) {
-        if(!a.due && !b.due) return b.id - a.id; if(!a.due) return 1; if(!b.due) return -1;
-        return new Date(a.due) - new Date(b.due);
-      });
-
+      
+      var q1 = [], q2 = [], q3 = [], q4 = [];
       var today = new Date(); today.setHours(0,0,0,0);
 
-      filtered.forEach(function(note) {
+      activeNotes.forEach(function(note) {
+        var imp = note.important !== false; // 預設或沒標記都算重要
+        var urg = note.urgent !== false;    // 預設或沒標記都算緊急
+        
+        if (imp && urg) q1.push(note);
+        else if (imp && !urg) q2.push(note);
+        else if (!imp && urg) q3.push(note);
+        else q4.push(note);
+
+        if(note.due) {
+          var dueDate = new Date(note.due); dueDate.setHours(0,0,0,0);
+          var diff = Math.ceil((dueDate - today) / 86400000);
+          if (diff <= 0) urgentCount++;
+        }
+      });
+
+      var buildCard = function(note) {
         var stateClass = 'due-safe'; var stateText = '無期限';
         if(note.due) {
           var dueDate = new Date(note.due); dueDate.setHours(0,0,0,0);
           var diff = Math.ceil((dueDate - today) / 86400000);
-          if (diff < 0) { stateClass = 'due-over'; stateText = '逾期 ' + Math.abs(diff) + ' 天'; urgentCount++; }
-          else if (diff === 0) { stateClass = 'due-today'; stateText = '今天到期！'; urgentCount++; }
+          if (diff < 0) { stateClass = 'due-over'; stateText = '逾期 ' + Math.abs(diff) + ' 天'; }
+          else if (diff === 0) { stateClass = 'due-today'; stateText = '今天到期！'; }
           else { stateText = '剩餘 ' + diff + ' 天'; }
         }
 
-        var el = document.createElement('div'); el.className = 'note-card fade';
-        // 標籤顏色條
+        var el = document.createElement('div'); el.className = 'note-card fade'; el.style.marginBottom = '12px';
+        
         var colorBar = document.createElement('div'); colorBar.className = note.color || 'c-green';
-        colorBar.style.cssText = 'position:absolute; left:0; top:0; bottom:0; width:6px; border-radius:12px 0 0 12px;';
+        colorBar.style.cssText = 'position:absolute; left:0; top:0; bottom:0; width:6px; border-radius:8px 0 0 8px;';
         el.appendChild(colorBar);
-        el.style.paddingLeft = '24px'; // 讓出顏色條空間
+        el.style.paddingLeft = '20px'; 
         
         var topDiv = document.createElement('div');
         var titleDiv = document.createElement('div'); titleDiv.className = 'note-title'; titleDiv.textContent = note.title; topDiv.appendChild(titleDiv);
-        
         if(note.body) { var bodyDiv = document.createElement('div'); bodyDiv.className = 'note-body'; bodyDiv.textContent = note.body; topDiv.appendChild(bodyDiv); }
         
         var dueDiv = document.createElement('div'); dueDiv.className = 'note-due ' + stateClass; dueDiv.textContent = note.due ? '📅 ' + note.due + ' (' + stateText + ')' : '📌 無期限'; topDiv.appendChild(dueDiv); el.appendChild(topDiv);
         
-        var btnDiv = document.createElement('div'); btnDiv.style.marginTop = '12px'; btnDiv.style.textAlign = 'right'; btnDiv.style.borderTop = '1px solid #eee'; btnDiv.style.paddingTop = '10px';
+        var btnDiv = document.createElement('div'); btnDiv.style.marginTop = '12px'; btnDiv.style.textAlign = 'right'; btnDiv.style.borderTop = '1px dashed #eee'; btnDiv.style.paddingTop = '10px';
         
-        var editBtn = document.createElement('button'); editBtn.className = 'btn btn-outline'; editBtn.style.padding = '4px 8px'; editBtn.style.fontSize = '12px'; editBtn.style.marginRight = '8px'; editBtn.textContent = '✏️ 修改'; editBtn.onclick = function() { editNote(note.id); };
-        var completeBtn = document.createElement('button'); completeBtn.className = 'btn btn-outline'; completeBtn.style.padding = '4px 8px'; completeBtn.style.fontSize = '12px'; completeBtn.style.marginRight = '8px'; completeBtn.style.color = 'var(--go)'; completeBtn.style.borderColor = 'var(--go)'; completeBtn.textContent = '✅ 完成'; completeBtn.onclick = function() { completeNote(note.id); };
-        var delBtn = document.createElement('button'); delBtn.className = 'btn btn-outline'; delBtn.style.padding = '4px 8px'; delBtn.style.fontSize = '12px'; delBtn.style.color = 'var(--danger)'; delBtn.textContent = '🗑️ 刪除'; delBtn.onclick = function() { deleteNote(note.id); };
+        var editBtn = document.createElement('button'); editBtn.className = 'btn btn-outline'; editBtn.style.padding = '4px 8px'; editBtn.style.fontSize = '12px'; editBtn.style.marginRight = '6px'; editBtn.textContent = '✏️修改'; editBtn.onclick = function() { editNote(note.id); };
+        var completeBtn = document.createElement('button'); completeBtn.className = 'btn btn-outline'; completeBtn.style.padding = '4px 8px'; completeBtn.style.fontSize = '12px'; completeBtn.style.marginRight = '6px'; completeBtn.style.color = 'var(--go)'; completeBtn.style.borderColor = 'var(--go)'; completeBtn.textContent = '✅完成'; completeBtn.onclick = function() { completeNote(note.id); };
+        var delBtn = document.createElement('button'); delBtn.className = 'btn btn-outline'; delBtn.style.padding = '4px 8px'; delBtn.style.fontSize = '12px'; delBtn.style.color = 'var(--danger)'; delBtn.textContent = '🗑️刪除'; delBtn.onclick = function() { deleteNote(note.id); };
         
-        btnDiv.appendChild(editBtn); btnDiv.appendChild(completeBtn); btnDiv.appendChild(delBtn); el.appendChild(btnDiv); grid.appendChild(el);
-      });
+        btnDiv.appendChild(editBtn); btnDiv.appendChild(completeBtn); btnDiv.appendChild(delBtn); el.appendChild(btnDiv); 
+        return el;
+      };
+
+      var buildQuadrant = function(title, titleClass, arr) {
+        var div = document.createElement('div'); div.className = 'matrix-quadrant';
+        var h = document.createElement('div'); h.className = 'quad-title ' + titleClass; 
+        h.innerHTML = title + ' <span style="background:#eee; padding:2px 6px; border-radius:4px; font-size:12px; color:#555;">' + arr.length + '</span>';
+        div.appendChild(h);
+        
+        arr.sort(function(a, b) {
+          if(!a.due && !b.due) return b.id - a.id; if(!a.due) return 1; if(!b.due) return -1;
+          return new Date(a.due) - new Date(b.due);
+        });
+        
+        arr.forEach(function(n) { div.appendChild(buildCard(n)); });
+        if(arr.length === 0) {
+          var empty = document.createElement('div'); empty.style.color = 'var(--sub)'; empty.style.fontSize = '13px'; empty.style.textAlign = 'center'; empty.style.marginTop = '40px'; empty.innerText = '目前無事項';
+          div.appendChild(empty);
+        }
+        return div;
+      };
+
+      grid.innerHTML = '';
+      grid.className = 'matrix-grid';
+      grid.appendChild(buildQuadrant('🔥 重要且急 (Q1)', 'q1-title', q1));
+      grid.appendChild(buildQuadrant('🎯 重要不急 (Q2)', 'q2-title', q2));
+      grid.appendChild(buildQuadrant('⚡ 不重要但急 (Q3)', 'q3-title', q3));
+      grid.appendChild(buildQuadrant('☕ 不重要不急 (Q4)', 'q4-title', q4));
     }
 
     var badge = document.getElementById('noteBadge');
