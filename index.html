@@ -7,6 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
+<script src="https://unpkg.com/drag-drop-touch"></script>
 
 <style>
   :root {
@@ -69,9 +70,10 @@
   .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
   
   /* 艾森豪四象限矩陣設計 */
-  .matrix-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 16px; }
-  .matrix-quadrant { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; min-height: 250px;}
-  .quad-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between;}
+  .matrix-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 16px; align-items: start; }
+  .matrix-quadrant { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .quad-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; user-select: none; cursor: pointer; }
+  .quad-title:hover { opacity: 0.8; }
   .q1-title { color: var(--danger); border-bottom-color: var(--dangerSoft); } 
   .q2-title { color: #BE842B; border-bottom-color: var(--goldSoft); } 
   .q3-title { color: #0066FF; border-bottom-color: #CCEEFF; } 
@@ -104,7 +106,7 @@
   .cal-td.empty { background: #fafafa; cursor: default; }
   .cal-td.today { background: var(--goldSoft); }
   .cal-date { font-size: 12px; color: var(--sub); margin-bottom: 4px; text-align: right; }
-  .cal-item { font-size: 11px; padding: 2px 4px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: grab; }
+  .cal-item { font-size: 11px; padding: 2px 4px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: grab; touch-action: none; }
   .cal-item:active { cursor: grabbing; opacity: 0.6; }
   .cal-item:hover { opacity: 0.8; }
   
@@ -142,6 +144,23 @@
     transform: translateY(100px); opacity: 0; transition: all 0.3s ease; z-index: 10000;
   }
   #toastNotification.show { transform: translateY(0); opacity: 1; }
+
+  /* 🌟 手機版 (RWD) 響應式優化設定 */
+  @media (max-width: 768px) {
+    .wrap { padding: 16px 12px 64px; }
+    h1 { font-size: 24px; margin-bottom: 12px; }
+    .tab { padding: 8px 12px; font-size: 13px; }
+    
+    /* 讓兩欄/三欄在手機直向時變單欄排列 */
+    .grid-2, .grid-3 { grid-template-columns: 1fr; gap: 12px; }
+    .matrix-grid { grid-template-columns: 1fr; gap: 12px; }
+    
+    /* 微調行事曆，讓手機畫面塞得下 7 天 */
+    .cal-th { font-size: 12px; padding: 6px 2px; }
+    .cal-td { min-height: 60px; padding: 2px; }
+    .cal-date { font-size: 10px; margin-bottom: 2px; }
+    .cal-item { font-size: 10px; padding: 2px; letter-spacing: -0.5px; }
+  }
 </style>
 </head>
 <body>
@@ -163,8 +182,8 @@
     <div class="kicker">MONTHLY ADMIN TOOLBOX</div>
     <h1>臻的行政百寶箱</h1>
     <div class="tabs">
-      <button class="tab" data-target="settings">⚙️ 系統與備份</button>
-      <button class="tab on" data-target="notes">行事曆 <span id="noteBadge"></span></button>
+      <button class="tab on" data-target="settings">⚙️ 系統與備份</button>
+      <button class="tab" data-target="notes">行事曆 <span id="noteBadge"></span></button>
       <button class="tab" data-target="stats">區域業績統計</button>
       <button class="tab" data-target="poster">百人戰報宣傳圖</button>
       <button class="tab" data-target="merge-jpg">契約書左右合併</button>
@@ -172,6 +191,132 @@
       <button class="tab" data-target="pdf-portfolio">結訓作品集</button>
       <button class="tab" data-target="dashboard">指標儀表板</button>
     </div>
+  </div>
+
+  <div id="settings" class="view active fade">
+    <div class="grid-2">
+      <div class="card">
+        <h3 style="margin-top:0;">💾 離線資料備份與還原</h3>
+        <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">匯出 .json 檔案存放在您的電腦中，作為離線保險。</p>
+        <button class="btn btn-outline" onclick="exportData()" style="width:100%; margin-bottom:20px;">📥 匯出離線備份檔 (.json)</button>
+        
+        <label style="display:block; font-size:14px; font-weight:bold; margin-bottom:8px; color:var(--go);">上傳離線備份檔還原：</label>
+        <input type="file" id="importFile" accept=".json" style="margin-bottom:12px;">
+        <button class="btn btn-outline" onclick="importData()" style="width:100%;">📤 還原離線資料</button>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0;">🔗 常用系統連結</h3>
+        <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">將公司的後台系統、報表或雲端硬碟網址存在這裡，當作您的專屬入口網站。</p>
+        
+        <div id="linksList" style="margin-bottom:16px; display:flex; flex-direction:column; gap:8px;"></div>
+        
+        <div style="border-top:1px dashed var(--line); padding-top:16px;">
+          <input type="text" id="newLinkName" placeholder="連結名稱 (例: 員工出勤系統)" style="margin-bottom:8px;">
+          <input type="text" id="newLinkUrl" placeholder="網址 (例: https://...)" style="margin-bottom:12px;">
+          <button class="btn" onclick="addLink()" style="width:100%;">➕ 新增連結</button>
+        </div>
+      </div>
+      
+      <div class="card" style="margin-top: 16px; border-color: #c0ded6; grid-column: 1 / -1; background: #fdfdfd;">
+        <h3 style="margin-top:0; color:var(--go);">☁️ GitHub 雲端資料同步與圖片自動備份</h3>
+        <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">
+          設定完成後，不僅圖片會自動上傳，每天首次開啟網頁時，也會自動將您的「行事曆、業績」等資料備份到 GitHub 裡！<br>
+          <strong style="color:var(--danger);">📱 手機同步解法：</strong>用手機打開網頁，按下方紅色的「從雲端下載覆蓋」，就能瞬間跟電腦同步！
+        </p>
+        
+        <div class="grid-2" style="margin-bottom: 12px;">
+          <div>
+            <label style="font-size:13px; font-weight:bold; color:var(--sub);">GitHub 帳號名稱 / Private 專案名稱</label>
+            <input type="text" id="ghRepo" placeholder="例: Janetdovely-cloud/LCC_Image_Backup">
+          </div>
+          <div>
+            <label style="font-size:13px; font-weight:bold; color:var(--sub);">Personal Access Token (需勾選 repo 權限)</label>
+            <input type="password" id="ghToken" placeholder="例: ghp_xxxxxxxxxxxxxxxxxxxx">
+          </div>
+        </div>
+        
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
+          <button class="btn" onclick="saveGhConfig()" style="flex:1;">💾 1. 先儲存雲端設定</button>
+          <button class="btn btn-outline" onclick="syncToCloud(false)" style="flex:1; border-color:var(--go); color:var(--go);">☁️ 2. 手動強制備份至雲端</button>
+          <button class="btn btn-outline" onclick="syncFromCloud()" style="flex:1; border-color:var(--danger); color:var(--danger);">📥 3. 從雲端下載並覆蓋本機 (手機用)</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 16px; border-color: #c0ded6; grid-column: 1 / -1;">
+        <h3 style="margin-top:0; color:var(--go);">🤖 Telegram 自動推播提醒</h3>
+        <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">設定您的 Telegram Bot Token 與 Chat ID。每天<b>首次開啟本網頁時</b>，系統會自動檢查並將「今天到期」或「逾期」的事項發送到您的 Telegram！</p>
+        <div class="grid-2" style="margin-bottom: 12px;">
+          <div>
+            <label style="font-size:13px; font-weight:bold; color:var(--sub);">Bot Token</label>
+            <input type="text" id="tgToken" placeholder="例: 123456:ABC-DEF1234ghIkl-zyx...">
+          </div>
+          <div>
+            <label style="font-size:13px; font-weight:bold; color:var(--sub);">Chat ID</label>
+            <input type="text" id="tgChatId" placeholder="例: 123456789">
+          </div>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn" onclick="saveTgConfig()">💾 儲存 TG 設定</button>
+          <button class="btn btn-outline" onclick="testTgNotification()">🔔 發送測試推播</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="notes" class="view fade">
+    <div id="dueBar"></div>
+    
+    <div class="cal-wrap">
+      <div class="cal-header">
+        <button onclick="changeMonth(-1)">◀ 上個月</button>
+        <h3 id="calTitle" style="margin:0; font-size:16px;"></h3>
+        <button onclick="changeMonth(1)">下個月 ▶</button>
+      </div>
+      <div id="calGrid" class="cal-grid"></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card" style="background: var(--goSoft); border-color: #c0ded6;">
+        <h3 id="noteFormTitle" style="margin-top:0; color: var(--go);">新增記事/待辦</h3>
+        
+        <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+          <select id="newNoteColor" style="width:90px; margin-bottom:0; padding:8px;">
+            <option value="c-green">就輔(綠)</option>
+            <option value="c-danger">緊急(紅)</option>
+            <option value="c-blue">會議(藍)</option>
+            <option value="c-purple">徵才(紫)</option>
+            <option value="c-orange">開班(橘)</option>
+            <option value="c-gray">結訓(灰)</option>
+            <option value="c-pink">排課(粉)</option>
+            <option value="c-brown">其他(咖)</option>
+          </select>
+          <select id="newNoteImp" style="width:90px; margin-bottom:0; padding:8px;">
+            <option value="true">🔥 重要</option>
+            <option value="false">⚪ 不重要</option>
+          </select>
+          <select id="newNoteUrg" style="width:90px; margin-bottom:0; padding:8px;">
+            <option value="true">⚡ 緊急</option>
+            <option value="false">⏳ 不急</option>
+          </select>
+          <input type="text" id="newNoteTitle" placeholder="事項標題 (必填)" style="flex:1; margin-bottom:0; padding:8px;">
+        </div>
+        
+        <textarea id="newNoteBody" placeholder="詳細內容 (選填)"></textarea>
+        <div style="display:flex; gap:10px;">
+          <input type="date" id="newNoteDate" style="flex:1;">
+          <button id="saveNoteBtn" class="btn" onclick="saveNoteAction()">儲存</button>
+          <button id="cancelNoteBtn" class="btn btn-outline" style="display:none;" onclick="cancelEditNote()">取消</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;">搜尋記事</h3>
+        <input type="text" id="searchNote" placeholder="輸入關鍵字..." onkeyup="renderNotes()">
+      </div>
+    </div>
+    
+    <div id="emptyState" style="text-align:center; padding: 40px; color: var(--sub); display:none;">找不到相關記事。</div>
+    <div id="noteGrid"></div>
   </div>
 
   <div id="stats" class="view fade">
@@ -404,64 +549,9 @@
       <label style="color:var(--go); font-weight:bold; margin-top:20px; display:block;">上傳學員作品 (支援圖片或 PDF，系統將自動提取原檔名做為內頁大標題)：</label>
       <input type="file" id="portImages" accept="image/*,application/pdf" multiple style="background:var(--goSoft);">
       
-  <!-- 記事提醒 -->
-  <div id="notes" class="view fade">
-    <div id="dueBar"></div>
-    
-    <!-- 行事曆區塊 -->
-    <div class="cal-wrap">
-      <div class="cal-header">
-        <button onclick="changeMonth(-1)">◀ 上個月</button>
-        <h3 id="calTitle" style="margin:0; font-size:16px;"></h3>
-        <button onclick="changeMonth(1)">下個月 ▶</button>
-      </div>
-      <!-- 🌟 修改這裡：加入一層 div 用來處理橫向滑動 -->
-      <div class="cal-scroll-area">
-        <div id="calGrid" class="cal-grid"></div>
-      </div>
+      <button class="btn" onclick="generatePortfolioPDF()" id="portBtn" style="margin-top:10px; width: 100%;">📚 開始產生作品集 PDF</button>
+      <div id="portStatus" style="margin-top:12px; font-weight:bold; color:var(--go); font-size: 14px; text-align: center;"></div>
     </div>
-
-    <div class="grid-2">
-      <div class="card" style="background: var(--goSoft); border-color: #c0ded6;">
-        <h3 id="noteFormTitle" style="margin-top:0; color: var(--go);">新增記事/待辦</h3>
-        
-        <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
-          <select id="newNoteColor" style="width:90px; margin-bottom:0; padding:8px;">
-            <option value="c-green">就輔(綠)</option>
-            <option value="c-danger">緊急(紅)</option>
-            <option value="c-blue">會議(藍)</option>
-            <option value="c-purple">徵才(紫)</option>
-            <option value="c-orange">開班(橘)</option>
-            <option value="c-gray">結訓(灰)</option>
-            <option value="c-pink">排課(粉)</option>
-            <option value="c-brown">其他(咖)</option>
-          </select>
-          <select id="newNoteImp" style="width:90px; margin-bottom:0; padding:8px;">
-            <option value="true">🔥 重要</option>
-            <option value="false">⚪ 不重要</option>
-          </select>
-          <select id="newNoteUrg" style="width:90px; margin-bottom:0; padding:8px;">
-            <option value="true">⚡ 緊急</option>
-            <option value="false">⏳ 不急</option>
-          </select>
-          <input type="text" id="newNoteTitle" placeholder="事項標題 (必填)" style="flex:1; margin-bottom:0; padding:8px;">
-        </div>
-        
-        <textarea id="newNoteBody" placeholder="詳細內容 (選填)"></textarea>
-        <div style="display:flex; gap:10px;">
-          <input type="date" id="newNoteDate" style="flex:1;">
-          <button id="saveNoteBtn" class="btn" onclick="saveNoteAction()">儲存</button>
-          <button id="cancelNoteBtn" class="btn btn-outline" style="display:none;" onclick="cancelEditNote()">取消</button>
-        </div>
-      </div>
-      <div class="card">
-        <h3 style="margin-top:0;">搜尋記事</h3>
-        <input type="text" id="searchNote" placeholder="輸入關鍵字..." onkeyup="renderNotes()">
-      </div>
-    </div>
-    
-    <div id="emptyState" style="text-align:center; padding: 40px; color: var(--sub); display:none;">找不到相關記事。</div>
-    <div id="noteGrid"></div>
   </div>
 
   <div id="dashboard" class="view fade">
@@ -485,77 +575,6 @@
         <button class="btn" onclick="saveDashboard()">儲存</button>
         <button class="btn btn-outline" onclick="document.getElementById('dashEditor').style.display='none'">取消</button>
         <button class="btn btn-danger" onclick="resetDashboard()" style="margin-left:auto;">重置數據</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="settings" class="view fade">
-    <div class="grid-2">
-      <div class="card">
-        <h3 style="margin-top:0;">💾 離線資料備份與還原</h3>
-        <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">匯出 .json 檔案存放在您的電腦中，作為離線保險。</p>
-        <button class="btn btn-outline" onclick="exportData()" style="width:100%; margin-bottom:20px;">📥 匯出離線備份檔 (.json)</button>
-        
-        <label style="display:block; font-size:14px; font-weight:bold; margin-bottom:8px; color:var(--go);">上傳離線備份檔還原：</label>
-        <input type="file" id="importFile" accept=".json" style="margin-bottom:12px;">
-        <button class="btn btn-outline" onclick="importData()" style="width:100%;">📤 還原離線資料</button>
-      </div>
-
-      <div class="card">
-        <h3 style="margin-top:0;">🔗 常用系統連結</h3>
-        <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">將公司的後台系統、報表或雲端硬碟網址存在這裡，當作您的專屬入口網站。</p>
-        
-        <div id="linksList" style="margin-bottom:16px; display:flex; flex-direction:column; gap:8px;"></div>
-        
-        <div style="border-top:1px dashed var(--line); padding-top:16px;">
-          <input type="text" id="newLinkName" placeholder="連結名稱 (例: 員工出勤系統)" style="margin-bottom:8px;">
-          <input type="text" id="newLinkUrl" placeholder="網址 (例: https://...)" style="margin-bottom:12px;">
-          <button class="btn" onclick="addLink()" style="width:100%;">➕ 新增連結</button>
-        </div>
-      </div>
-      
-      <div class="card" style="margin-top: 16px; border-color: #c0ded6; grid-column: 1 / -1; background: #fdfdfd;">
-        <h3 style="margin-top:0; color:var(--go);">☁️ GitHub 雲端資料同步與圖片自動備份</h3>
-        <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">
-          設定完成後，不僅圖片會自動上傳，每天首次開啟網頁時，也會自動將您的「行事曆、業績」等資料備份到 GitHub 裡！<br>
-          <strong style="color:var(--danger);">📱 手機同步解法：</strong>用手機打開網頁，按下方紅色的「從雲端下載覆蓋」，就能瞬間跟電腦同步！
-        </p>
-        
-        <div class="grid-2" style="margin-bottom: 12px;">
-          <div>
-            <label style="font-size:13px; font-weight:bold; color:var(--sub);">GitHub 帳號名稱 / Private 專案名稱</label>
-            <input type="text" id="ghRepo" placeholder="例: Janetdovely-cloud/LCC_Image_Backup">
-          </div>
-          <div>
-            <label style="font-size:13px; font-weight:bold; color:var(--sub);">Personal Access Token (需勾選 repo 權限)</label>
-            <input type="password" id="ghToken" placeholder="例: ghp_xxxxxxxxxxxxxxxxxxxx">
-          </div>
-        </div>
-        
-        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
-          <button class="btn" onclick="saveGhConfig()" style="flex:1;">💾 1. 先儲存雲端設定</button>
-          <button class="btn btn-outline" onclick="syncToCloud(false)" style="flex:1; border-color:var(--go); color:var(--go);">☁️ 2. 手動強制備份至雲端</button>
-          <button class="btn btn-outline" onclick="syncFromCloud()" style="flex:1; border-color:var(--danger); color:var(--danger);">📥 3. 從雲端下載並覆蓋本機 (手機用)</button>
-        </div>
-      </div>
-
-      <div class="card" style="margin-top: 16px; border-color: #c0ded6; grid-column: 1 / -1;">
-        <h3 style="margin-top:0; color:var(--go);">🤖 Telegram 自動推播提醒</h3>
-        <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">設定您的 Telegram Bot Token 與 Chat ID。每天<b>首次開啟本網頁時</b>，系統會自動檢查並將「今天到期」或「逾期」的事項發送到您的 Telegram！</p>
-        <div class="grid-2" style="margin-bottom: 12px;">
-          <div>
-            <label style="font-size:13px; font-weight:bold; color:var(--sub);">Bot Token</label>
-            <input type="text" id="tgToken" placeholder="例: 123456:ABC-DEF1234ghIkl-zyx...">
-          </div>
-          <div>
-            <label style="font-size:13px; font-weight:bold; color:var(--sub);">Chat ID</label>
-            <input type="text" id="tgChatId" placeholder="例: 123456789">
-          </div>
-        </div>
-        <div style="display:flex; gap:10px;">
-          <button class="btn" onclick="saveTgConfig()">💾 儲存 TG 設定</button>
-          <button class="btn btn-outline" onclick="testTgNotification()">🔔 發送測試推播</button>
-        </div>
       </div>
     </div>
   </div>
@@ -1285,6 +1304,7 @@
   var notes = safeGet('admin_notes_v4', []);
   var editingNoteId = null; 
   var currentCalDate = new Date(); 
+  var quadState = safeGet('admin_quad_state', { q1: true, q2: true, q3: true, q4: true }); // 記憶收合狀態
 
   function saveNotes() { safeSet('admin_notes_v4', notes); renderNotes(); }
 
@@ -1406,7 +1426,7 @@
       var dayNotes = notes.filter(function(n) { return n.due === dateStr; });
       dayNotes.forEach(function(n) {
         var cls = 'cal-item ' + (n.completed ? 'c-completed' : (n.color || 'c-green'));
-        var dragTip = n.completed ? ' (已完成)' : ' (💡按住可拖曳移動，+Ctrl鍵拖曳可複製)';
+        var dragTip = n.completed ? ' (已完成)' : ' (💡長按可拖曳移動，+Ctrl鍵拖曳可複製)';
         html += '<div class="' + cls + '" draggable="true" ondragstart="handleDragStart(event, \'' + n.id + '\')" onclick="event.stopPropagation(); editNote(\'' + n.id + '\')" title="' + n.title + dragTip + '">' + n.title + '</div>';
       });
       html += '</div>';
@@ -1433,8 +1453,8 @@
       var today = new Date(); today.setHours(0,0,0,0);
 
       activeNotes.forEach(function(note) {
-        var imp = note.important !== false; // 預設或沒標記都算重要
-        var urg = note.urgent !== false;    // 預設或沒標記都算緊急
+        var imp = note.important !== false; 
+        var urg = note.urgent !== false;    
         
         if (imp && urg) q1.push(note);
         else if (imp && !urg) q2.push(note);
@@ -1481,31 +1501,59 @@
         return el;
       };
 
-      var buildQuadrant = function(title, titleClass, arr) {
+      var buildQuadrant = function(title, titleClass, arr, quadKey) {
         var div = document.createElement('div'); div.className = 'matrix-quadrant';
         var h = document.createElement('div'); h.className = 'quad-title ' + titleClass; 
-        h.innerHTML = title + ' <span style="background:#eee; padding:2px 6px; border-radius:4px; font-size:12px; color:#555;">' + arr.length + '</span>';
+        
+        var isOpen = quadState[quadKey] !== false; 
+        
+        var arrow = document.createElement('span');
+        arrow.innerHTML = isOpen ? '▼ ' : '▶ ';
+        arrow.style.fontSize = '10px';
+        arrow.style.marginRight = '6px';
+        arrow.style.transition = 'transform 0.2s';
+        
+        var titleText = document.createElement('span');
+        titleText.innerHTML = title + ' <span style="background:#eee; padding:2px 6px; border-radius:4px; font-size:12px; color:#555;">' + arr.length + '</span>';
+        titleText.style.flex = '1';
+        
+        h.appendChild(arrow);
+        h.appendChild(titleText);
         div.appendChild(h);
+        
+        var contentDiv = document.createElement('div');
+        contentDiv.style.display = isOpen ? 'block' : 'none'; 
         
         arr.sort(function(a, b) {
           if(!a.due && !b.due) return b.id - a.id; if(!a.due) return 1; if(!b.due) return -1;
           return new Date(a.due) - new Date(b.due);
         });
         
-        arr.forEach(function(n) { div.appendChild(buildCard(n)); });
+        arr.forEach(function(n) { contentDiv.appendChild(buildCard(n)); });
         if(arr.length === 0) {
           var empty = document.createElement('div'); empty.style.color = 'var(--sub)'; empty.style.fontSize = '13px'; empty.style.textAlign = 'center'; empty.style.marginTop = '40px'; empty.innerText = '目前無事項';
-          div.appendChild(empty);
+          contentDiv.appendChild(empty);
         }
+        
+        div.appendChild(contentDiv);
+        
+        h.onclick = function() {
+          var willOpen = contentDiv.style.display === 'none';
+          contentDiv.style.display = willOpen ? 'block' : 'none';
+          arrow.innerHTML = willOpen ? '▼ ' : '▶ ';
+          quadState[quadKey] = willOpen; 
+          safeSet('admin_quad_state', quadState); // 記憶狀態
+        };
+        
         return div;
       };
 
       grid.innerHTML = '';
       grid.className = 'matrix-grid';
-      grid.appendChild(buildQuadrant('🔥 重要且急 (Q1)', 'q1-title', q1));
-      grid.appendChild(buildQuadrant('🎯 重要不急 (Q2)', 'q2-title', q2));
-      grid.appendChild(buildQuadrant('⚡ 不重要但急 (Q3)', 'q3-title', q3));
-      grid.appendChild(buildQuadrant('☕ 不重要不急 (Q4)', 'q4-title', q4));
+      grid.appendChild(buildQuadrant('🔥 重要且急 (Q1)', 'q1-title', q1, 'q1'));
+      grid.appendChild(buildQuadrant('🎯 重要不急 (Q2)', 'q2-title', q2, 'q2'));
+      grid.appendChild(buildQuadrant('⚡ 不重要但急 (Q3)', 'q3-title', q3, 'q3'));
+      grid.appendChild(buildQuadrant('☕ 不重要不急 (Q4)', 'q4-title', q4, 'q4'));
     }
 
     var badge = document.getElementById('noteBadge');
@@ -1615,13 +1663,29 @@
     if (tgConfig.token && tgConfig.chatId && tgConfig.lastNotified !== todayStr) {
       today.setHours(0,0,0,0);
       var urgentNotes = notes.filter(function(n) {
-        if(!n.due || n.completed) return false; var dueDate = new Date(n.due); dueDate.setHours(0,0,0,0); return dueDate <= today;
+        if(!n.due || n.completed) return false; 
+        var dueDate = new Date(n.due); dueDate.setHours(0,0,0,0); 
+        var diff = Math.ceil((dueDate - today) / 86400000);
+        
+        var isImp = n.important !== false;
+        var isUrg = n.urgent !== false;
+        var isQ4 = (!isImp && !isUrg);
+        
+        if (isQ4 && diff < 0) return false;
+        return diff === 1 || diff === 0 || diff === -1;
       });
+      
       if (urgentNotes.length > 0) {
         var msg = '⚠️ 【每日行政提醒】 ⚠️\n\n';
         urgentNotes.forEach(function(n) {
-          var dueDate = new Date(n.due); dueDate.setHours(0,0,0,0); var diff = Math.ceil((dueDate - today) / 86400000);
-          var statusStr = diff === 0 ? '🔔 [今天到期]' : '🚨 [逾期 ' + Math.abs(diff) + ' 天]'; msg += statusStr + ' ' + n.title + '\n';
+          var dueDate = new Date(n.due); dueDate.setHours(0,0,0,0); 
+          var diff = Math.ceil((dueDate - today) / 86400000);
+          var statusStr = '';
+          if (diff === 1) statusStr = '🔜 [明天到期]';
+          else if (diff === 0) statusStr = '🔔 [今天到期]';
+          else if (diff === -1) statusStr = '🚨 [逾期 1 天]';
+          
+          msg += statusStr + ' ' + n.title + '\n';
         });
         var ok = await sendTelegramMessage(msg);
         if (ok) { tgConfig.lastNotified = todayStr; safeSet('admin_tg_config', tgConfig); }
@@ -1630,7 +1694,6 @@
     
     // 2. 執行 GitHub JSON 資料自動雲端備份檢查
     if (ghConfig.token && ghConfig.repo && ghConfig.lastJsonBackup !== todayStr) {
-      // 延遲執行避免卡住網頁載入
       setTimeout(function() { syncToCloud(true); }, 2000);
     }
   }
