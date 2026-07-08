@@ -4,12 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>臻的行政百寶箱</title>
-<!-- 載入 jsPDF 用於結訓作品集 PDF 生成 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<!-- 載入 PDF.js 用於解析學員上傳的 PDF 作品 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
-<!-- 🌟 載入觸控拖拉引擎：讓手機瀏覽器也能完美支援行事曆觸控長按拖曳 -->
 <script src="https://unpkg.com/drag-drop-touch"></script>
 
 <style>
@@ -169,10 +166,8 @@
 </head>
 <body>
 
-<!-- 浮動通知 -->
 <div id="toastNotification">通知訊息</div>
 
-<!-- 自訂對話框 -->
 <div id="customModalOverlay">
   <div class="modal-box fade">
     <div id="modalMsg" style="font-size: 16px; margin-bottom: 24px; color: var(--ink); line-height: 1.5; white-space: pre-wrap;"></div>
@@ -199,10 +194,8 @@
     </div>
   </div>
 
-  <!-- ⚙️ 系統與備份 (預設停留此頁) -->
   <div id="settings" class="view active fade">
     <div class="grid-2">
-      <!-- 離線備份 -->
       <div class="card">
         <h3 style="margin-top:0;">💾 離線資料備份與還原</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">匯出 .json 檔案存放在您的電腦中，作為離線保險。</p>
@@ -213,7 +206,6 @@
         <button class="btn btn-outline" onclick="importData()" style="width:100%;">📤 還原離線資料</button>
       </div>
 
-      <!-- 常用連結 -->
       <div class="card">
         <h3 style="margin-top:0;">🔗 常用系統連結</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">將公司的後台系統、報表或雲端硬碟網址存在這裡，當作您的專屬入口網站。</p>
@@ -227,7 +219,6 @@
         </div>
       </div>
       
-      <!-- 🌟 GitHub 雲端備份設定區 -->
       <div class="card" style="margin-top: 16px; border-color: #c0ded6; grid-column: 1 / -1; background: #fdfdfd;">
         <h3 style="margin-top:0; color:var(--go);">☁️ GitHub 雲端資料同步與圖片自動備份</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">
@@ -253,7 +244,6 @@
         </div>
       </div>
 
-      <!-- Telegram 設定區 -->
       <div class="card" style="margin-top: 16px; border-color: #c0ded6; grid-column: 1 / -1;">
         <h3 style="margin-top:0; color:var(--go);">🤖 Telegram 自動推播提醒</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">設定您的 Telegram Bot Token 與 Chat ID。每天<b>首次開啟本網頁時</b>，系統會自動檢查並將「今天到期」或「逾期」的事項發送到您的 Telegram！</p>
@@ -275,7 +265,6 @@
     </div>
   </div>
 
-  <!-- 📅 行事曆區塊 -->
   <div id="notes" class="view fade">
     <div id="dueBar"></div>
     
@@ -285,7 +274,6 @@
         <h3 id="calTitle" style="margin:0; font-size:16px;"></h3>
         <button onclick="changeMonth(1)">下個月 ▶</button>
       </div>
-      <!-- 橫向可滑動容器包裹行事曆表格 -->
       <div class="cal-scroll-area">
         <div id="calGrid" class="cal-grid"></div>
       </div>
@@ -295,9 +283,8 @@
       <div class="card" style="background: var(--goSoft); border-color: #c0ded6;">
         <h3 id="noteFormTitle" style="margin-top:0; color: var(--go);">新增記事/待辦</h3>
         
-        <!-- 🌟 新增記事表單：支援左右滑動的彈性區塊 -->
-        <div style="display:flex; gap:8px; margin-bottom:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:8px;">
-          <select id="newNoteColor" style="flex:0 0 auto; width:90px; margin-bottom:0; padding:8px;">
+        <div style="display:flex; flex-wrap:nowrap; gap:8px; margin-bottom:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:8px; width:100%;">
+          <select id="newNoteColor" style="flex:0 0 95px; width:90px; margin-bottom:0; padding:8px;">
             <option value="c-green">就輔(綠)</option>
             <option value="c-danger">緊急(紅)</option>
             <option value="c-blue">會議(藍)</option>
@@ -307,15 +294,15 @@
             <option value="c-pink">排課(粉)</option>
             <option value="c-brown">其他(咖)</option>
           </select>
-          <select id="newNoteImp" style="flex:0 0 auto; width:90px; margin-bottom:0; padding:8px;">
+          <select id="newNoteImp" style="flex:0 0 95px; width:90px; margin-bottom:0; padding:8px;">
             <option value="true">🔥 重要</option>
             <option value="false">⚪ 不重要</option>
           </select>
-          <select id="newNoteUrg" style="flex:0 0 auto; width:90px; margin-bottom:0; padding:8px;">
+          <select id="newNoteUrg" style="flex:0 0 95px; width:90px; margin-bottom:0; padding:8px;">
             <option value="true">⚡ 緊急</option>
             <option value="false">⏳ 不急</option>
           </select>
-          <input type="text" id="newNoteTitle" placeholder="事項標題 (必填)" style="flex:1; min-width:200px; margin-bottom:0; padding:8px;">
+          <input type="text" id="newNoteTitle" placeholder="事項標題 (必填)" style="flex:1 0 200px; min-width:200px; margin-bottom:0; padding:8px;">
         </div>
         
         <textarea id="newNoteBody" placeholder="詳細內容 (選填)"></textarea>
@@ -335,7 +322,6 @@
     <div id="noteGrid"></div>
   </div>
 
-  <!-- 📊 區域業績統計 -->
   <div id="stats" class="view fade">
     <div class="grid-2">
       <div class="card">
@@ -371,7 +357,6 @@
     </div>
   </div>
 
-  <!-- 🎨 百人戰報宣傳圖 -->
   <div id="poster" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">百人戰報宣傳圖 (自動套版)</h3>
@@ -434,7 +419,6 @@
     </div>
   </div>
 
-  <!-- 📑 契約書左右合併 -->
   <div id="merge-jpg" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">契約書左右合併 (輸出 JPG)</h3>
@@ -473,7 +457,6 @@
     </div>
   </div>
 
-  <!-- 📑 廠商契約 (上下合併) -->
   <div id="vendor-contract" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">廠商契約 (上下合併輸出 JPG)</h3>
@@ -500,7 +483,6 @@
     </div>
   </div>
 
-  <!-- 📚 結訓作品集 -->
   <div id="pdf-portfolio" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">結訓作品集 PDF (自動內頁標題版)</h3>
@@ -562,7 +544,6 @@
         </div>
       </div>
       
-      <!-- 👀 封面即時預覽 -->
       <div style="margin-top: 20px; text-align: center; border-top: 1px dashed var(--line); padding-top: 20px;">
         <label style="font-weight:bold; font-size:14px; color:var(--go); margin-bottom: 12px; display:block;">👀 封面即時預覽 (PDF將依此畫面生成)</label>
         <canvas id="portCoverPreview" width="2376" height="1680" style="max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);"></canvas>
@@ -576,7 +557,6 @@
     </div>
   </div>
 
-  <!-- 📈 指標儀表板 -->
   <div id="dashboard" class="view fade">
     <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
       <h3 style="margin:0;">本月營運指標</h3>
@@ -642,7 +622,7 @@
     };
   }
 
-  // 🌟 分頁安全防錯切換綁定 (修正 RWD Click 與內嵌 Badge 錯誤)
+  // 🌟 分頁安全防錯切換綁定
   document.querySelectorAll('.tab').forEach(function(tab) {
     tab.addEventListener('click', function(e) {
       document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('on'); });
@@ -768,7 +748,7 @@
     
     var path = 'Toolbox_Cloud_Sync_V2.json';
     var repoPath = ghConfig.repo.replace('https://github.com/', '').replace(/\/$/, '');
-    var url = 'https://api.github.com/repos/' + repoPath + '/contents/' + path;
+    url = 'https://api.github.com/repos/' + repoPath + '/contents/' + path;
 
     try {
       var res = await fetch(url, { 
@@ -814,7 +794,6 @@
   // ==========================================
   var REGIONS = [
     { key: '桃園', slogan: '桃園-桃園衝衝衝！做就對了！', people: ['譽人', '俊亨', '聖潔'] },
-    // 🌟 已更新：刪除宇佑
     { key: '中壢', slogan: '中壢-問心無愧 !!! 我全兜要 !!!', people: ['世勳', '旻儒', '慧君'] },
     { key: '新竹', slogan: '新竹-錢進新竹！勇奪第一', people: ['婷薇', '嘉祥', '思靜', '松源'] }
   ];
@@ -902,7 +881,6 @@
     REGIONS.forEach(function(r) { r.people.forEach(function(p) { allNames.push(p); }); });
     
     var s = str;
-    // 🌟 已更新：加入「米飛」的自動轉換
     s = s.replace(/miffy/gi, '婷薇').replace(/米飛/g, '婷薇').replace(/小花/g, '語桐').replace(/小米/g, '旻儒');
     
     var hits = [];
@@ -1163,7 +1141,7 @@
       };
       img2.onerror = function() { status.innerText = '❌ 第二張圖片載入失敗。'; btn.disabled = false; };
     };
-    img1.onerror = function() { status.innerText = '❌ 第一張圖片載入失敗。'; btn.disabled = false; };
+    img1.onerror = function() { status.innerText = '❌ 第一張圖片載入失敗'].pdf'; btn.disabled = false; };
   }
 
   // ==========================================
@@ -1299,7 +1277,7 @@
 
       var backCoverImgData = null;
       if (backCoverFile) {
-        backCoverImgData = await getResizedImageData(backCoverFile);
+        backCoverImgData = await getResizedImageData(file);
       } else if (CONFIG.PORTFOLIO_BACKCOVER_URL) {
         try {
           backCoverImgData = await new Promise(function(resolve, reject) {
