@@ -7,6 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
+<script src="https://unpkg.com/drag-drop-touch"></script>
 
 <style>
   :root {
@@ -105,7 +106,7 @@
   .cal-td.empty { background: #fafafa; cursor: default; }
   .cal-td.today { background: var(--goldSoft); }
   .cal-date { font-size: 12px; color: var(--sub); margin-bottom: 4px; text-align: right; }
-  .cal-item { font-size: 11px; padding: 2px 4px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: grab; }
+  .cal-item { font-size: 11px; padding: 2px 4px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: grab; touch-action: none; }
   .cal-item:active { cursor: grabbing; opacity: 0.6; }
   .cal-item:hover { opacity: 0.8; }
   
@@ -143,6 +144,23 @@
     transform: translateY(100px); opacity: 0; transition: all 0.3s ease; z-index: 10000;
   }
   #toastNotification.show { transform: translateY(0); opacity: 1; }
+
+  /* 🌟 手機版 (RWD) 響應式優化設定 */
+  @media (max-width: 768px) {
+    .wrap { padding: 16px 12px 64px; }
+    h1 { font-size: 24px; margin-bottom: 12px; }
+    .tab { padding: 8px 12px; font-size: 13px; }
+    
+    /* 讓兩欄/三欄在手機直向時變單欄排列 */
+    .grid-2, .grid-3 { grid-template-columns: 1fr; gap: 12px; }
+    .matrix-grid { grid-template-columns: 1fr; gap: 12px; }
+    
+    /* 微調行事曆，讓手機畫面塞得下 7 天 */
+    .cal-th { font-size: 12px; padding: 6px 2px; }
+    .cal-td { min-height: 60px; padding: 2px; }
+    .cal-date { font-size: 10px; margin-bottom: 2px; }
+    .cal-item { font-size: 10px; padding: 2px; letter-spacing: -0.5px; }
+  }
 </style>
 </head>
 <body>
@@ -1286,7 +1304,7 @@
   var notes = safeGet('admin_notes_v4', []);
   var editingNoteId = null; 
   var currentCalDate = new Date(); 
-  var quadState = { q1: true, q2: true, q3: true, q4: true }; // 記錄四象限收合狀態
+  var quadState = safeGet('admin_quad_state', { q1: true, q2: true, q3: true, q4: true }); // 記憶收合狀態
 
   function saveNotes() { safeSet('admin_notes_v4', notes); renderNotes(); }
 
@@ -1408,7 +1426,7 @@
       var dayNotes = notes.filter(function(n) { return n.due === dateStr; });
       dayNotes.forEach(function(n) {
         var cls = 'cal-item ' + (n.completed ? 'c-completed' : (n.color || 'c-green'));
-        var dragTip = n.completed ? ' (已完成)' : ' (💡按住可拖曳移動，+Ctrl鍵拖曳可複製)';
+        var dragTip = n.completed ? ' (已完成)' : ' (💡長按可拖曳移動，+Ctrl鍵拖曳可複製)';
         html += '<div class="' + cls + '" draggable="true" ondragstart="handleDragStart(event, \'' + n.id + '\')" onclick="event.stopPropagation(); editNote(\'' + n.id + '\')" title="' + n.title + dragTip + '">' + n.title + '</div>';
       });
       html += '</div>';
@@ -1435,8 +1453,8 @@
       var today = new Date(); today.setHours(0,0,0,0);
 
       activeNotes.forEach(function(note) {
-        var imp = note.important !== false; // 預設或沒標記都算重要
-        var urg = note.urgent !== false;    // 預設或沒標記都算緊急
+        var imp = note.important !== false; 
+        var urg = note.urgent !== false;    
         
         if (imp && urg) q1.push(note);
         else if (imp && !urg) q2.push(note);
@@ -1486,7 +1504,6 @@
       var buildQuadrant = function(title, titleClass, arr, quadKey) {
         var div = document.createElement('div'); div.className = 'matrix-quadrant';
         var h = document.createElement('div'); h.className = 'quad-title ' + titleClass; 
-        h.style.cursor = 'pointer'; 
         
         var isOpen = quadState[quadKey] !== false; 
         
@@ -1525,6 +1542,7 @@
           contentDiv.style.display = willOpen ? 'block' : 'none';
           arrow.innerHTML = willOpen ? '▼ ' : '▶ ';
           quadState[quadKey] = willOpen; 
+          safeSet('admin_quad_state', quadState); // 記憶狀態
         };
         
         return div;
@@ -1653,10 +1671,7 @@
         var isUrg = n.urgent !== false;
         var isQ4 = (!isImp && !isUrg);
         
-        // 如果是不重要且不急(Q4)，且已經逾期 (diff < 0)，就不提醒
         if (isQ4 && diff < 0) return false;
-        
-        // 只提醒 前一天(diff=1)、當天(diff=0)、逾期1天(diff=-1)
         return diff === 1 || diff === 0 || diff === -1;
       });
       
@@ -1679,7 +1694,6 @@
     
     // 2. 執行 GitHub JSON 資料自動雲端備份檢查
     if (ghConfig.token && ghConfig.repo && ghConfig.lastJsonBackup !== todayStr) {
-      // 延遲執行避免卡住網頁載入
       setTimeout(function() { syncToCloud(true); }, 2000);
     }
   }
