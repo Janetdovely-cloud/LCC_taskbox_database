@@ -1026,21 +1026,23 @@
 
     const status = document.getElementById('pdfLoadingStatus');
     const textArea = document.getElementById('rcResumeText');
-  
-    status.innerText = '⏳ 正在讀取 PDF 文字（校正繁體中文編碼）...';
-    textArea.value = ''; 
+    const pdfVersion = '2.16.105'; // 確保這與您 head 引入的版本一致
+
+    status.innerText = '⏳ 正在解析 104 專用編碼 (Identity-H)...';
+    textArea.value = '';
 
     try {
         const arrayBuffer = await file.arrayBuffer();
-        
-        // --- 關鍵修正：加入 CMap 設定 ---
+
+        // 核心修正：使用 unpkg 來源，並確保路徑完全正確
         const loadingTask = pdfjsLib.getDocument({
             data: arrayBuffer,
-            // 這是解決亂碼的關鍵：從 CDN 載入中文字體對照表
-            cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/cmaps/',
+            // 解決 Identity-H 亂碼的關鍵對照表
+            cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfVersion}/cmaps/`,
             cMapPacked: true,
+            // 處理部分標準字體遺失的問題
+            standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfVersion}/standard_fonts/`
         });
-        // ------------------------------
 
         const pdf = await loadingTask.promise;
         let fullText = '';
@@ -1049,32 +1051,36 @@
             const page = await pdf.getPage(i);
             const textContent = await page.getTextContent();
             
-            // 提取文字片段並合併
-            const pageText = textContent.items.map(item => item.str).join('');
+            // 104 履歷中，中文字元有時會被切得很碎，合併時不留空格
+            const pageText = textContent.items.map(item => {
+                // 如果文字物件中有 'str' 屬性則使用，否則跳過
+                return item.str ? item.str : "";
+            }).join("");
+            
             fullText += `--- 第 ${i} 頁 ---\n${pageText}\n\n`;
         }
 
-        if (fullText.trim().length < 20) {
-            status.innerHTML = '⚠️ 提取文字過少。如果此 PDF 是圖片掃描檔，則無法讀取文字。';
+        // 檢查是否仍然抓到亂碼（檢查是否有過多方塊字或空白）
+        if (fullText.replace(/[\s\d\w\p{P}]/gu, "").length === 0) {
+            status.innerHTML = '⚠️ 偵測到編碼異常。請嘗試：<br>1. 用 Chrome 打開履歷 > 列印 > 另存為 PDF 再上傳。<br>2. 或是直接複製網頁履歷內容貼上。';
         } else {
             status.innerText = '✅ 繁體中文讀取成功！';
         }
-    
+
         textArea.value = fullText;
-    
-        // 自動提取姓名 (簡單邏輯)
+
+        // 自動提取姓名 (104 履歷姓名通常在開頭)
         if (!document.getElementById('rcName').value) {
             const lines = fullText.split('\n').filter(l => l.trim().length > 0);
-            if (lines.length > 0) {
-                // 嘗試抓取非裝飾性的第一行
-                const nameCandidate = lines.find(l => !l.includes('--- 第'));
-                if(nameCandidate) document.getElementById('rcName').value = nameCandidate.substring(0, 10).trim();
+            if (lines.length > 1) {
+                // 104 導出的 PDF 姓名通常在第一頁標題下方
+                document.getElementById('rcName').value = lines[1].substring(0, 10).trim();
             }
         }
 
-      } catch (error) {
-          console.error('PDF 解析錯誤:', error);
-          status.innerText = '❌ 讀取失敗：' + error.message;
+    } catch (error) {
+        console.error('PDF 解析錯誤:', error);
+        status.innerText = '❌ 讀取失敗，請確認檔案是否加密。';
       }
   });
 
