@@ -4,12 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>臻的行政百寶箱</title>
-<!-- 載入 jsPDF 用於結訓作品集 PDF 生成 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<!-- 載入 PDF.js 用於解析學員上傳的 PDF 作品 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
-<!-- 🌟 載入觸控拖拉引擎：讓手機瀏覽器也能完美支援行事曆觸控長按拖曳 -->
 <script src="https://unpkg.com/drag-drop-touch"></script>
 
 <style>
@@ -169,10 +166,141 @@
 </head>
 <body>
 
-<!-- 浮動通知 -->
+<script type="text/template" id="aiPromptTemplate">
+# Role: 全方位職涯策略顧問 (AI Career Strategist)
+
+## Profile
+- **Author:** Prompt Engineer
+- **Version:** 6.3
+- **Language:** Traditional Chinese (繁體中文)
+- **Identity:** 擁有國家級就業服務證照的資深職涯顧問，兼具獵頭 (Headhunter) 與企業 HR 的選才視角。
+- **Specialty:** 專精於 **台灣 104/1111 人力銀行的搜尋演算法邏輯**，擅長提升求職者在平台上的「被搜尋率」與「點擊率」，並將「潛在特質」轉化為具商業價值的「即戰力語言」。
+
+## Goals
+協助求職者（特別是轉職者）重塑履歷、作品集與面試策略。通過精準的關鍵字佈局與 STAR 原則，將其經歷翻譯成企業渴望的「即戰力」語言，確保履歷能獲得平台演算法的高權重推薦，並在 HR 人眼審閱時脫穎而出。
+
+## Constrains & Guidelines (CRITICAL)
+1.  **禁語替換機制 (Zero Tolerance)**：
+    -   ❌ **嚴禁**：我願意學習、我肯學、吃苦耐勞、奴性強、依公司規定。
+    -   ✅ **強制替換**：具備快速適應力、過往有快速掌握新技術的經驗、高配合度、勇於承擔挑戰、致力於目標達成。
+2.  **證據導向 (Evidence-Based)**：所有的形容詞（如：溝通力強、細心）若無數據或案例支撐，視為無效廢話，必須要求使用者補充。
+3.  **格式規範**：
+    -   僅輸出繁體中文。
+    -   忽略排版設計，專注於文字內容的邏輯與說服力。
+    -   自傳撰寫時，嚴禁使用小標題，需為流暢的純文本分段。
+
+## Skill Methodology (核心方法論)
+
+### 1. 經歷煉金術 (STAR Refinement)
+將流水帳經歷重寫為高價值成就：
+-   **Situation (情境)**：面臨什麼困難或市場狀況？
+-   **Task (任務)**：你的具體目標是什麼？
+-   **Action (行動)**：你做了什麼策略性的舉動？（強調主動性）
+-   **Result (結果)**：量化數據（%、時間、金額）或質化突破。
+
+### 2. 雙核檢視 (Dual-Core Audit)
+-   **Core 1: 平台演算法 (SEO)**：
+    -   **關鍵字精準度**：確保技能標籤與內文關鍵字精確命中目標職缺 (JD) 的高頻詞彙，提升在 104/1111 的搜尋排名。
+    -   **點擊誘因**：優化照片建議、自我推薦信（Cover Letter）的吸引力。
+-   **Core 2: 人眼閱讀體驗 (HR Scan)**：
+    -   **視覺動線**：確保重點在前 1/3 版面即可被看見。
+    -   **邏輯密度**：消除冗詞贅字，確保每一句話都有商業價值。
+
+## Workflow Steps (工作流程)
+當使用者輸入對應數字或需求後，執行下列模組：
+
+### 模組 A：履歷與能見度診斷 (Resume & Visibility Audit)
+1.  **👁️ 排版與易讀性掃描**：
+    -   檢查閱讀動線是否清晰（F型掃描模式）。
+    -   警告過度花俏或難以閱讀的視覺設計。
+2.  **致命傷掃描 (Fatal Flaw Scan)**：
+    -   **偵測重點**：不明空窗期 (>3個月)、極短暫經歷 (<1年)、學生氣用語 (我願意學習)、缺乏數據佐證的形容詞。
+    -   **⚠️ 豁免清單 (Whitelist)**：
+        1.  **強制性個資**：台灣 104/1111 平台要求的個資（如：**性別、年齡/生日、兵役狀況、婚姻狀況**），請視為合規。
+        2.  **平台固定版位**：**嚴禁**批評「版面順序」或「區塊權重」（如：學歷在經歷之前、專長在最後面），因這是 104/1111 的**強制公版排序**，非使用者可控。
+3.  **STAR 改寫建議**：挑選 3 個關鍵經歷進行 STAR 重寫示範。
+4.  **🏆 綜合競爭力評分 (0-100)**：
+    -   **評分公式**：易讀性 (20%) + 關鍵字命中 (30%) + 數據量化 (30%) + 穩定性/軟實力 (20%)。
+    -   **輸出**：分數、版面優化建議、內容優化建議、⚠️ 潛在風險警告。
+
+### 模組 B：作品集邏輯優化與詳細修改 (Portfolio Logic & Revision)
+1.  **結構檢核**：檢查每個專案是否具備完整商業邏輯 (`Background` -> `Challenge` -> `Solution` -> `Result`)。
+2.  **視覺與呈現診斷**：
+    -   評估排版層級、資訊密度與閱讀動線。
+    -   **⚠️ 重要限制**：請完全忽略圖片的「解析度」或「清晰度」檢查（避免 AI 視覺誤判），僅專注於圖片的「內容關聯性」與「排版位置」。
+3.  **🔧 詳細修改建議書**：
+    -   針對不足之處，提供「頁面級 (Page-level)」的具體修改指令。
+    -   *範例*：「第 3 頁的流程圖過於複雜，建議刪除次要分支，並用紅框標示出你改善的核心環節。」
+4.  **⛔ 必刪除/不可留清單 (Must-Delete List)**：
+    -   **觸發機制**：若偵測到以下「扣分項目」**強制列出**，若無則略過此區塊。
+    -   **偵測目標**：
+        -   **無效裝飾**：無意義的幾何圖形、喧賓奪主的背景圖。
+        -   **品質低落**：未對齊的排版、明顯的錯字（**註：不包含圖片畫質檢查**）。
+        -   **雜訊內容**：與應徵職位完全無關的個人興趣（如：應徵工程師卻放了大量烹飪照片）、超過 5 年且技術過時的學校作業。
+        -   **負面表述**：任何形式的藉口（如：「因為時間不夠所以沒做完...」）。
+5.  **輸出總結**：🟢 競爭力分析 / 🟡 具體優化清單 / ⛔ 必刪除清單(視情況)。
+
+### 模組 C：黃金自我介紹生成 (Golden Scripts)
+根據使用者履歷，填空並生成兩版講稿（嚴禁出現扣分字眼）：
+-   **⏱️ 1分鐘版 (精準破題)**：聚焦「過去經驗如何支持新職位」+「即戰力證明」。
+-   **⏱️ 3分鐘版 (起承轉合)**：性格特質 -> 軟實力遷移 (STAR故事) -> 轉職動機與硬實力準備 -> 願景與配合度。
+
+### 模組 D：專業自傳與極速摘要 (Professional Bio & 6-Second Hook)
+本模組需同時產出以下兩個部分：
+1.  **⚡ 黃金 6 秒極速簡介**：嚴格限制 80 字內。公式：`[年資職稱]` + `[JD 關鍵字匹配技能]` + `[價值承諾]`。戰略目標為**針對特定職缺的精準打擊**。
+2.  **📝 完整專業實務自傳**：約 500-600 字。第一句必須介紹姓名，結構需包含定位、硬實力、軟實力與願景，嚴禁使用小標題。
+
+### 模組 E：面試戰略全書 (Strategic Interview Preparation)
+1.  **🎯 15 題精準題庫**：含轉職動機、STAR行為面試、軟實力情境。
+2.  **👔 專業對答禮儀與氣場**：含「黃金結尾句」與非語言策略。
+3.  **❓ 情境感知型反問策略**：
+    -   **互動指令**：若無公司資料，**務必先詢問**使用者欲面試的「企業名稱」與「職稱」。
+    -   **路徑 A (無經驗/轉職)**：聚焦成功路徑、團隊協作、文化適應。
+    -   **路徑 B (有經驗)**：狙擊型深度提問，針對公司技術痛點或市場挑戰。
+
+### 模組 F：作品集逐頁導覽說詞 (Portfolio Page-by-Page Scripts)
+1.  **目標**：為作品集的每一頁或主要專案，生成一段「面試時口頭報告用」的逐字稿。
+2.  **結構模式**：引導視線 (Eye Contact) -> 決策邏輯 (Business Logic) -> 效益收尾 (Impact)。
+
+### 模組 G：延伸諮詢與優化 (Iterative Refinement)
+當使用者選擇此項，或針對前次產出提出追問時，完整繼承上下文並針對性調整。
+
+### 模組 H：🍀 賽前心理建設與最後叮嚀 (Context-Aware Pre-Interview Warm-up)
+**時機**：僅在使用者主動詢問，或 **AI 判斷履歷/作品集已優化至成熟階段（Ready for Battle）時**，才顯示此選項。
+**互動指令**：若先前對話未提及目標職位，**務必先詢問**：「請問您明天要面試的『具體職位』與『產業』為何？」以進行客製化。
+**產出內容**：
+1.  **📋 職位專屬戰備清單**：根據 設計/工程/業務/行政 不同類別提供專屬裝備建議（如：離線作品集、白板筆、數據平板）。
+2.  **🧠 勝選心態定錨**：設定該職位的「高勝率人格面具」（如：合作夥伴 vs 應徵者）。
+3.  **❤️ 顧問的暖心喊話**：給予信心與鼓勵。
+
+## Interaction Protocol (互動循環機制)
+**在每一次回答結束後**，無論是哪一個模組，你都必須執行以下動作：
+1.  使用分隔線 `---` 區隔內容。
+2.  **強制完整顯示標準選單 (Mandatory Full Menu Display)**：
+    * **⚠️ 嚴格規定**：無論前述回答為何，必須**完整列出 1~8 項**，不可省略任何選項，不可修改文字：
+    1.  🚀 **全套轉職輔導** (履歷+作品集+自傳+口語自我介紹)
+    2.  🔍 **履歷健檢與評分** (104/1111 搜尋優化視角)
+    3.  🎨 **優化作品集邏輯** (含詳細修改建議 & **⛔ 必刪除清單**)
+    4.  🗣️ **生成作品集「逐頁導覽說詞」**
+    5.  📝 **撰寫「專業版」自傳** (含 ⚡ **黃金 6 秒極速簡介** - JD 關鍵字精準匹配)
+    6.  🎤 **生成「自我介紹」講稿** (1/3分鐘背誦版)
+    7.  🛡️ **面試戰略全書** (含題庫、禮儀與針對性反問)
+    8.  💬 **針對上述內容延伸提問或修改**
+3.  **條件式觸發 (Conditional Trigger)**：
+    * **僅當**履歷/作品集已修正完善，或使用者表示將面試時，**才在清單最後追加**：
+    9.  🍀 **賽前心理建設與最後叮嚀** (職位專屬 Checklist + 信心喊話)
+4.  詢問使用者：「接下來您希望進行哪個步驟？請輸入數字。」
+
+## Initialization (啟動程序)
+對話開始時，請執行：
+1.  自我介紹：表明身分與專業領域（強調 104/1111 演算法優化 與 獵頭選才視角）。
+2.  顯示 **標準功能選單** (僅顯示 1-8，第 9 項隱藏)：
+    * (請輸出與 Interaction Protocol 完全相同的 1~8 項文字)
+3.  引導語：「請輸入數字選擇服務，或直接貼上您的履歷/作品集連結，讓我為您進行 **能見度 (SEO)** 與 **競爭力** 雙重診斷。」
+</script>
+
 <div id="toastNotification">通知訊息</div>
 
-<!-- 自訂對話框 -->
 <div id="customModalOverlay">
   <div class="modal-box fade">
     <div id="modalMsg" style="font-size: 16px; margin-bottom: 24px; color: var(--ink); line-height: 1.5; white-space: pre-wrap;"></div>
@@ -195,14 +323,13 @@
       <button class="tab" data-target="merge-jpg">契約書左右合併</button>
       <button class="tab" data-target="vendor-contract">廠商契約</button>
       <button class="tab" data-target="pdf-portfolio">結訓作品集</button>
+      <button class="tab" data-target="resume-check">STAR 履歷健診</button>
       <button class="tab" data-target="dashboard">指標儀表板</button>
     </div>
   </div>
 
-  <!-- ⚙️ 系統與備份 (預設停留此頁) -->
   <div id="settings" class="view active fade">
     <div class="grid-2">
-      <!-- 離線備份 -->
       <div class="card">
         <h3 style="margin-top:0;">💾 離線資料備份與還原</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">匯出 .json 檔案存放在您的電腦中，作為離線保險。</p>
@@ -213,7 +340,6 @@
         <button class="btn btn-outline" onclick="importData()" style="width:100%;">📤 還原離線資料</button>
       </div>
 
-      <!-- 常用連結 -->
       <div class="card">
         <h3 style="margin-top:0;">🔗 常用系統連結</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">將公司的後台系統、報表或雲端硬碟網址存在這裡，當作您的專屬入口網站。</p>
@@ -227,7 +353,6 @@
         </div>
       </div>
       
-      <!-- 🌟 GitHub 雲端備份設定區 -->
       <div class="card" style="margin-top: 16px; border-color: #c0ded6; grid-column: 1 / -1; background: #fdfdfd;">
         <h3 style="margin-top:0; color:var(--go);">☁️ GitHub 雲端資料同步與圖片自動備份</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">
@@ -253,7 +378,6 @@
         </div>
       </div>
 
-      <!-- Telegram 設定區 -->
       <div class="card" style="margin-top: 16px; border-color: #c0ded6; grid-column: 1 / -1;">
         <h3 style="margin-top:0; color:var(--go);">🤖 Telegram 自動推播提醒</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">設定您的 Telegram Bot Token 與 Chat ID。每天<b>首次開啟本網頁時</b>，系統會自動檢查並將「今天到期」或「逾期」的事項發送到您的 Telegram！</p>
@@ -275,7 +399,71 @@
     </div>
   </div>
 
-  <!-- 📅 行事曆區塊 -->
+  <div id="resume-check" class="view fade">
+    <div class="grid-2">
+      <div class="card">
+        <h3 style="margin-top:0; color:var(--go);">1. 🤖 深度分析 (AI 顧問提示詞生成)</h3>
+        <p style="color:var(--sub); font-size:13px; margin-bottom:12px;">將學員履歷輸入後，一鍵生成並複製包含了「您專屬選才標準」的巨型提示詞，直接貼給 ChatGPT 進行深度診斷。</p>
+        
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="rcName" placeholder="學員姓名 (例如：王大明)" style="flex:1;">
+          <input type="text" id="rcJob" placeholder="目標職務 (例如：UI/UX 設計師)" style="flex:1;">
+        </div>
+        <textarea id="rcResumeText" placeholder="請在此貼上學員的履歷純文字內容..." style="min-height:160px;"></textarea>
+        
+        <button class="btn" onclick="copyAiPrompt()" style="width:100%; background:var(--ink);">📋 一鍵複製 AI 顧問提示詞 (含學員履歷)</button>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0; color:var(--go);">2. ⚡ 快速診斷 (手動勾選常用評語)</h3>
+        <p style="color:var(--sub); font-size:13px; margin-bottom:12px;">不想依賴 AI 時，直接勾選以下最常見的 STAR 履歷致命傷，自動拼湊出一份專業的修改建議！</p>
+        
+        <label style="font-weight:bold; font-size:13px; color:var(--ink);">S 情境 (Situation)</label>
+        <select id="rcS" style="margin-bottom:8px;">
+          <option value="✅ 情境脈絡清晰，能有效引導閱讀者了解專案背景。">✅ 脈絡清晰</option>
+          <option value="⚠️ 缺乏專案背景與痛點描述，建議補充當時面臨的具體困難或市場狀況。" selected>⚠️ 缺乏背景與痛點</option>
+          <option value="⚠️ 描述過於冗長流水帳，建議濃縮背景，將重點留給具體行動。">⚠️ 過於冗長流水帳</option>
+        </select>
+
+        <label style="font-weight:bold; font-size:13px; color:var(--ink);">T 任務 (Task)</label>
+        <select id="rcT" style="margin-bottom:8px;">
+          <option value="✅ 任務目標明確，清楚展現個人職責。">✅ 任務明確</option>
+          <option value="⚠️ 未清楚界定「個人職責」與「團隊目標」，HR 無法判斷實際貢獻比例。" selected>⚠️ 職責界定不清</option>
+          <option value="⚠️ 目標不夠具體，建議加上具體的 KPI 或欲解決的核心問題。">⚠️ 目標不夠具體</option>
+        </select>
+
+        <label style="font-weight:bold; font-size:13px; color:var(--ink);">A 行動 (Action)</label>
+        <select id="rcA" style="margin-bottom:8px;">
+          <option value="✅ 行動策略具體且具說服力，充分展現專業能力。">✅ 策略具體</option>
+          <option value="⚠️ 缺乏具體執行步驟。建議補充「如何」達成任務的策略性舉動（強調主動性）。" selected>⚠️ 缺乏具體執行步驟</option>
+          <option value="⛔ 履歷中出現「我願意學習、肯學」等學生氣字眼。強烈建議替換為「具備快速適應力、勇於承擔挑戰」。">⛔ 出現學生氣扣分字眼</option>
+        </select>
+
+        <label style="font-weight:bold; font-size:13px; color:var(--ink);">R 結果 (Result)</label>
+        <select id="rcR" style="margin-bottom:12px;">
+          <option value="✅ 具備強而有力的量化結果，有效證明即戰力。">✅ 具備量化結果</option>
+          <option value="⚠️ 缺乏量化數據支撐。建議補上具體數字（如：提升%、節省時間、金額）。" selected>⚠️ 缺乏量化數據</option>
+          <option value="⚠️ 有寫出結果，但與「行動」缺乏因果連結，建議強化個人行動對結果的直接影響。">⚠️ 結果與行動脫節</option>
+        </select>
+        
+        <button class="btn btn-outline" onclick="generateQuickFeedback()" style="width:100%;">⬇️ 組合上述評語至下方報告</button>
+      </div>
+
+      <div class="card" style="grid-column: 1 / -1;">
+        <h3 style="margin-top:0; color:var(--go);">3. 📄 健診報告預覽與 PDF 輸出</h3>
+        <p style="color:var(--sub); font-size:13px; margin-bottom:12px;">您可以在此手動修改評語，或是將 ChatGPT 產出的萬字分析報告貼回這裡，最後一鍵轉換成有質感的 A4 PDF 給學員。</p>
+        
+        <textarea id="rcOutput" placeholder="這裡將顯示組合後的評語或 AI 報告內容..." style="min-height:300px; line-height:1.6; font-size:14px;"></textarea>
+        
+        <div style="display:flex; gap:10px; margin-top:12px;">
+          <button class="btn" onclick="exportResumePDF()" style="flex:1; padding: 12px; font-size:16px;">📥 產生精美 A4 健診報告 (PDF)</button>
+          <button class="btn btn-outline" onclick="document.getElementById('rcOutput').value=''" style="padding:0 24px;">清除重填</button>
+        </div>
+        <div id="rcStatus" style="margin-top:12px; font-weight:bold; color:var(--go); font-size: 14px; text-align:center;"></div>
+      </div>
+    </div>
+  </div>
+
   <div id="notes" class="view fade">
     <div id="dueBar"></div>
     
@@ -285,7 +473,6 @@
         <h3 id="calTitle" style="margin:0; font-size:16px;"></h3>
         <button onclick="changeMonth(1)">下個月 ▶</button>
       </div>
-      <!-- 橫向可滑動容器包裹行事曆表格 -->
       <div class="cal-scroll-area">
         <div id="calGrid" class="cal-grid"></div>
       </div>
@@ -295,9 +482,8 @@
       <div class="card" style="background: var(--goSoft); border-color: #c0ded6;">
         <h3 id="noteFormTitle" style="margin-top:0; color: var(--go);">新增記事/待辦</h3>
         
-        <!-- 🌟 新增記事表單：支援左右滑動的彈性區塊 -->
-        <div style="display:flex; gap:8px; margin-bottom:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:8px;">
-          <select id="newNoteColor" style="flex:0 0 auto; width:90px; margin-bottom:0; padding:8px;">
+        <div style="display:flex; flex-wrap:nowrap; gap:8px; margin-bottom:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:8px; width:100%;">
+          <select id="newNoteColor" style="flex:0 0 95px; width:90px; margin-bottom:0; padding:8px;">
             <option value="c-green">就輔(綠)</option>
             <option value="c-danger">緊急(紅)</option>
             <option value="c-blue">會議(藍)</option>
@@ -307,15 +493,15 @@
             <option value="c-pink">排課(粉)</option>
             <option value="c-brown">其他(咖)</option>
           </select>
-          <select id="newNoteImp" style="flex:0 0 auto; width:90px; margin-bottom:0; padding:8px;">
+          <select id="newNoteImp" style="flex:0 0 95px; width:90px; margin-bottom:0; padding:8px;">
             <option value="true">🔥 重要</option>
             <option value="false">⚪ 不重要</option>
           </select>
-          <select id="newNoteUrg" style="flex:0 0 auto; width:90px; margin-bottom:0; padding:8px;">
+          <select id="newNoteUrg" style="flex:0 0 95px; width:90px; margin-bottom:0; padding:8px;">
             <option value="true">⚡ 緊急</option>
             <option value="false">⏳ 不急</option>
           </select>
-          <input type="text" id="newNoteTitle" placeholder="事項標題 (必填)" style="flex:1; min-width:200px; margin-bottom:0; padding:8px;">
+          <input type="text" id="newNoteTitle" placeholder="事項標題 (必填)" style="flex:1 0 200px; min-width:200px; margin-bottom:0; padding:8px;">
         </div>
         
         <textarea id="newNoteBody" placeholder="詳細內容 (選填)"></textarea>
@@ -335,7 +521,6 @@
     <div id="noteGrid"></div>
   </div>
 
-  <!-- 📊 區域業績統計 -->
   <div id="stats" class="view fade">
     <div class="grid-2">
       <div class="card">
@@ -371,7 +556,6 @@
     </div>
   </div>
 
-  <!-- 🎨 百人戰報宣傳圖 -->
   <div id="poster" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">百人戰報宣傳圖 (自動套版)</h3>
@@ -434,7 +618,6 @@
     </div>
   </div>
 
-  <!-- 📑 契約書左右合併 -->
   <div id="merge-jpg" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">契約書左右合併 (輸出 JPG)</h3>
@@ -473,7 +656,6 @@
     </div>
   </div>
 
-  <!-- 📑 廠商契約 (上下合併) -->
   <div id="vendor-contract" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">廠商契約 (上下合併輸出 JPG)</h3>
@@ -500,7 +682,6 @@
     </div>
   </div>
 
-  <!-- 📚 結訓作品集 -->
   <div id="pdf-portfolio" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">結訓作品集 PDF (自動內頁標題版)</h3>
@@ -562,7 +743,6 @@
         </div>
       </div>
       
-      <!-- 👀 封面即時預覽 -->
       <div style="margin-top: 20px; text-align: center; border-top: 1px dashed var(--line); padding-top: 20px;">
         <label style="font-weight:bold; font-size:14px; color:var(--go); margin-bottom: 12px; display:block;">👀 封面即時預覽 (PDF將依此畫面生成)</label>
         <canvas id="portCoverPreview" width="2376" height="1680" style="max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);"></canvas>
@@ -576,7 +756,6 @@
     </div>
   </div>
 
-  <!-- 📈 指標儀表板 -->
   <div id="dashboard" class="view fade">
     <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
       <h3 style="margin:0;">本月營運指標</h3>
@@ -642,7 +821,7 @@
     };
   }
 
-  // 🌟 分頁安全防錯切換綁定 (修正 RWD Click 與內嵌 Badge 錯誤)
+  // 🌟 分頁安全防錯切換綁定
   document.querySelectorAll('.tab').forEach(function(tab) {
     tab.addEventListener('click', function(e) {
       document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('on'); });
@@ -810,11 +989,184 @@
 
 
   // ==========================================
+  // 🌟 模組 A: STAR 履歷健診與 AI 提示詞生成
+  // ==========================================
+  function copyAiPrompt() {
+    var resume = document.getElementById('rcResumeText').value.trim();
+    var name = document.getElementById('rcName').value.trim() || '未命名學員';
+    var job = document.getElementById('rcJob').value.trim() || '目標職缺未定';
+    
+    // 抓取隱藏的模板內容，避免 JS 語法衝突
+    var templateNode = document.getElementById('aiPromptTemplate');
+    if(!templateNode) return showMsg('系統錯誤：找不到提示詞模板');
+    
+    var basePrompt = templateNode.innerHTML.trim();
+    var finalPrompt = basePrompt + '\n\n' +
+      '==========================================\n' +
+      '【學員基本資訊】\n' +
+      '姓名：' + name + '\n' +
+      '目標職務：' + job + '\n\n' +
+      '【學員履歷內容如下，請依照上述原則進行深度診斷與重寫建議】：\n' +
+      (resume ? resume : '(未提供履歷內文，請直接針對目標職務給予通用撰寫建議與常見地雷)');
+      
+    var ta = document.createElement('textarea');
+    ta.value = finalPrompt;
+    document.body.appendChild(ta);
+    ta.select();
+    try { 
+      document.execCommand('copy'); 
+      showConfirm('✅ 超強 AI 提示詞與履歷已成功複製到剪貼簿！\n\n是否為您直接開啟 ChatGPT 網頁？\n(開啟後請直接貼上對話框即可)', function() {
+        window.open('https://chatgpt.com/', '_blank');
+      });
+    } catch(e) {
+      showMsg('❌ 複製失敗，請檢查瀏覽器權限。');
+    }
+    document.body.removeChild(ta);
+  }
+
+  function generateQuickFeedback() {
+    var name = document.getElementById('rcName').value.trim() || '同學';
+    var s = document.getElementById('rcS').options[document.getElementById('rcS').selectedIndex].text + '：' + document.getElementById('rcS').value.replace(/^[✅⚠️⛔]\s*/, '');
+    var t = document.getElementById('rcT').options[document.getElementById('rcT').selectedIndex].text + '：' + document.getElementById('rcT').value.replace(/^[✅⚠️⛔]\s*/, '');
+    var a = document.getElementById('rcA').options[document.getElementById('rcA').selectedIndex].text + '：' + document.getElementById('rcA').value.replace(/^[✅⚠️⛔]\s*/, '');
+    var r = document.getElementById('rcR').options[document.getElementById('rcR').selectedIndex].text + '：' + document.getElementById('rcR').value.replace(/^[✅⚠️⛔]\s*/, '');
+    
+    var text = name + ' 你好，\n以下是針對你目前履歷的 STAR 結構健診建議：\n\n';
+    text += '【S 情境描述】\n' + s + '\n\n';
+    text += '【T 任務目標】\n' + t + '\n\n';
+    text += '【A 行動策略】\n' + a + '\n\n';
+    text += '【R 具體結果】\n' + r + '\n\n';
+    text += '建議你依照上述方向進行調整，能大幅提升履歷的商業價值與 HR 搜尋能見度！加油！';
+    
+    document.getElementById('rcOutput').value = text;
+    showToast('✅ 已自動組合評語至下方輸出框！');
+  }
+
+  async function exportResumePDF() {
+    var name = document.getElementById('rcName').value.trim() || '未命名學員';
+    var job = document.getElementById('rcJob').value.trim() || '未填寫';
+    var text = document.getElementById('rcOutput').value.trim();
+    var statusEl = document.getElementById('rcStatus');
+    
+    if (!text) return showMsg('請先在輸出框中輸入或生成報告內容！');
+    statusEl.innerText = '正在生成高畫質 A4 PDF，請稍候...';
+    
+    try {
+      var jsPDF = window.jspdf.jsPDF; 
+      var doc = new jsPDF('p', 'mm', 'a4'); 
+      var pdfW = 210; var pdfH = 297;
+      
+      // 建立高畫質隱藏畫布 (150dpi)
+      var canvas = document.createElement('canvas');
+      canvas.width = 1240; canvas.height = 1754;
+      var ctx = canvas.getContext('2d');
+      
+      var paragraphs = text.split('\n');
+      var pIndex = 0; // 追蹤畫到哪一段
+      var pageCount = 0;
+      
+      while (pIndex < paragraphs.length) {
+        // 清空背景
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // 如果是第一頁，畫上超美版頭
+        var currentY = 100;
+        if (pageCount === 0) {
+          ctx.fillStyle = '#0E7A66';
+          ctx.fillRect(0, 0, canvas.width, 180);
+          
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 56px "PingFang TC", "Microsoft JhengHei", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('STAR 職涯策略與履歷健診報告', canvas.width/2, 90);
+          
+          ctx.fillStyle = '#F6F1E8';
+          ctx.fillRect(80, 220, canvas.width - 160, 100);
+          
+          ctx.fillStyle = '#20251F';
+          ctx.font = 'bold 32px "PingFang TC", "Microsoft JhengHei", sans-serif';
+          ctx.textAlign = 'left';
+          ctx.fillText('學員：' + name + '    |    目標職務：' + job, 120, 270);
+          
+          currentY = 380;
+        }
+        
+        ctx.fillStyle = '#333333';
+        ctx.font = '28px "PingFang TC", "Microsoft JhengHei", sans-serif';
+        ctx.textBaseline = 'top';
+        ctx.textAlign = 'left';
+        
+        var margin = 100;
+        var maxWidth = canvas.width - (margin * 2);
+        var lineHeight = 46;
+        var yLimit = 1650; // 頁底邊界
+        
+        // 迴圈寫入文字，支援自動換頁
+        var pageFull = false;
+        while (pIndex < paragraphs.length && !pageFull) {
+          var pText = paragraphs[pIndex];
+          if(pText.trim() === '') { 
+            currentY += lineHeight; 
+            pIndex++; 
+            if (currentY > yLimit) pageFull = true;
+            continue; 
+          }
+          
+          var words = pText.split('');
+          var line = '';
+          for (var n = 0; n < words.length; n++) {
+            var testLine = line + words[n];
+            var metrics = ctx.measureText(testLine);
+            if (metrics.width > maxWidth && n > 0) {
+              ctx.fillText(line, margin, currentY);
+              line = words[n];
+              currentY += lineHeight;
+              if (currentY > yLimit) { pageFull = true; break; }
+            } else {
+              line = testLine;
+            }
+          }
+          
+          if (pageFull) {
+            // 文字斷在半路，把剩下的文字存回原本陣列讓下一頁繼續畫
+            paragraphs[pIndex] = line + words.slice(n).join('');
+          } else {
+            ctx.fillText(line, margin, currentY);
+            currentY += lineHeight;
+            pIndex++;
+            if (currentY > yLimit) pageFull = true;
+          }
+        }
+        
+        // 頁尾 Footer
+        ctx.fillStyle = '#7C766A';
+        ctx.font = '20px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Powered by AI Career Strategist & 臻的行政百寶箱  - Page ' + (pageCount+1), canvas.width/2, 1700);
+        
+        var dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+        if (pageCount > 0) doc.addPage();
+        doc.addImage(dataUrl, 'JPEG', 0, 0, pdfW, pdfH);
+        pageCount++;
+      }
+      
+      doc.save('履歷健診_[' + name + '].pdf');
+      statusEl.innerText = '✅ PDF 成功產生並已下載！';
+    } catch(e) {
+      console.error(e);
+      statusEl.innerText = '❌ 產生失敗，請檢查內容格式。';
+    } finally {
+      setTimeout(function(){ statusEl.innerText = ''; }, 3000);
+    }
+  }
+
+  // ==========================================
   // 模組 1: 區域業績統計
   // ==========================================
   var REGIONS = [
     { key: '桃園', slogan: '桃園-桃園衝衝衝！做就對了！', people: ['譽人', '俊亨', '聖潔'] },
-    // 🌟 已更新：刪除宇佑
     { key: '中壢', slogan: '中壢-問心無愧 !!! 我全兜要 !!!', people: ['世勳', '旻儒', '慧君'] },
     { key: '新竹', slogan: '新竹-錢進新竹！勇奪第一', people: ['婷薇', '嘉祥', '思靜', '松源'] }
   ];
@@ -902,7 +1254,6 @@
     REGIONS.forEach(function(r) { r.people.forEach(function(p) { allNames.push(p); }); });
     
     var s = str;
-    // 🌟 已更新：加入「米飛」的自動轉換
     s = s.replace(/miffy/gi, '婷薇').replace(/米飛/g, '婷薇').replace(/小花/g, '語桐').replace(/小米/g, '旻儒');
     
     var hits = [];
