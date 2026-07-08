@@ -6,7 +6,10 @@
 <title>臻的行政百寶箱</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-<script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
+<script>
+    // 指定 Worker 的路徑
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+</script>
 <script src="https://unpkg.com/drag-drop-touch"></script>
 
 <style>
@@ -1024,44 +1027,55 @@
     const status = document.getElementById('pdfLoadingStatus');
     const textArea = document.getElementById('rcResumeText');
   
-    status.innerText = '⏳ 正在讀取 PDF 文字，請稍候...';
-    textArea.value = ''; // 清空舊內容
+    status.innerText = '⏳ 正在讀取 PDF 文字（校正繁體中文編碼）...';
+    textArea.value = ''; 
 
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      let fullText = '';
+        const arrayBuffer = await file.arrayBuffer();
+        
+        // --- 關鍵修正：加入 CMap 設定 ---
+        const loadingTask = pdfjsLib.getDocument({
+            data: arrayBuffer,
+            // 這是解決亂碼的關鍵：從 CDN 載入中文字體對照表
+            cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/cmaps/',
+            cMapPacked: true,
+        });
+        // ------------------------------
 
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-      
-        // 合併頁面中的所有文字片段
-        const pageText = textContent.items.map(item => item.str).join(' ');
-        fullText += `--- 第 ${i} 頁 ---\n${pageText}\n\n`;
-      }
+        const pdf = await loadingTask.promise;
+        let fullText = '';
 
-      if (fullText.trim().length < 50) {
-        status.innerHTML = '⚠️ 讀取完成，但文字極少。這可能是「掃描圖片檔」，AI 無法直接讀取。';
-      } else {
-        status.innerText = '✅ PDF 讀取成功！內容已填入下方框中。';
-      }
-    
-      textArea.value = fullText;
-    
-      // 自動嘗試提取姓名（簡單邏輯：通常在第一行或前幾個字）
-      if (!document.getElementById('rcName').value) {
-        const lines = fullText.split('\n').filter(l => l.trim().length > 0);
-        if (lines.length > 1) {
-            // 抓取第一行前 5 個字嘗試當作姓名（可視情況調整）
-            document.getElementById('rcName').value = lines[1].substring(0, 10).trim();
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            
+            // 提取文字片段並合併
+            const pageText = textContent.items.map(item => item.str).join('');
+            fullText += `--- 第 ${i} 頁 ---\n${pageText}\n\n`;
         }
-      }
 
-    } catch (error) {
-      console.error('PDF 解析錯誤:', error);
-      status.innerText = '❌ PDF 讀取失敗，請確認檔案是否加密或損毀。';
-    }
+        if (fullText.trim().length < 20) {
+            status.innerHTML = '⚠️ 提取文字過少。如果此 PDF 是圖片掃描檔，則無法讀取文字。';
+        } else {
+            status.innerText = '✅ 繁體中文讀取成功！';
+        }
+    
+        textArea.value = fullText;
+    
+        // 自動提取姓名 (簡單邏輯)
+        if (!document.getElementById('rcName').value) {
+            const lines = fullText.split('\n').filter(l => l.trim().length > 0);
+            if (lines.length > 0) {
+                // 嘗試抓取非裝飾性的第一行
+                const nameCandidate = lines.find(l => !l.includes('--- 第'));
+                if(nameCandidate) document.getElementById('rcName').value = nameCandidate.substring(0, 10).trim();
+            }
+        }
+
+      } catch (error) {
+          console.error('PDF 解析錯誤:', error);
+          status.innerText = '❌ 讀取失敗：' + error.message;
+      }
   });
 
   // ==========================================
