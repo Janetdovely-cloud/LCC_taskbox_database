@@ -2196,26 +2196,27 @@
   }
 
   // 2. 繁體中文 PDF 提取 (解決編碼與亂碼問題)
-  if(document.getElementById('rcPdfFile')) {
+  if (document.getElementById('rcPdfFile')) {
     document.getElementById('rcPdfFile').addEventListener('change', async function(e) {
       const file = e.target.files[0];
       if (!file) return;
 
       const status = document.getElementById('pdfLoadingStatus');
       const textArea = document.getElementById('rcResumeText');
-      const pdfVersion = '2.16.105'; // 確保版本一致
+      // 確保版本號與您 head 引入的 https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105 一致
+      const v = '2.16.105'; 
 
-      status.innerText = '⏳ 正在解析 104 專用編碼 (避免亂碼)...';
+      status.innerText = '⏳ 正在讀取並校正編碼...';
       textArea.value = '';
 
       try {
         const arrayBuffer = await file.arrayBuffer();
-        // 強化的 PDF 解析設定
+        // 修正 CMap 網址，移除多餘斜線並更換 CDN 來源
         const loadingTask = pdfjsLib.getDocument({
           data: arrayBuffer,
-          cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfVersion}/cmaps//`,
+          cMapUrl: `https://unpkg.com/pdfjs-dist@${v}/cmaps/`,
           cMapPacked: true,
-          standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfVersion}/standard_fonts/`
+          standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${v}/standard_fonts/`
         });
 
         const pdf = await loadingTask.promise;
@@ -2225,30 +2226,31 @@
           const page = await pdf.getPage(i);
           const textContent = await page.getTextContent();
           
-          // 修正：104 履歷文字合併時不應有空格，否則詞彙會斷開
+          // 104 履歷文字合併：不加空格以維持詞彙連續性
           const pageText = textContent.items.map(item => item.str).join("");
           fullText += `[第 ${i} 頁]\n${pageText}\n\n`;
         }
 
-        // 偵測是否依然為方塊字亂碼
-        if (fullText.length > 0 && /[\uFFFD\u0000]/.test(fullText)) {
-          status.innerHTML = '⚠️ 偵測到特殊編碼。若仍有亂碼，請改用「另存為 PDF」後再上傳。';
+        // 檢查是否提取出無意義內容
+        const cleanTest = fullText.replace(/[0-9\s\-_]/g, '');
+        if (cleanTest.length < 10) {
+            status.innerHTML = '⚠️ 文字提取失敗（PDF 僅含圖片或編碼損毀）。<br>請改用「複製貼上」方式處理。';
         } else {
-          status.innerText = '✅ 繁體中文讀取成功！';
+            status.innerText = '✅ 讀取成功！';
         }
 
         textArea.value = fullText.trim();
 
-        // 嘗試自動填寫姓名
+        // 自動抓取姓名（針對 104 格式）
         if (!document.getElementById('rcName').value) {
           const lines = fullText.split('\n').filter(l => l.trim().length > 0);
           if (lines.length > 1) {
-            // 104 PDF 第二行通常是姓名
             document.getElementById('rcName').value = lines[1].substring(0, 10).trim();
           }
         }
       } catch (err) {
-        status.innerText = '❌ 讀取失敗：' + err.message;
+        status.innerText = '❌ 錯誤：' + err.message;
+        console.error(err);
       }
     });
   }
