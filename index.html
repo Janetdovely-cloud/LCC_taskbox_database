@@ -885,15 +885,19 @@
   // ==========================================
   // GitHub 雲端同步邏輯
   // ==========================================
-  var ghConfig = safeGet('admin_gh_config', { token: '', repo: '', lastJsonBackup: '' });
-  document.getElementById('ghRepo').value = ghConfig.repo || '';
-  document.getElementById('ghToken').value = ghConfig.token || '';
+  // 憑證僅保留在目前頁面的記憶體，避免被持久化資料或惡意腳本讀取。
+  var savedGhConfig = safeGet('admin_gh_config', { repo: '', lastJsonBackup: '' });
+  var ghConfig = { token: '', repo: savedGhConfig.repo || '', lastJsonBackup: savedGhConfig.lastJsonBackup || '' };
+  // 清除舊版可能保存過 token 的設定，只保留非敏感的儲存庫與備份日期。
+  safeSet('admin_gh_config', { repo: ghConfig.repo, lastJsonBackup: ghConfig.lastJsonBackup });
+  document.getElementById('ghRepo').value = ghConfig.repo;
+  document.getElementById('ghToken').value = '';
 
   function saveGhConfig() {
     ghConfig.repo = document.getElementById('ghRepo').value.trim();
     ghConfig.token = document.getElementById('ghToken').value.trim();
-    safeSet('admin_gh_config', ghConfig);
-    showMsg('✅ GitHub 雲端設定已儲存！您現在可以點擊「強制備份至雲端」了！');
+    safeSet('admin_gh_config', { repo: ghConfig.repo, lastJsonBackup: ghConfig.lastJsonBackup });
+    showMsg('✅ GitHub 設定已套用於本次工作階段。為保護帳號安全，Token 不會儲存在瀏覽器中。');
   }
 
   async function uploadImageToGitHub(fileName, dataUrlBase64, customFolder) {
@@ -1016,13 +1020,14 @@
   // ==========================================
   // 🌟 模組 A: STAR 履歷健診與 AI 提示詞生成 (含 PDF 繁體中文解析)
   // ==========================================
-  var geminiConfig = safeGet('admin_gemini_cfg', { key: '' });
-  if(document.getElementById('geminiKey')) document.getElementById('geminiKey').value = geminiConfig.key || '';
+  // Gemini key 同樣只存在記憶體；重新整理頁面後需再次輸入。
+  var geminiConfig = { key: '' };
+  localStorage.removeItem('admin_gemini_cfg');
+  if(document.getElementById('geminiKey')) document.getElementById('geminiKey').value = '';
 
   function saveGeminiConfig() {
     geminiConfig.key = document.getElementById('geminiKey').value.trim();
-    safeSet('admin_gemini_cfg', geminiConfig);
-    showToast('✅ Gemini API Key 已儲存！');
+    showToast('✅ Gemini API Key 已套用於本次工作階段。');
   }
 
   if (document.getElementById('rcPdfFile')) {
@@ -1562,6 +1567,17 @@
 
   function changeMonth(delta) { currentCalDate.setMonth(currentCalDate.getMonth() + delta); renderCalendar(); }
 
+  function escapeHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+    });
+  }
+
+  function getSafeNoteColor(color) {
+    var allowed = ['c-green', 'c-danger', 'c-blue', 'c-purple', 'c-orange', 'c-gray', 'c-brown', 'c-pink'];
+    return allowed.includes(color) ? color : 'c-green';
+  }
+
   function renderCalendar() {
     var grid = document.getElementById('calGrid'); var title = document.getElementById('calTitle');
     if(!grid || !title) return;
@@ -1586,9 +1602,12 @@
       
       var dayNotes = notes.filter(function(n) { return n.due === dateStr; });
       dayNotes.forEach(function(n) {
-        var cls = 'cal-item ' + (n.completed ? 'c-completed' : (n.color || 'c-green'));
+        var cls = 'cal-item ' + (n.completed ? 'c-completed' : getSafeNoteColor(n.color));
         var dragTip = n.completed ? ' (已完成)' : ' (💡長按可拖曳移動，+Ctrl鍵拖曳可複製)';
-        html += '<div class="' + cls + '" draggable="true" ondragstart="handleDragStart(event, \'' + n.id + '\')" onclick="event.stopPropagation(); editNote(\'' + n.id + '\')" title="' + n.title + dragTip + '">' + n.title + '</div>';
+        var noteId = encodeURIComponent(String(n.id == null ? '' : n.id));
+        var safeTitle = escapeHtml(n.title);
+        var safeTooltip = escapeHtml(String(n.title == null ? '' : n.title) + dragTip);
+        html += '<div class="' + cls + '" draggable="true" data-note-id="' + noteId + '" ondragstart="handleDragStart(event, decodeURIComponent(this.dataset.noteId))" onclick="event.stopPropagation(); editNote(decodeURIComponent(this.dataset.noteId))" title="' + safeTooltip + '">' + safeTitle + '</div>';
       });
       html += '</div>';
     }
@@ -1728,13 +1747,52 @@
     renderCalendar(); 
   }
 
+  // 模組 6: 指標儀表板
+  var dashData = safeGet('admin_dash_v2', { d1: 0, d2: 0, d3: 0 });
+
+  function renderDashboard() {
+    document.getElementById('dash1').textContent = dashData.d1;
+    document.getElementById('dash2').textContent = dashData.d2;
+    document.getElementById('dash3').textContent = dashData.d3;
+  }
+
+  function editDashboard() {
+    document.getElementById('inputDash1').value = dashData.d1;
+    document.getElementById('inputDash2').value = dashData.d2;
+    document.getElementById('inputDash3').value = dashData.d3;
+    document.getElementById('dashEditor').style.display = 'block';
+  }
+
+  function saveDashboard() {
+    ['1', '2', '3'].forEach(function(index) {
+      var value = Number(document.getElementById('inputDash' + index).value);
+      dashData['d' + index] = Number.isFinite(value) && value >= 0 ? value : 0;
+    });
+    safeSet('admin_dash_v2', dashData);
+    renderDashboard();
+    document.getElementById('dashEditor').style.display = 'none';
+    showToast('✅ 指標已儲存！');
+  }
+
+  function resetDashboard() {
+    showConfirm('確定要將所有指標重置為 0 嗎？', function() {
+      dashData = { d1: 0, d2: 0, d3: 0 };
+      safeSet('admin_dash_v2', dashData);
+      renderDashboard();
+      document.getElementById('dashEditor').style.display = 'none';
+      showToast('✅ 指標已重置！');
+    });
+  }
+
   //網頁初始化載入各模組渲染
   renderNotes();
+  renderDashboard();
   
-  // 模組 6: 指標儀表板 (省略未變更部分...)
+  // 模組 7: 系統備份與常用連結 (省略未變更部分...)
   // 模組 7: 系統備份與常用連結 (省略未變更部分...)
   // 模組 8: Telegram 自動推播與自動雲端備份啟動器 (省略未變更部分...)
 
 </script>
 </body>
 </html>
+
