@@ -1030,158 +1030,7 @@
     showToast('✅ Gemini API Key 已套用於本次工作階段。');
   }
 
-  if (document.getElementById('rcPdfFile')) {
-    /*
-    * Drop-in replacement for the rcPdfFile "change" listener in index.html.
-    * Requires PDF.js 2.16.105 and the existing elements:
-    * rcPdfFile, pdfLoadingStatus, rcResumeText, rcName.
-    */
-    (function () {
-      'use strict';
 
-      var PDFJS_VERSION = '2.16.105';
-      var PDFJS_CDN = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@' + PDFJS_VERSION + '/';
-      var OCR_SCRIPT = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-      var ocrLoader;
-
-      function setStatus(message) {
-        var status = document.getElementById('pdfLoadingStatus');
-        if (status) status.textContent = message;
-      }
-
-      function isUsefulText(text) {
-        return (text.match(/[\u3400-\u9fffA-Za-z0-9]/g) || []).length >= 20;
-      }
-
-      function joinTextItems(items) {
-        var records = items
-          .filter(function (item) { return item.str && item.str.trim(); })
-          .map(function (item) {
-            return { text: item.str, x: item.transform[4], y: item.transform[5], width: item.width || 0 };
-          });
-
-        records.sort(function (a, b) {
-          return Math.abs(a.y - b.y) < 3 ? a.x - b.x : b.y - a.y;
-        });
-
-        var lines = [];
-        records.forEach(function (record) {
-          var line = lines[lines.length - 1];
-          if (!line || Math.abs(line.y - record.y) >= 3) {
-            lines.push({ y: record.y, items: [record] });
-          } else {
-            line.items.push(record);
-          }
-        });
-
-        return lines.map(function (line) {
-          line.items.sort(function (a, b) { return a.x - b.x; });
-          return line.items.map(function (item, index) {
-            if (!index) return item.text;
-            var previous = line.items[index - 1];
-            var gap = item.x - (previous.x + previous.width);
-            return (gap > 5 ? ' ' : '') + item.text;
-          }).join('');
-        }).join('\n');
-      }
-
-      async function loadTesseract() {
-        if (window.Tesseract) return window.Tesseract;
-        if (!ocrLoader) {
-          ocrLoader = new Promise(function (resolve, reject) {
-            var script = document.createElement('script');
-            script.src = OCR_SCRIPT;
-            script.onload = function () { resolve(window.Tesseract); };
-            script.onerror = function () { reject(new Error('無法載入 OCR 元件，請檢查網路連線。')); };
-            document.head.appendChild(script);
-          });
-        }
-        return ocrLoader;
-      }
-
-      async function renderPage(page) {
-        var viewport = page.getViewport({ scale: 2 });
-        var canvas = document.createElement('canvas');
-        canvas.width = Math.ceil(viewport.width);
-        canvas.height = Math.ceil(viewport.height);
-        await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
-        return canvas;
-      }
-
-      async function extractResumePdf(file) {
-        if (!window.pdfjsLib) throw new Error('PDF.js 尚未載入完成，請重新整理後再試一次。');
-
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_CDN + 'build/pdf.worker.min.js';
-        var buffer = await file.arrayBuffer();
-        var pdf = await window.pdfjsLib.getDocument({
-          data: buffer,
-          cMapUrl: PDFJS_CDN + 'cmaps/',
-          cMapPacked: true,
-          standardFontDataUrl: PDFJS_CDN + 'standard_fonts/',
-          useSystemFonts: true
-        }).promise;
-
-        // 104 履歷常使用無法可靠擷取的內嵌字型，因此一律採用影像 OCR。
-        // 不讀取 PDF 文字層，可避免「看起來正常、擷取卻是亂碼」的情況。
-        var pages = [];
-        for (var pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
-          setStatus('正在準備第 ' + pageNumber + '/' + pdf.numPages + ' 頁 OCR…');
-          pages.push(await pdf.getPage(pageNumber));
-        }
-
-        setStatus('正在載入本機 OCR 繁體中文模型…');
-        var Tesseract = await loadTesseract();
-        var ocrPages = [];
-        for (var index = 0; index < pages.length; index += 1) {
-          setStatus('OCR 辨識第 ' + (index + 1) + '/' + pages.length + ' 頁…');
-          var canvas = await renderPage(pages[index]);
-          var result = await Tesseract.recognize(canvas, 'chi_tra+eng', {
-            logger: function (event) {
-              if (event.status === 'recognizing text' && event.progress != null) {
-                setStatus('OCR 辨識第 ' + (index + 1) + '/' + pages.length + ' 頁…' + Math.round(event.progress * 100) + '%');
-              }
-            }
-          });
-          ocrPages.push('[第 ' + (index + 1) + ' 頁]\n' + result.data.text.trim());
-          canvas.width = 1;
-          canvas.height = 1;
-        }
-
-        var ocrText = ocrPages.join('\n\n').trim();
-        if (!isUsefulText(ocrText)) throw new Error('無法辨識此 PDF。請確認檔案未受密碼保護，且掃描文字清晰可讀。');
-        return ocrText;
-      }
-
-      var input = document.getElementById('rcPdfFile');
-      if (!input) return;
-      input.addEventListener('change', async function (event) {
-        var file = event.target.files && event.target.files[0];
-        var textArea = document.getElementById('rcResumeText');
-        if (!file || !textArea) return;
-        if (file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) {
-          setStatus('請選擇 PDF 檔案。');
-          return;
-        }
-
-        textArea.value = '';
-        try {
-          var text = await extractResumePdf(file);
-          textArea.value = text;
-          setStatus('✅ 履歷文字讀取完成。若有少量 OCR 錯字，請先在文字框內修正再送出。');
-
-          var nameInput = document.getElementById('rcName');
-          if (nameInput && !nameInput.value.trim()) {
-            var candidate = text.split('\n').map(function (line) { return line.trim(); })
-              .find(function (line) { return /^[\u3400-\u9fff]{2,6}$/.test(line); });
-            if (candidate) nameInput.value = candidate;
-          }
-        } catch (error) {
-          console.error(error);
-          setStatus('❌ PDF 讀取失敗：' + error.message);
-        }
-      });
-    }());
-  }
 
   function copyAiPrompt() {
     var resume = document.getElementById('rcResumeText').value.trim();
@@ -1879,5 +1728,389 @@
   // 模組 8: Telegram 自動推播與自動雲端備份啟動器 (省略未變更部分...)
 
 </script>
+
+<script>
+/*
+ * Drop-in replacement for the rcPdfFile "change" listener in index.html.
+ * Requires PDF.js 2.16.105 and the existing elements:
+ * rcPdfFile, pdfLoadingStatus, rcResumeText, rcName.
+ */
+(function () {
+  'use strict';
+
+  var PDFJS_VERSION = '2.16.105';
+  var PDFJS_CDN = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@' + PDFJS_VERSION + '/';
+  var OCR_SCRIPT = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+  var ocrLoader;
+
+  function setStatus(message) {
+    var status = document.getElementById('pdfLoadingStatus');
+    if (status) status.textContent = message;
+  }
+
+  function isUsefulText(text) {
+    return (text.match(/[\u3400-\u9fffA-Za-z0-9]/g) || []).length >= 20;
+  }
+
+  function joinTextItems(items) {
+    var records = items
+      .filter(function (item) { return item.str && item.str.trim(); })
+      .map(function (item) {
+        return { text: item.str, x: item.transform[4], y: item.transform[5], width: item.width || 0 };
+      });
+
+    records.sort(function (a, b) {
+      return Math.abs(a.y - b.y) < 3 ? a.x - b.x : b.y - a.y;
+    });
+
+    var lines = [];
+    records.forEach(function (record) {
+      var line = lines[lines.length - 1];
+      if (!line || Math.abs(line.y - record.y) >= 3) {
+        lines.push({ y: record.y, items: [record] });
+      } else {
+        line.items.push(record);
+      }
+    });
+
+    return lines.map(function (line) {
+      line.items.sort(function (a, b) { return a.x - b.x; });
+      return line.items.map(function (item, index) {
+        if (!index) return item.text;
+        var previous = line.items[index - 1];
+        var gap = item.x - (previous.x + previous.width);
+        return (gap > 5 ? ' ' : '') + item.text;
+      }).join('');
+    }).join('\n');
+  }
+
+  async function loadTesseract() {
+    if (window.Tesseract) return window.Tesseract;
+    if (!ocrLoader) {
+      ocrLoader = new Promise(function (resolve, reject) {
+        var script = document.createElement('script');
+        script.src = OCR_SCRIPT;
+        script.onload = function () { resolve(window.Tesseract); };
+        script.onerror = function () { reject(new Error('無法載入 OCR 元件，請檢查網路連線。')); };
+        document.head.appendChild(script);
+      });
+    }
+    return ocrLoader;
+  }
+
+  async function renderPage(page) {
+    var viewport = page.getViewport({ scale: 2 });
+    var canvas = document.createElement('canvas');
+    canvas.width = Math.ceil(viewport.width);
+    canvas.height = Math.ceil(viewport.height);
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
+    return canvas;
+  }
+
+  async function extractResumePdf(file) {
+    if (!window.pdfjsLib) throw new Error('PDF.js 尚未載入完成，請重新整理後再試一次。');
+
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_CDN + 'build/pdf.worker.min.js';
+    var buffer = await file.arrayBuffer();
+    var pdf = await window.pdfjsLib.getDocument({
+      data: buffer,
+      cMapUrl: PDFJS_CDN + 'cmaps/',
+      cMapPacked: true,
+      standardFontDataUrl: PDFJS_CDN + 'standard_fonts/',
+      useSystemFonts: true
+    }).promise;
+
+    // 104 履歷常使用無法可靠擷取的內嵌字型，因此一律採用影像 OCR。
+    // 不讀取 PDF 文字層，可避免「看起來正常、擷取卻是亂碼」的情況。
+    var pages = [];
+    for (var pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+      setStatus('正在準備第 ' + pageNumber + '/' + pdf.numPages + ' 頁 OCR…');
+      pages.push(await pdf.getPage(pageNumber));
+    }
+
+    setStatus('正在載入本機 OCR 繁體中文模型…');
+    var Tesseract = await loadTesseract();
+    var ocrPages = [];
+    for (var index = 0; index < pages.length; index += 1) {
+      setStatus('OCR 辨識第 ' + (index + 1) + '/' + pages.length + ' 頁…');
+      var canvas = await renderPage(pages[index]);
+      var result = await Tesseract.recognize(canvas, 'chi_tra+eng', {
+        logger: function (event) {
+          if (event.status === 'recognizing text' && event.progress != null) {
+            setStatus('OCR 辨識第 ' + (index + 1) + '/' + pages.length + ' 頁…' + Math.round(event.progress * 100) + '%');
+          }
+        }
+      });
+      ocrPages.push('[第 ' + (index + 1) + ' 頁]\n' + result.data.text.trim());
+      canvas.width = 1;
+      canvas.height = 1;
+    }
+
+    var ocrText = ocrPages.join('\n\n').trim();
+    if (!isUsefulText(ocrText)) throw new Error('無法辨識此 PDF。請確認檔案未受密碼保護，且掃描文字清晰可讀。');
+    return ocrText;
+  }
+
+  var input = document.getElementById('rcPdfFile');
+  if (!input) return;
+  input.addEventListener('change', async function (event) {
+    var file = event.target.files && event.target.files[0];
+    var textArea = document.getElementById('rcResumeText');
+    if (!file || !textArea) return;
+    if (file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) {
+      setStatus('請選擇 PDF 檔案。');
+      return;
+    }
+
+    textArea.value = '';
+    try {
+      var text = await extractResumePdf(file);
+      textArea.value = text;
+      setStatus('✅ 履歷文字讀取完成。若有少量 OCR 錯字，請先在文字框內修正再送出。');
+
+      var nameInput = document.getElementById('rcName');
+      if (nameInput && !nameInput.value.trim()) {
+        var candidate = text.split('\n').map(function (line) { return line.trim(); })
+          .find(function (line) { return /^[\u3400-\u9fff]{2,6}$/.test(line); });
+        if (candidate) nameInput.value = candidate;
+      }
+    } catch (error) {
+      console.error(error);
+      setStatus('❌ PDF 讀取失敗：' + error.message);
+    }
+  });
+}());
+</script>
+<script>
+/* Replace the current resume prompt/PDF script with this upgrade after jsPDF is loaded. */
+(function () {
+  'use strict';
+
+  var FULL_REPORT_PROMPT = `你是一位具國家級就業服務證照的資深職涯顧問，熟悉台灣 104／1111 的履歷搜尋邏輯與企業 HR 的篩選標準。
+
+請依據下方學員資料，直接完成一份完整、可交付的繁體中文職涯健診報告。不要要求輸入數字、不要顯示選單、不要詢問下一步。
+
+報告必須嚴格使用以下兩個區段與標題：
+
+【學員版健診報告】
+以支持、具體、專業的口吻撰寫，完整涵蓋八大章節：
+1. 全套轉職輔導總覽：職涯定位、目標職務、30/60/90 天行動路線。
+2. 履歷健檢與評分：以易讀性、關鍵字、量化成果、穩定性／軟實力給出 0–100 分與原因。
+3. 作品集邏輯優化：以 Background → Challenge → Solution → Result 檢核；若未提供作品集，要明確列出補件方向。
+4. 作品集逐頁導覽說詞：為主要專案提供可在面試使用的口語說法；沒有作品集時提供可套用模板。
+5. 專業版自傳：先給 80 字內黃金 6 秒簡介，再給 500–600 字無小標題的自傳草稿。
+6. 自我介紹講稿：提供 1 分鐘與 3 分鐘兩版。
+7. 面試戰略全書：提供 15 題高機率題目、答題方向、非語言建議與 3 個反問問題。
+8. 後續優化清單：依優先級列出下一步可執行事項。
+
+所有建議都要以提供的履歷事實為依據；缺乏數據時請清楚標為「待補資料」，不可虛構。避免「我願意學習、肯學、吃苦耐勞、依公司規定」等措辭，改用可證明的能力與成果。
+
+【內部教學備註】
+此段只供就業輔導老師使用，不對學員顯示。請列出：
+- 問題判讀依據與風險級別。
+- 下次輔導應追問的事實、數據與佐證。
+- 建議採用的教學／引導話術。
+- 學員版中刻意簡化、但老師需留意的敏感議題。
+
+學員姓名：{{name}}
+目標職務：{{job}}
+履歷內容：
+{{resume}}`;
+
+  function getValue(id, fallback) {
+    var element = document.getElementById(id);
+    return element && element.value.trim() ? element.value.trim() : fallback;
+  }
+
+  function buildPrompt() {
+    return FULL_REPORT_PROMPT
+      .replace('{{name}}', getValue('rcName', '未提供'))
+      .replace('{{job}}', getValue('rcJob', '尚未確定'))
+      .replace('{{resume}}', getValue('rcResumeText', '未提供履歷內容；請先列出需要補充的資料，再提供可套用的範本。'));
+  }
+
+  function splitReports(raw) {
+    var marker = '【內部教學備註】';
+    var position = raw.indexOf(marker);
+    if (position < 0) return { student: raw, internal: raw + '\n\n' + marker + '\n尚未依新版提示詞產出內部備註。' };
+    return { student: raw.slice(0, position).trim(), internal: raw.trim() };
+  }
+
+  function loadLogoFile(file) {
+    if (!file) return Promise.resolve(null);
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var image = new Image();
+        image.onload = function () { resolve(image); };
+        image.onerror = function () { reject(new Error('Logo 圖檔無法讀取。')); };
+        image.src = reader.result;
+      };
+      reader.onerror = function () { reject(new Error('Logo 圖檔無法讀取。')); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function wrapCanvasText(ctx, text, maxWidth) {
+    var lines = [];
+    String(text).split('\n').forEach(function (paragraph) {
+      if (!paragraph) { lines.push(''); return; }
+      var line = '';
+      Array.from(paragraph).forEach(function (character) {
+        if (ctx.measureText(line + character).width > maxWidth && line) {
+          lines.push(line);
+          line = character;
+        } else {
+          line += character;
+        }
+      });
+      if (line) lines.push(line);
+    });
+    return lines;
+  }
+
+  function drawHeader(ctx, canvas, edition, logo) {
+    ctx.fillStyle = edition === '內部教學版' ? '#1D4E89' : '#0E7A66';
+    ctx.fillRect(0, 0, canvas.width, 170);
+    if (logo) {
+      var maxWidth = 220, maxHeight = 110;
+      var ratio = Math.min(maxWidth / logo.width, maxHeight / logo.height);
+      ctx.drawImage(logo, 70, 30, logo.width * ratio, logo.height * ratio);
+    } else {
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '700 34px "Microsoft JhengHei", sans-serif';
+      ctx.fillText('聯成電腦', 70, 100);
+    }
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '700 44px "Microsoft JhengHei", sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(edition, canvas.width - 70, 100);
+    ctx.textAlign = 'left';
+  }
+
+  function buildPdf(text, edition, studentName, job, logo) {
+    var jsPDF = window.jspdf && window.jspdf.jsPDF;
+    if (!jsPDF) throw new Error('PDF 元件尚未載入。');
+    var doc = new jsPDF('p', 'mm', 'a4');
+    var canvas = document.createElement('canvas');
+    canvas.width = 1240; canvas.height = 1754;
+    var ctx = canvas.getContext('2d');
+    var lines;
+    var pageNumber = 0;
+    var index = 0;
+
+    ctx.font = '28px "PingFang TC", "Microsoft JhengHei", sans-serif';
+    lines = wrapCanvasText(ctx, text, 1040);
+    while (index < lines.length) {
+      ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      drawHeader(ctx, canvas, edition, logo);
+      ctx.fillStyle = '#20251F';
+      ctx.font = '700 30px "Microsoft JhengHei", sans-serif';
+      ctx.fillText('學員：' + studentName + '　目標職務：' + job, 80, 225);
+      ctx.font = '26px "PingFang TC", "Microsoft JhengHei", sans-serif';
+      var y = 290;
+      while (index < lines.length && y < 1610) {
+        var line = lines[index++];
+        if (/^【.+】$/.test(line) || /^\d+\.\s/.test(line)) {
+          ctx.fillStyle = edition === '內部教學版' ? '#1D4E89' : '#0E7A66';
+          ctx.font = '700 29px "Microsoft JhengHei", sans-serif';
+        } else {
+          ctx.fillStyle = '#20251F';
+          ctx.font = '26px "PingFang TC", "Microsoft JhengHei", sans-serif';
+        }
+        ctx.fillText(line, 100, y);
+        y += line ? 42 : 24;
+      }
+      ctx.fillStyle = '#7C766A';
+      ctx.font = '20px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('聯成電腦｜職涯健診報告｜第 ' + (pageNumber + 1) + ' 頁', canvas.width / 2, 1690);
+      ctx.textAlign = 'left';
+      if (pageNumber) doc.addPage();
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 210, 297);
+      pageNumber += 1;
+    }
+    return doc;
+  }
+
+  async function exportBothReports() {
+    var output = getValue('rcOutput', '');
+    if (!output) throw new Error('請先完成健診報告。');
+    var logoInput = document.getElementById('rcCompanyLogo');
+    var logo = await loadLogoFile(logoInput && logoInput.files[0]);
+    var reports = splitReports(output);
+    var name = getValue('rcName', '未命名學員');
+    var job = getValue('rcJob', '未填寫');
+    buildPdf(reports.student, '學員版', name, job, logo).save('聯成電腦_學員版職涯健診_' + name + '.pdf');
+    buildPdf(reports.internal, '內部教學版', name, job, logo).save('聯成電腦_內部教學職涯健診_' + name + '.pdf');
+  }
+
+  function installUi() {
+    var template = document.getElementById('aiPromptTemplate');
+    if (template) template.textContent = FULL_REPORT_PROMPT;
+    var output = document.getElementById('rcOutput');
+    if (!output) return;
+    var controls = output.parentElement.querySelector('div[style*="display:flex"]');
+    if (controls && !document.getElementById('rcCompanyLogo')) {
+      var label = document.createElement('label');
+      label.style.cssText = 'display:block; width:100%; margin:10px 0 0; font-size:13px; color:#7C766A;';
+      label.textContent = '聯成電腦官方 Logo（PNG/JPG，將嵌入兩份 PDF）：';
+      var input = document.createElement('input');
+      input.id = 'rcCompanyLogo'; input.type = 'file'; input.accept = 'image/png,image/jpeg';
+      input.style.marginTop = '6px';
+      label.appendChild(input);
+      controls.parentElement.insertBefore(label, controls);
+    }
+    var exportButton = controls && controls.querySelector('button[onclick*="exportResumePDF"]');
+    if (exportButton) {
+      exportButton.textContent = '📥 產生學員版＋內部教學版 PDF';
+      exportButton.onclick = async function () {
+        var status = document.getElementById('rcStatus');
+        try {
+          status.textContent = '正在產生兩份 PDF，請稍候…';
+          await exportBothReports();
+          status.textContent = '✅ 已下載學員版與內部教學版 PDF。';
+        } catch (error) {
+          console.error(error);
+          status.textContent = '❌ PDF 產生失敗：' + error.message;
+        }
+      };
+    }
+  }
+
+  window.copyAiPrompt = function () {
+    navigator.clipboard.writeText(buildPrompt()).then(function () {
+      if (typeof showToast === 'function') showToast('✅ 完整八大項健診提示詞已複製！');
+    });
+  };
+  window.runGeminiDiagnosis = async function () {
+    var apiKey = getValue('geminiKey', '');
+    var output = document.getElementById('rcOutput');
+    var button = document.getElementById('runGeminiBtn');
+    if (!apiKey) throw new Error('請先輸入 Gemini API Key。');
+    if (!getValue('rcResumeText', '')) throw new Error('請先上傳或貼上履歷內容。');
+    button.disabled = true;
+    button.textContent = '🤖 正在產生完整健診報告…';
+    output.value = '正在產生學員版與內部教學備註，請稍候…';
+    try {
+      var response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + encodeURIComponent(apiKey), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: buildPrompt() }] }] })
+      });
+      var data = await response.json();
+      if (!response.ok || data.error) throw new Error((data.error && data.error.message) || 'Gemini 回應失敗。');
+      output.value = data.candidates[0].content.parts[0].text;
+      if (typeof showToast === 'function') showToast('✅ 完整健診報告已完成！');
+    } finally {
+      button.disabled = false;
+      button.textContent = '🚀 直接用 Gemini AI 健檢';
+    }
+  };
+  window.exportResumePDF = exportBothReports;
+  installUi();
+}());
+</script>
 </body>
 </html>
+
