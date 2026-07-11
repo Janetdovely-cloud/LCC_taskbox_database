@@ -440,7 +440,7 @@
       </div>
 
       <div class="card">
-        <h3 style="margin-top:0; color:var(--go);">2. ⚡ 快速診斷 (手動勾選常用評語)</h3>
+        <h3 style="margin-top:0; color:var(--go);">2. ⚡ 快速診斷 (手掌握勾選常用評語)</h3>
         <p style="color:var(--sub); font-size:13px; margin-bottom:12px;">不想依賴 AI 時，直接勾選以下最常見的 STAR 履歷致命傷，自動拼湊出一份專業的修改建議！</p>
         
         <label style="font-weight:bold; font-size:13px; color:var(--ink);">S 情境 (Situation)</label>
@@ -1014,8 +1014,17 @@
 
 
   // ==========================================
-  // 🌟 修正版：繁體中文 PDF 提取 (解決編碼與亂碼問題)
+  // 🌟 模組 A: STAR 履歷健診與 AI 提示詞生成 (含 PDF 繁體中文解析)
   // ==========================================
+  var geminiConfig = safeGet('admin_gemini_cfg', { key: '' });
+  if(document.getElementById('geminiKey')) document.getElementById('geminiKey').value = geminiConfig.key || '';
+
+  function saveGeminiConfig() {
+    geminiConfig.key = document.getElementById('geminiKey').value.trim();
+    safeSet('admin_gemini_cfg', geminiConfig);
+    showToast('✅ Gemini API Key 已儲存！');
+  }
+
   if (document.getElementById('rcPdfFile')) {
     document.getElementById('rcPdfFile').addEventListener('change', async function(e) {
       const file = e.target.files[0];
@@ -1031,15 +1040,12 @@
       try {
         const arrayBuffer = await file.arrayBuffer();
         
-        // 🌟 核心修正：
-        // 1. 改用 jsdelivr CDN 確保字典檔不被擋
-        // 2. 加入 disableFontFace 讓系統只抓「純文字」不渲染字型，大幅降低方塊字機率
+        // 🌟 修正核心：移除 disableFontFace，並確保 cMapUrl 網址正確
         const loadingTask = pdfjsLib.getDocument({
           data: arrayBuffer,
-          cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${v}/cmaps/`,
+          cMapUrl: `https://unpkg.com/pdfjs-dist@${v}/cmaps/`,
           cMapPacked: true,
-          standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${v}/standard_fonts/`,
-          disableFontFace: true 
+          standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${v}/standard_fonts/`
         });
 
         const pdf = await loadingTask.promise;
@@ -1049,27 +1055,30 @@
           const page = await pdf.getPage(i);
           const textContent = await page.getTextContent();
           
-          // 🌟 優化文字排版：判斷是否有換行符號
           let pageText = '';
+          let lastY = -1;
+          
+          // 更好的換行邏輯
           textContent.items.forEach(item => {
+            if (lastY !== -1 && Math.abs(item.transform[5] - lastY) > 5) {
+               pageText += '\n';
+            }
             pageText += item.str;
-            if (item.hasEOL) pageText += '\n';
+            lastY = item.transform[5];
           });
           
           fullText += `[第 ${i} 頁]\n${pageText}\n\n`;
         }
 
-        // 檢查是否提取出無意義內容
         const cleanTest = fullText.replace(/[0-9\s\-_]/g, '');
         if (cleanTest.length < 10) {
-            status.innerHTML = '⚠️ 文字提取失敗（PDF 僅含圖片或編碼損毀）。<br>請改用「複製貼上」方式處理。';
+            status.innerHTML = '⚠️ 文字提取失敗。<br>💡 終極破解法：請打開該 PDF，點擊「列印」➔「另存為 PDF」，上傳新存的檔案即可完美讀取！';
         } else {
             status.innerText = '✅ 繁體中文讀取成功！';
         }
 
         textArea.value = fullText.trim();
 
-        // 自動抓取姓名（針對 104 格式）
         if (!document.getElementById('rcName').value) {
           const lines = fullText.split('\n').filter(l => l.trim().length > 0);
           if (lines.length > 1) {
@@ -1081,18 +1090,6 @@
         console.error(err);
       }
     });
-  }
-
-  // ==========================================
-  // 🌟 模組 A: STAR 履歷健診與 AI 提示詞生成
-  // ==========================================
-  var geminiConfig = safeGet('admin_gemini_cfg', { key: '' });
-  if(document.getElementById('geminiKey')) document.getElementById('geminiKey').value = geminiConfig.key || '';
-
-  function saveGeminiConfig() {
-    geminiConfig.key = document.getElementById('geminiKey').value.trim();
-    safeSet('admin_gemini_cfg', geminiConfig);
-    showToast('✅ Gemini API Key 已儲存！');
   }
 
   function copyAiPrompt() {
@@ -1146,7 +1143,7 @@
     const finalPrompt = promptTemplate + `\n\n學員：${name}\n目標職務：${job}\n履歷內容：\n${resumeText}`;
 
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: finalPrompt }] }] })
@@ -1669,6 +1666,7 @@
       var buildQuadrant = function(title, titleClass, arr, quadKey) {
         var div = document.createElement('div'); div.className = 'matrix-quadrant';
         var h = document.createElement('div'); h.className = 'quad-title ' + titleClass; 
+        h.style.cursor = 'pointer'; 
         
         var isOpen = quadState[quadKey] !== false; 
         
