@@ -1031,70 +1031,162 @@
   }
 
   if (document.getElementById('rcPdfFile')) {
-    document.getElementById('rcPdfFile').addEventListener('change', async function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
+    /*
+ * Drop-in replacement for the rcPdfFile "change" listener in index.html.
+ * Requires PDF.js 2.16.105 and the existing elements:
+ * rcPdfFile, pdfLoadingStatus, rcResumeText, rcName.
+ */
+    (function () {
+      'use strict';
 
-      const status = document.getElementById('pdfLoadingStatus');
-      const textArea = document.getElementById('rcResumeText');
-      const v = '2.16.105'; 
+      var PDFJS_VERSION = '2.16.105';
+      var PDFJS_CDN = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@' + PDFJS_VERSION + '/';
+      var OCR_SCRIPT = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+      var ocrLoader;
 
-      status.innerText = '⏳ 正在掛載繁體中文防亂碼字典檔 (CMap)...';
-      textArea.value = '';
+      function setStatus(message) {
+        var status = document.getElementById('pdfLoadingStatus');
+        if (status) status.textContent = message;
+      }
 
-      try {
-        const arrayBuffer = await file.arrayBuffer();
-        
-        // 🌟 修正核心：移除 disableFontFace，並確保 cMapUrl 網址正確
-        const loadingTask = pdfjsLib.getDocument({
-          data: arrayBuffer,
-          cMapUrl: `https://unpkg.com/pdfjs-dist@${v}/cmaps/`,
-          cMapPacked: true,
-          standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${v}/standard_fonts/`
+      function isUsefulText(text) {
+        return (text.match(/[\u3400-\u9fffA-Za-z0-9]/g) || []).length >= 20;
+      }
+
+      function joinTextItems(items) {
+        var records = items
+          .filter(function (item) { return item.str && item.str.trim(); })
+          .map(function (item) {
+            return { text: item.str, x: item.transform[4], y: item.transform[5], width: item.width || 0 };
+          });
+
+        records.sort(function (a, b) {
+          return Math.abs(a.y - b.y) < 3 ? a.x - b.x : b.y - a.y;
         });
 
-        const pdf = await loadingTask.promise;
-        let fullText = '';
-
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          
-          let pageText = '';
-          let lastY = -1;
-          
-          // 更好的換行邏輯
-          textContent.items.forEach(item => {
-            if (lastY !== -1 && Math.abs(item.transform[5] - lastY) > 5) {
-               pageText += '\n';
-            }
-            pageText += item.str;
-            lastY = item.transform[5];
-          });
-          
-          fullText += `[第 ${i} 頁]\n${pageText}\n\n`;
-        }
-
-        const cleanTest = fullText.replace(/[0-9\s\-_]/g, '');
-        if (cleanTest.length < 10) {
-            status.innerHTML = '⚠️ 文字提取失敗。<br>💡 終極破解法：請打開該 PDF，點擊「列印」➔「另存為 PDF」，上傳新存的檔案即可完美讀取！';
-        } else {
-            status.innerText = '✅ 繁體中文讀取成功！';
-        }
-
-        textArea.value = fullText.trim();
-
-        if (!document.getElementById('rcName').value) {
-          const lines = fullText.split('\n').filter(l => l.trim().length > 0);
-          if (lines.length > 1) {
-            document.getElementById('rcName').value = lines[1].substring(0, 10).trim();
+        var lines = [];
+        records.forEach(function (record) {
+          var line = lines[lines.length - 1];
+          if (!line || Math.abs(line.y - record.y) >= 3) {
+            lines.push({ y: record.y, items: [record] });
+          } else {
+            line.items.push(record);
           }
-        }
-      } catch (err) {
-        status.innerText = '❌ 錯誤：' + err.message;
-        console.error(err);
+        });
+
+        return lines.map(function (line) {
+          line.items.sort(function (a, b) { return a.x - b.x; });
+          return line.items.map(function (item, index) {
+            if (!index) return item.text;
+            var previous = line.items[index - 1];
+            var gap = item.x - (previous.x + previous.width);
+            return (gap > 5 ? ' ' : '') + item.text;
+          }).join('');
+        }).join('\n');
       }
-    });
+
+      async function loadTesseract() {
+        if (window.Tesseract) return window.Tesseract;
+        if (!ocrLoader) {
+          ocrLoader = new Promise(function (resolve, reject) {
+            var script = document.createElement('script');
+            script.src = OCR_SCRIPT;
+            script.onload = function () { resolve(window.Tesseract); };
+            script.onerror = function () { reject(new Error('無法載入 OCR 元件，請檢查網路連線。')); };
+            document.head.appendChild(script);
+          });
+        }
+        return ocrLoader;
+      }
+
+      async function renderPage(page) {
+        var viewport = page.getViewport({ scale: 2 });
+        var canvas = document.createElement('canvas');
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
+        return canvas;
+      }
+
+      async function extractResumePdf(file) {
+        if (!window.pdfjsLib) throw new Error('PDF.js 尚未載入完成，請重新整理後再試一次。');
+
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_CDN + 'build/pdf.worker.min.js';
+        var buffer = await file.arrayBuffer();
+        var pdf = await window.pdfjsLib.getDocument({
+          data: buffer,
+          cMapUrl: PDFJS_CDN + 'cmaps/',
+          cMapPacked: true,
+          standardFontDataUrl: PDFJS_CDN + 'standard_fonts/',
+          useSystemFonts: true
+        }).promise;
+
+        var pages = [];
+        for (var pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+          setStatus('正在讀取第 ' + pageNumber + '/' + pdf.numPages + ' 頁…');
+          var page = await pdf.getPage(pageNumber);
+          var content = await page.getTextContent({ normalizeWhitespace: true });
+          pages.push({ page: page, text: joinTextItems(content.items) });
+        }
+
+        var extractedText = pages.map(function (entry, index) {
+          return '[第 ' + (index + 1) + ' 頁]\n' + entry.text;
+        }).join('\n\n');
+
+        if (isUsefulText(extractedText)) return extractedText.trim();
+
+        setStatus('此 PDF 沒有可用的文字層，正在以本機 OCR 辨識繁體中文…');
+        var Tesseract = await loadTesseract();
+        var ocrPages = [];
+        for (var index = 0; index < pages.length; index += 1) {
+          setStatus('OCR 辨識第 ' + (index + 1) + '/' + pages.length + ' 頁…');
+          var canvas = await renderPage(pages[index].page);
+          var result = await Tesseract.recognize(canvas, 'chi_tra+eng', {
+            logger: function (event) {
+              if (event.status === 'recognizing text' && event.progress != null) {
+                setStatus('OCR 辨識第 ' + (index + 1) + '/' + pages.length + ' 頁…' + Math.round(event.progress * 100) + '%');
+              }
+            }
+          });
+          ocrPages.push('[第 ' + (index + 1) + ' 頁]\n' + result.data.text.trim());
+          canvas.width = 1;
+          canvas.height = 1;
+        }
+
+        var ocrText = ocrPages.join('\n\n').trim();
+        if (!isUsefulText(ocrText)) throw new Error('無法辨識此 PDF。請確認檔案未受密碼保護，且掃描文字清晰可讀。');
+        return ocrText;
+      }
+
+      var input = document.getElementById('rcPdfFile');
+      if (!input) return;
+      input.addEventListener('change', async function (event) {
+        var file = event.target.files && event.target.files[0];
+        var textArea = document.getElementById('rcResumeText');
+        if (!file || !textArea) return;
+        if (file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) {
+          setStatus('請選擇 PDF 檔案。');
+          return;
+        }
+
+        textArea.value = '';
+        try {
+          var text = await extractResumePdf(file);
+          textArea.value = text;
+          setStatus('✅ 履歷文字讀取完成。若有少量 OCR 錯字，請先在文字框內修正再送出。');
+
+          var nameInput = document.getElementById('rcName');
+          if (nameInput && !nameInput.value.trim()) {
+            var candidate = text.split('\n').map(function (line) { return line.trim(); })
+              .find(function (line) { return /^[\u3400-\u9fff]{2,6}$/.test(line); });
+            if (candidate) nameInput.value = candidate;
+          }
+        } catch (error) {
+          console.error(error);
+          setStatus('❌ PDF 讀取失敗：' + error.message);
+        }
+      });
+    }());
   }
 
   function copyAiPrompt() {
@@ -1795,4 +1887,3 @@
 </script>
 </body>
 </html>
-
