@@ -1032,10 +1032,10 @@
 
   if (document.getElementById('rcPdfFile')) {
     /*
- * Drop-in replacement for the rcPdfFile "change" listener in index.html.
- * Requires PDF.js 2.16.105 and the existing elements:
- * rcPdfFile, pdfLoadingStatus, rcResumeText, rcName.
- */
+    * Drop-in replacement for the rcPdfFile "change" listener in index.html.
+    * Requires PDF.js 2.16.105 and the existing elements:
+    * rcPdfFile, pdfLoadingStatus, rcResumeText, rcName.
+    */
     (function () {
       'use strict';
 
@@ -1121,26 +1121,20 @@
           useSystemFonts: true
         }).promise;
 
+        // 104 履歷常使用無法可靠擷取的內嵌字型，因此一律採用影像 OCR。
+        // 不讀取 PDF 文字層，可避免「看起來正常、擷取卻是亂碼」的情況。
         var pages = [];
         for (var pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
-          setStatus('正在讀取第 ' + pageNumber + '/' + pdf.numPages + ' 頁…');
-          var page = await pdf.getPage(pageNumber);
-          var content = await page.getTextContent({ normalizeWhitespace: true });
-          pages.push({ page: page, text: joinTextItems(content.items) });
+          setStatus('正在準備第 ' + pageNumber + '/' + pdf.numPages + ' 頁 OCR…');
+          pages.push(await pdf.getPage(pageNumber));
         }
 
-        var extractedText = pages.map(function (entry, index) {
-          return '[第 ' + (index + 1) + ' 頁]\n' + entry.text;
-        }).join('\n\n');
-
-        if (isUsefulText(extractedText)) return extractedText.trim();
-
-        setStatus('此 PDF 沒有可用的文字層，正在以本機 OCR 辨識繁體中文…');
+        setStatus('正在載入本機 OCR 繁體中文模型…');
         var Tesseract = await loadTesseract();
         var ocrPages = [];
         for (var index = 0; index < pages.length; index += 1) {
           setStatus('OCR 辨識第 ' + (index + 1) + '/' + pages.length + ' 頁…');
-          var canvas = await renderPage(pages[index].page);
+          var canvas = await renderPage(pages[index]);
           var result = await Tesseract.recognize(canvas, 'chi_tra+eng', {
             logger: function (event) {
               if (event.status === 'recognizing text' && event.progress != null) {
