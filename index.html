@@ -160,7 +160,6 @@
     .tab { padding: 8px 14px; font-size: 13px; }
     .grid-2, .grid-3, .matrix-grid { grid-template-columns: 1fr; gap: 12px; }
     
-    /* 限制手機版寬度，讓行事曆表格可以流暢左右滾動 */
     .cal-grid { width: 750px; }
     .cal-th { font-size: 12px; padding: 6px 2px; }
     .cal-td { min-height: 70px; padding: 2px; }
@@ -179,7 +178,7 @@
 目標是協助求職者重塑履歷、作品集與面試策略，將經歷翻譯成企業渴望的「即戰力」語言，提升曝光率與面試勝率。
 
 ## 格式絕對限制 (CRITICAL CONSTRAINTS - 系統核心層級)
-1. 絕對禁止使用任何 Markdown 符號（如星號 `*`、井字號 `#`、底線 `_`、引號 ` 等）。
+1. 絕對禁止使用任何 Markdown 符號（如星號 *、井字號 #、底線 _、引號 ` 等）。
 2. 僅能使用標準純文字排版，例如全形括號【】、中文數字（一、二、三）或阿拉伯數字（1. 2. 3.）來進行條列與分段。任何導致粗體、標題渲染的符號皆嚴格禁止。
 3. 禁語替換機制：嚴禁出現「我願意學習、我肯學、吃苦耐勞、奴性強、依公司規定」。強制替換為「具備快速適應力、過往有快速掌握新技術的經驗、高配合度、勇於承擔挑戰、致力於目標達成」。
 4. 必須「一次性產出」完整的長篇報告，不需要與使用者一問一答。
@@ -190,9 +189,9 @@
 
 【第一部分：給學員的實戰修改建議】
 
-一、 履歷健檢與綜合評分 (104/1111 搜尋優化視角)
+一、 履歷健檢與綜合評分
 (1) 綜合競爭力評分 (0-100分)。
-(2) 易讀性掃描與致命傷點出 (如不明空窗期、缺乏數據佐證等)。
+(2) 易讀性掃描與致命傷點出。
 (3) 提供 3 個關鍵經歷的 STAR 具體改寫示範 (Situation情境, Task任務, Action行動, Result結果)。
 
 二、 專業版自傳與極速簡介
@@ -200,30 +199,29 @@
 (2) 完整專業實務自傳 (約 500 字，結構含定位、硬實力、軟實力與願景，流暢純文字分段)。
 
 三、 作品集邏輯優化與逐頁導覽說詞
-(1) 邏輯診斷與必刪除清單：若學員有附上作品集資訊，請給予架構建議與應刪除的無效內容。若無，請列出應徵該職務「必備的作品集項目清單」與「排版邏輯」。
-(2) 生成一段面試時展示作品集用的「導覽說詞講稿」(包含引導視線、決策邏輯、效益收尾)。
+(1) 邏輯診斷與必刪除清單：給予架構建議與應刪除的無效內容。若無提供作品集，請列出應徵該職務「必備的作品集項目清單」。
+(2) 生成面試時展示作品集用的「導覽說詞講稿」。
 
 四、 自我介紹講稿生成
 (1) 1 分鐘精準破題版講稿。
 (2) 3 分鐘起承轉合版講稿。
 
 五、 面試戰略全書
-(1) 針對該目標職務，列出 3 至 5 題最容易被問到的精準面試題庫與建議回答方向。
-(2) 提供 2 個高品質的「情境感知型反問策略」(讓學員提問面試官的問題)。
+(1) 針對該職務列出精準面試題庫與建議回答。
+(2) 提供情境感知型反問策略(讓學員提問面試官的問題)。
 
 --------------------------------------------------
 
 【第二部分：給就業輔導老師的引導參考】
 
 一、 學員潛力與弱點分析
-從 HR 與獵頭視角，真實剖析該學員履歷目前的「潛在優勢」與「最大致命傷」。
+從 HR 視角，真實剖析潛在優勢與最大致命傷。
 
 二、 諮詢引導策略
-(1) 建議老師在輔導時，可以優先從哪個痛點切入。
-(2) 列出 3 個「引導話術與提問」，幫助老師挖掘學員未寫出的亮點或量化數據。
+建議優先切入的痛點，並列出「引導話術與提問」挖掘學員亮點。
 
 三、 媒合與推播建議
-針對學員目前的特質與目標，建議後續可以推播哪種類型的廠商或職缺最容易錄取。
+建議後續可以推播哪種類型的廠商或職缺最容易錄取。
 </script>
 
 <div id="toastNotification">通知訊息</div>
@@ -410,12 +408,12 @@
 
       <div class="card">
         <h3 style="margin-top:0; color:var(--go);">3. 📄 健診報告預覽與 PDF 輸出</h3>
-        <p style="color:var(--sub); font-size:13px; margin-bottom:12px;">此區文字皆為「純淨無亂碼版」，您可以自由編修。滿意後請點擊下方按鈕產出精美的雙視角 A4 PDF。</p>
+        <p style="color:var(--sub); font-size:13px; margin-bottom:12px;">此區文字皆為「純淨無亂碼版」，您可以自由編修。滿意後請點擊下方按鈕產出帶有視覺特效的超精美 A4 PDF。</p>
         
         <textarea id="rcOutput" placeholder="這裡將顯示組合後的評語或 AI 全套分析報告內容..." style="min-height:350px; line-height:1.6; font-size:14px;"></textarea>
         
         <div style="display:flex; gap:10px; margin-top:12px;">
-          <button class="btn" onclick="exportResumePDF()" style="flex:1; padding: 12px; font-size:16px;">📥 產生精美 A4 健診報告</button>
+          <button class="btn" onclick="exportResumePDF()" style="flex:1; padding: 12px; font-size:16px;">📥 產生高質感 A4 健診報告</button>
           <button class="btn btn-outline" onclick="document.getElementById('rcOutput').value=''" style="padding:0 24px;">清除重填</button>
         </div>
         <div id="rcStatus" style="margin-top:12px; font-weight:bold; color:var(--go); font-size: 14px; text-align:center;"></div>
@@ -959,7 +957,7 @@
     showToast('✅ Gemini API Key 已儲存！');
   }
 
-  // 1. 履歷 PDF 解析 (維持原版邏輯)
+  // 1. 履歷 PDF 解析
   if (document.getElementById('rcPdfFile')) {
     document.getElementById('rcPdfFile').addEventListener('change', async function(e) {
       const file = e.target.files[0];
@@ -1017,7 +1015,7 @@
     });
   }
 
-  // 2. 🌟 全新：多模態作品集解析引擎 (支援 txt, py, java, pdf, jpg, png)
+  // 2. 多模態作品集解析引擎 (支援 txt, py, java, pdf, jpg, png)
   var portfolioParts = []; 
   var portfolioTextForPrompt = "";
 
@@ -1071,7 +1069,6 @@
             portfolioParts.push({ text: `\n--- 作品檔案(PDF)：${file.name} ---\n${pdfText}\n` });
           } 
           else if (['jpg', 'jpeg', 'png'].includes(ext)) {
-            // 轉換為 Base64 供 Gemini 視覺引擎讀取
             let reader = new FileReader();
             let base64Promise = new Promise(resolve => {
               reader.onload = () => resolve(reader.result.split(',')[1]);
@@ -1147,7 +1144,6 @@
     const promptTemplate = document.getElementById('aiPromptTemplate').innerHTML;
     const finalPromptText = promptTemplate + `\n\n學員：${name}\n目標職務：${job}\n履歷內容：\n${resumeText ? resumeText : '(未提供)'}\n\n【作品集檔案內容/圖片如下】：\n${portfolioTextForPrompt ? portfolioTextForPrompt : '(未提供)'}`;
 
-    // 🌟 將文字與附加的檔案(圖片/PDF)打包給多模態引擎
     let apiParts = [{ text: finalPromptText }];
     if (portfolioParts.length > 0) {
       apiParts = apiParts.concat(portfolioParts);
@@ -1163,8 +1159,7 @@
       if (data.error) throw new Error(data.error.message);
       
       let rawText = data.candidates[0].content.parts[0].text;
-      
-      // 終極濾網：強制洗掉所有 Markdown 符號
+      // 🌟 終極濾網：強制洗掉所有 Markdown 符號
       let cleanText = rawText.replace(/[\*\#\_\`]/g, '');
       
       outputArea.value = cleanText;
@@ -1193,17 +1188,13 @@
     var a = document.getElementById('rcA').options[document.getElementById('rcA').selectedIndex].text + '：' + document.getElementById('rcA').value.replace(/^[✅⚠️⛔]\s*/, '');
     var r = document.getElementById('rcR').options[document.getElementById('rcR').selectedIndex].text + '：' + document.getElementById('rcR').value.replace(/^[✅⚠️⛔]\s*/, '');
     
-    var text = name + ' 你好，\n以下是針對你目前履歷的 STAR 結構健診建議：\n\n';
-    text += '【S 情境描述】\n' + s + '\n\n';
-    text += '【T 任務目標】\n' + t + '\n\n';
-    text += '【A 行動策略】\n' + a + '\n\n';
-    text += '【R 具體結果】\n' + r + '\n\n';
-    text += '建議你依照上述方向進行調整，能大幅提升履歷的商業價值與 HR 搜尋能見度！加油！';
+    var text = '【第一部分：給學員的實戰修改建議】\n\n一、 履歷健檢與綜合評分\n(1) 綜合競爭力評分：待評估\n(2) 易讀性掃描與致命傷點出：\n☑ 排版可再精簡\n\n(3) STAR 具體改寫示範：\n【S 情境描述】\n' + s + '\n\n【T 任務目標】\n' + t + '\n\n【A 行動策略】\n' + a + '\n\n【R 具體結果】\n' + r;
     
     document.getElementById('rcOutput').value = text;
     showToast('✅ 已自動組合評語至下方輸出框！');
   }
 
+  // 🌟 終極高質感視覺化 PDF 渲染器
   async function exportResumePDF() {
     var name = document.getElementById('rcName').value.trim() || '未命名學員';
     var job = document.getElementById('rcJob').value.trim() || '未填寫';
@@ -1211,7 +1202,7 @@
     var statusEl = document.getElementById('rcStatus');
     
     if (!text) return showMsg('請先在輸出框中輸入或生成報告內容！');
-    statusEl.innerText = '正在生成高畫質 A4 PDF，請稍候...';
+    statusEl.innerText = '正在生成高畫質視覺化 A4 PDF，請稍候...';
     
     try {
       var jsPDF = window.jspdf.jsPDF; 
@@ -1222,6 +1213,57 @@
       canvas.width = 1240; canvas.height = 1754;
       var ctx = canvas.getContext('2d');
       
+      // 自動換行計算器
+      function getWrappedLines(text, maxWidth, fontStr) {
+          ctx.font = fontStr;
+          var lines = [];
+          var words = text.split('');
+          var currentLine = '';
+          for (var i = 0; i < words.length; i++) {
+              var testLine = currentLine + words[i];
+              var metrics = ctx.measureText(testLine);
+              if (metrics.width > maxWidth && i > 0) {
+                  lines.push(currentLine);
+                  currentLine = words[i];
+              } else {
+                  currentLine = testLine;
+              }
+          }
+          lines.push(currentLine);
+          return lines;
+      }
+
+      // 手工繪製高質感聯成 Logo
+      function drawLCCLogo(x, y, scale) {
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.scale(scale, scale);
+          
+          // 陰影
+          ctx.fillStyle = 'rgba(0,0,0,0.8)';
+          ctx.font = '900 60px "PingFang TC", sans-serif';
+          ctx.fillText('聯成電腦', 85, 55);
+          // 文字
+          ctx.fillStyle = '#73B82D';
+          ctx.fillText('聯成電腦', 80, 50);
+
+          ctx.lineWidth = 14;
+          // 綠色框
+          ctx.strokeStyle = '#73B82D';
+          ctx.beginPath();
+          ctx.moveTo(10, 40); ctx.lineTo(10, 10); ctx.lineTo(50, 10); ctx.lineTo(50, 45);
+          ctx.stroke();
+          ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+          ctx.beginPath(); ctx.moveTo(50, 45); ctx.lineTo(50, 50); ctx.stroke(); // 補陰影
+          // 黃色框
+          ctx.strokeStyle = '#F2A900';
+          ctx.beginPath();
+          ctx.moveTo(35, 20); ctx.lineTo(75, 20); ctx.lineTo(75, 55); ctx.lineTo(35, 55);
+          ctx.stroke();
+
+          ctx.restore();
+      }
+
       var paragraphs = text.split('\n');
       var pIndex = 0; 
       var pageCount = 0;
@@ -1231,68 +1273,134 @@
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         var currentY = 100;
+        var margin = 100;
+        var maxWidth = canvas.width - (margin * 2);
+        var yLimit = 1650; 
+
+        // 繪製版頭 (每一頁都有，第一頁特別大)
         if (pageCount === 0) {
-          ctx.fillStyle = '#0E7A66';
+          let grad = ctx.createLinearGradient(0, 0, canvas.width, 0);
+          grad.addColorStop(0, '#0E7A66');
+          grad.addColorStop(1, '#1A5276');
+          ctx.fillStyle = grad;
           ctx.fillRect(0, 0, canvas.width, 180);
           
           ctx.fillStyle = '#ffffff';
           ctx.font = 'bold 56px "PingFang TC", "Microsoft JhengHei", sans-serif';
-          ctx.textAlign = 'center';
+          ctx.textAlign = 'left';
           ctx.textBaseline = 'middle';
-          ctx.fillText('STAR 職涯策略與履歷健診報告', canvas.width/2, 90);
+          ctx.fillText('STAR 職涯策略與履歷健診報告', 80, 90);
+          
+          drawLCCLogo(canvas.width - 400, 50, 0.8);
           
           ctx.fillStyle = '#F6F1E8';
           ctx.fillRect(80, 220, canvas.width - 160, 100);
           
           ctx.fillStyle = '#20251F';
           ctx.font = 'bold 32px "PingFang TC", "Microsoft JhengHei", sans-serif';
-          ctx.textAlign = 'left';
           ctx.fillText('學員：' + name + '    |    目標職務：' + job, 120, 270);
           
           currentY = 380;
+        } else {
+          drawLCCLogo(canvas.width - 350, 40, 0.6);
+          ctx.strokeStyle = '#E7DFD0';
+          ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(margin, 110); ctx.lineTo(canvas.width - margin, 110); ctx.stroke();
+          currentY = 150;
         }
         
-        ctx.fillStyle = '#333333';
-        ctx.font = '28px "PingFang TC", "Microsoft JhengHei", sans-serif';
         ctx.textBaseline = 'top';
-        ctx.textAlign = 'left';
-        
-        var margin = 100;
-        var maxWidth = canvas.width - (margin * 2);
-        var lineHeight = 46;
-        var yLimit = 1650; 
-        
         var pageFull = false;
+
         while (pIndex < paragraphs.length && !pageFull) {
           var pText = paragraphs[pIndex];
           if(pText.trim() === '') { 
-            currentY += lineHeight; 
+            currentY += 20; 
             pIndex++; 
             if (currentY > yLimit) pageFull = true;
             continue; 
           }
+
+          // 視覺化邏輯判定
+          var isMainTitle = pText.match(/^【第[一二]部分/);
+          var isSubTitle = pText.match(/^[一二三四五六七八九]、/);
+          var isSTAR = pText.match(/^【[STAR]/);
+          var isScore = pText.includes('綜合競爭力評分');
+          var isList = pText.match(/^[\-\*]\s/) || pText.match(/^\(\d+\)/);
+
+          var fontStr = '28px "PingFang TC", "Microsoft JhengHei", sans-serif';
+          var textColor = '#333333';
+          var lineHeight = 46;
+          var xOffset = margin;
+          var currentDrawMaxWidth = maxWidth;
+
+          if (isMainTitle) {
+            let grad = ctx.createLinearGradient(margin, currentY, canvas.width - margin, currentY);
+            grad.addColorStop(0, '#4F46E5');
+            grad.addColorStop(1, '#7B1FA2');
+            ctx.fillStyle = grad;
+            ctx.fillRect(margin, currentY, maxWidth, 60);
+            textColor = '#ffffff';
+            fontStr = 'bold 32px "PingFang TC", sans-serif';
+            xOffset = margin + 20;
+            currentY += 15;
+            lineHeight = 60;
+          } 
+          else if (isSubTitle) {
+            ctx.fillStyle = '#0E7A66';
+            ctx.fillRect(margin, currentY, 8, 40);
+            textColor = '#0E7A66';
+            fontStr = 'bold 30px "PingFang TC", sans-serif';
+            xOffset = margin + 20;
+          }
+          else if (isSTAR) {
+            let lines = getWrappedLines(pText, maxWidth - 40, fontStr);
+            let boxHeight = (lines.length * lineHeight) + 20;
+            ctx.fillStyle = '#E1F0EC';
+            ctx.fillRect(margin, currentY, maxWidth, boxHeight);
+            ctx.fillStyle = '#0E7A66';
+            ctx.fillRect(margin, currentY, 6, boxHeight);
+            xOffset = margin + 20;
+            currentY += 10;
+            currentDrawMaxWidth = maxWidth - 40;
+          }
+          else if (isScore) {
+            let lines = getWrappedLines(pText, maxWidth - 40, 'bold 30px "PingFang TC", sans-serif');
+            let boxHeight = (lines.length * 50) + 20;
+            let grad = ctx.createLinearGradient(margin, currentY, canvas.width - margin, currentY);
+            grad.addColorStop(0, '#7DBB42');
+            grad.addColorStop(1, '#F3B621');
+            ctx.fillStyle = grad;
+            ctx.fillRect(margin, currentY, maxWidth, boxHeight);
+            textColor = '#ffffff';
+            fontStr = 'bold 30px "PingFang TC", sans-serif';
+            xOffset = margin + 20;
+            currentY += 10;
+            currentDrawMaxWidth = maxWidth - 40;
+            lineHeight = 50;
+          }
+          else if (isList) {
+            pText = pText.replace(/^[\-\*]\s/, '☑ ');
+            xOffset = margin + 30;
+            currentDrawMaxWidth = maxWidth - 30;
+          }
+
+          var lines = getWrappedLines(pText, currentDrawMaxWidth, fontStr);
           
-          var words = pText.split('');
-          var line = '';
-          for (var n = 0; n < words.length; n++) {
-            var testLine = line + words[n];
-            var metrics = ctx.measureText(testLine);
-            if (metrics.width > maxWidth && n > 0) {
-              ctx.fillText(line, margin, currentY);
-              line = words[n];
-              currentY += lineHeight;
-              if (currentY > yLimit) { pageFull = true; break; }
-            } else {
-              line = testLine;
+          ctx.fillStyle = textColor;
+          for (var i = 0; i < lines.length; i++) {
+            ctx.fillText(lines[i], xOffset, currentY);
+            currentY += lineHeight;
+            if (currentY > yLimit) {
+               paragraphs[pIndex] = lines.slice(i+1).join(''); 
+               pageFull = true;
+               break;
             }
           }
           
-          if (pageFull) {
-            paragraphs[pIndex] = line + words.slice(n).join('');
-          } else {
-            ctx.fillText(line, margin, currentY);
-            currentY += lineHeight;
+          if(!pageFull) {
             pIndex++;
+            if (isMainTitle || isSTAR || isScore) currentY += 20;
             if (currentY > yLimit) pageFull = true;
           }
         }
@@ -1308,7 +1416,7 @@
         pageCount++;
       }
       
-      doc.save('履歷健診_[' + name + '].pdf');
+      doc.save('職涯健診報告_[' + name + '].pdf');
       statusEl.innerText = '✅ PDF 成功產生並已下載！';
     } catch(e) {
       console.error(e);
@@ -1747,7 +1855,7 @@
   //網頁初始化載入各模組渲染
   renderNotes();
   
-  // 模組 6: 指標儀表板 (省略未變更部分...)
+  // 模組 6: 指標儀表板
   var dashData = safeGet('admin_dash_v2', { d1: 0, d2: 0, d3: 0 });
   function renderDashboard() { 
     var d1 = document.getElementById('dash1');
@@ -1760,7 +1868,7 @@
   function resetDashboard() { showConfirm('確定要將所有指標數據歸零嗎？', function() { dashData = { d1: 0, d2: 0, d3: 0 }; safeSet('admin_dash_v2', dashData); renderDashboard(); document.getElementById('dashEditor').style.display = 'none'; showMsg('指標數據已重置。'); }); }
   renderDashboard();
 
-  // 模組 7: 系統備份與常用連結 (省略未變更部分...)
+  // 模組 7: 系統備份與常用連結
   var linksData = safeGet('admin_links_v1', [ { id: '1', name: '員工入口網', url: 'https://www.google.com' } ]);
   function renderLinks() {
     var list = document.getElementById('linksList'); if(!list) return; list.innerHTML = '';
@@ -1804,7 +1912,7 @@
     reader.readAsText(fileInput.files[0]);
   }
 
-  // 模組 8: Telegram 自動推播與自動雲端備份啟動器 (省略未變更部分...)
+  // 模組 8: Telegram 自動推播與自動雲端備份啟動器
   var tgConfig = safeGet('admin_tg_config', { token: '', chatId: '', lastNotified: '' });
   document.getElementById('tgToken').value = tgConfig.token || ''; document.getElementById('tgChatId').value = tgConfig.chatId || '';
   function saveTgConfig() {
