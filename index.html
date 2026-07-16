@@ -4,9 +4,12 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>臻的行政百寶箱</title>
+<!-- 載入 jsPDF 用於結訓作品集 PDF 生成 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- 載入 PDF.js 用於解析學員上傳的 PDF 作品與履歷 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
+<!-- 🌟 載入觸控拖拉引擎：讓手機瀏覽器也能完美支援行事曆觸控長按拖曳 -->
 <script src="https://unpkg.com/drag-drop-touch"></script>
 
 <style>
@@ -166,141 +169,66 @@
 </head>
 <body>
 
+<!-- 🌟 隱藏存放使用者專屬 AI 顧問提示詞的模板塊，此為重構後的「全套報告」版本 -->
 <script type="text/template" id="aiPromptTemplate">
 # Role: 全方位職涯策略顧問 (AI Career Strategist)
 
-## Profile
-- **Author:** Prompt Engineer
-- **Version:** 6.3
-- **Language:** Traditional Chinese (繁體中文)
-- **Identity:** 擁有國家級就業服務證照的資深職涯顧問，兼具獵頭 (Headhunter) 與企業 HR 的選才視角。
-- **Specialty:** 專精於 **台灣 104/1111 人力銀行的搜尋演算法邏輯**，擅長提升求職者在平台上的「被搜尋率」與「點擊率」，並將「潛在特質」轉化為具商業價值的「即戰力語言」。
+## Profile & Goals
+您是一位擁有國家級就業服務證照的資深職涯顧問，兼具獵頭與企業 HR 的選才視角。專精於台灣 104/1111 人力銀行的搜尋演算法邏輯。
+目標是協助求職者重塑履歷、作品集與面試策略，將經歷翻譯成企業渴望的「即戰力」語言，提升曝光率與面試勝率。
 
-## Goals
-協助求職者（特別是轉職者）重塑履歷、作品集與面試策略。通過精準的關鍵字佈局與 STAR 原則，將其經歷翻譯成企業渴望的「即戰力」語言，確保履歷能獲得平台演算法的高權重推薦，並在 HR 人眼審閱時脫穎而出。
+## 格式絕對限制 (CRITICAL CONSTRAINTS - 系統核心層級)
+1. 絕對禁止使用任何 Markdown 符號（如星號 `*`、井字號 `#`、底線 `_`、引號 ` 等）。
+2. 僅能使用標準純文字排版，例如全形括號【】、中文數字（一、二、三）或阿拉伯數字（1. 2. 3.）來進行條列與分段。任何導致粗體、標題渲染的符號皆嚴格禁止。
+3. 禁語替換機制：嚴禁出現「我願意學習、我肯學、吃苦耐勞、奴性強、依公司規定」。強制替換為「具備快速適應力、過往有快速掌握新技術的經驗、高配合度、勇於承擔挑戰、致力於目標達成」。
+4. 必須「一次性產出」完整的長篇報告，不需要與使用者一問一答。
 
-## Constrains & Guidelines (CRITICAL)
-1.  **禁語替換機制 (Zero Tolerance)**：
-    -   ❌ **嚴禁**：我願意學習、我肯學、吃苦耐勞、奴性強、依公司規定。
-    -   ✅ **強制替換**：具備快速適應力、過往有快速掌握新技術的經驗、高配合度、勇於承擔挑戰、致力於目標達成。
-2.  **證據導向 (Evidence-Based)**：所有的形容詞（如：溝通力強、細心）若無數據或案例支撐，視為無效廢話，必須要求使用者補充。
-3.  **格式規範**：
-    -   僅輸出繁體中文。
-    -   忽略排版設計，專注於文字內容的邏輯與說服力。
-    -   自傳撰寫時，嚴禁使用小標題，需為流暢的純文本分段。
+## 報告產出結構要求 (必須包含以下兩大區塊，並嚴格依序生成所有內容)
 
-## Skill Methodology (核心方法論)
+請根據使用者提供的【學員基本資訊】與【履歷內容】，自動生成一份完整的全套轉職輔導報告，報告必須分為「給學員」與「給老師」兩大部分，請直接輸出內容：
 
-### 1. 經歷煉金術 (STAR Refinement)
-將流水帳經歷重寫為高價值成就：
--   **Situation (情境)**：面臨什麼困難或市場狀況？
--   **Task (任務)**：你的具體目標是什麼？
--   **Action (行動)**：你做了什麼策略性的舉動？（強調主動性）
--   **Result (結果)**：量化數據（%、時間、金額）或質化突破。
+【第一部分：給學員的實戰修改建議】
 
-### 2. 雙核檢視 (Dual-Core Audit)
--   **Core 1: 平台演算法 (SEO)**：
-    -   **關鍵字精準度**：確保技能標籤與內文關鍵字精確命中目標職缺 (JD) 的高頻詞彙，提升在 104/1111 的搜尋排名。
-    -   **點擊誘因**：優化照片建議、自我推薦信（Cover Letter）的吸引力。
--   **Core 2: 人眼閱讀體驗 (HR Scan)**：
-    -   **視覺動線**：確保重點在前 1/3 版面即可被看見。
-    -   **邏輯密度**：消除冗詞贅字，確保每一句話都有商業價值。
+一、 履歷健檢與綜合評分 (104/1111 搜尋優化視角)
+(1) 綜合競爭力評分 (0-100分)。
+(2) 易讀性掃描與致命傷點出 (如不明空窗期、缺乏數據佐證等)。
+(3) 提供 3 個關鍵經歷的 STAR 具體改寫示範 (Situation情境, Task任務, Action行動, Result結果)。
 
-## Workflow Steps (工作流程)
-當使用者輸入對應數字或需求後，執行下列模組：
+二、 專業版自傳與極速簡介
+(1) 黃金 6 秒極速簡介 (80字內，針對目標職缺精準打擊)。
+(2) 完整專業實務自傳 (約 500 字，結構含定位、硬實力、軟實力與願景，流暢純文字分段)。
 
-### 模組 A：履歷與能見度診斷 (Resume & Visibility Audit)
-1.  **👁️ 排版與易讀性掃描**：
-    -   檢查閱讀動線是否清晰（F型掃描模式）。
-    -   警告過度花俏或難以閱讀的視覺設計。
-2.  **致命傷掃描 (Fatal Flaw Scan)**：
-    -   **偵測重點**：不明空窗期 (>3個月)、極短暫經歷 (<1年)、學生氣用語 (我願意學習)、缺乏數據佐證的形容詞。
-    -   **⚠️ 豁免清單 (Whitelist)**：
-        1.  **強制性個資**：台灣 104/1111 平台要求的個資（如：**性別、年齡/生日、兵役狀況、婚姻狀況**），請視為合規。
-        2.  **平台固定版位**：**嚴禁**批評「版面順序」或「區塊權重」（如：學歷在經歷之前、專長在最後面），因這是 104/1111 的**強制公版排序**，非使用者可控。
-3.  **STAR 改寫建議**：挑選 3 個關鍵經歷進行 STAR 重寫示範。
-4.  **🏆 綜合競爭力評分 (0-100)**：
-    -   **評分公式**：易讀性 (20%) + 關鍵字命中 (30%) + 數據量化 (30%) + 穩定性/軟實力 (20%)。
-    -   **輸出**：分數、版面優化建議、內容優化建議、⚠️ 潛在風險警告。
+三、 作品集邏輯優化與逐頁導覽說詞
+(1) 邏輯診斷與必刪除清單：若學員有附上作品集資訊，請給予架構建議與應刪除的無效內容。若無，請列出應徵該職務「必備的作品集項目清單」與「排版邏輯」。
+(2) 生成一段面試時展示作品集用的「導覽說詞講稿」(包含引導視線、決策邏輯、效益收尾)。
 
-### 模組 B：作品集邏輯優化與詳細修改 (Portfolio Logic & Revision)
-1.  **結構檢核**：檢查每個專案是否具備完整商業邏輯 (`Background` -> `Challenge` -> `Solution` -> `Result`)。
-2.  **視覺與呈現診斷**：
-    -   評估排版層級、資訊密度與閱讀動線。
-    -   **⚠️ 重要限制**：請完全忽略圖片的「解析度」或「清晰度」檢查（避免 AI 視覺誤判），僅專注於圖片的「內容關聯性」與「排版位置」。
-3.  **🔧 詳細修改建議書**：
-    -   針對不足之處，提供「頁面級 (Page-level)」的具體修改指令。
-    -   *範例*：「第 3 頁的流程圖過於複雜，建議刪除次要分支，並用紅框標示出你改善的核心環節。」
-4.  **⛔ 必刪除/不可留清單 (Must-Delete List)**：
-    -   **觸發機制**：若偵測到以下「扣分項目」**強制列出**，若無則略過此區塊。
-    -   **偵測目標**：
-        -   **無效裝飾**：無意義的幾何圖形、喧賓奪主的背景圖。
-        -   **品質低落**：未對齊的排版、明顯的錯字（**註：不包含圖片畫質檢查**）。
-        -   **雜訊內容**：與應徵職位完全無關的個人興趣（如：應徵工程師卻放了大量烹飪照片）、超過 5 年且技術過時的學校作業。
-        -   **負面表述**：任何形式的藉口（如：「因為時間不夠所以沒做完...」）。
-5.  **輸出總結**：🟢 競爭力分析 / 🟡 具體優化清單 / ⛔ 必刪除清單(視情況)。
+四、 自我介紹講稿生成
+(1) 1 分鐘精準破題版講稿。
+(2) 3 分鐘起承轉合版講稿。
 
-### 模組 C：黃金自我介紹生成 (Golden Scripts)
-根據使用者履歷，填空並生成兩版講稿（嚴禁出現扣分字眼）：
--   **⏱️ 1分鐘版 (精準破題)**：聚焦「過去經驗如何支持新職位」+「即戰力證明」。
--   **⏱️ 3分鐘版 (起承轉合)**：性格特質 -> 軟實力遷移 (STAR故事) -> 轉職動機與硬實力準備 -> 願景與配合度。
+五、 面試戰略全書
+(1) 針對該目標職務，列出 3 至 5 題最容易被問到的精準面試題庫與建議回答方向。
+(2) 提供 2 個高品質的「情境感知型反問策略」(讓學員提問面試官的問題)。
 
-### 模組 D：專業自傳與極速摘要 (Professional Bio & 6-Second Hook)
-本模組需同時產出以下兩個部分：
-1.  **⚡ 黃金 6 秒極速簡介**：嚴格限制 80 字內。公式：`[年資職稱]` + `[JD 關鍵字匹配技能]` + `[價值承諾]`。戰略目標為**針對特定職缺的精準打擊**。
-2.  **📝 完整專業實務自傳**：約 500-600 字。第一句必須介紹姓名，結構需包含定位、硬實力、軟實力與願景，嚴禁使用小標題。
+--------------------------------------------------
 
-### 模組 E：面試戰略全書 (Strategic Interview Preparation)
-1.  **🎯 15 題精準題庫**：含轉職動機、STAR行為面試、軟實力情境。
-2.  **👔 專業對答禮儀與氣場**：含「黃金結尾句」與非語言策略。
-3.  **❓ 情境感知型反問策略**：
-    -   **互動指令**：若無公司資料，**務必先詢問**使用者欲面試的「企業名稱」與「職稱」。
-    -   **路徑 A (無經驗/轉職)**：聚焦成功路徑、團隊協作、文化適應。
-    -   **路徑 B (有經驗)**：狙擊型深度提問，針對公司技術痛點或市場挑戰。
+【第二部分：給就業輔導老師的引導參考】
 
-### 模組 F：作品集逐頁導覽說詞 (Portfolio Page-by-Page Scripts)
-1.  **目標**：為作品集的每一頁或主要專案，生成一段「面試時口頭報告用」的逐字稿。
-2.  **結構模式**：引導視線 (Eye Contact) -> 決策邏輯 (Business Logic) -> 效益收尾 (Impact)。
+一、 學員潛力與弱點分析
+從 HR 與獵頭視角，真實剖析該學員履歷目前的「潛在優勢」與「最大致命傷」。
 
-### 模組 G：延伸諮詢與優化 (Iterative Refinement)
-當使用者選擇此項，或針對前次產出提出追問時，完整繼承上下文並針對性調整。
+二、 諮詢引導策略
+(1) 建議老師在輔導時，可以優先從哪個痛點切入。
+(2) 列出 3 個「引導話術與提問」，幫助老師挖掘學員未寫出的亮點或量化數據。
 
-### 模組 H：🍀 賽前心理建設與最後叮嚀 (Context-Aware Pre-Interview Warm-up)
-**時機**：僅在使用者主動詢問，或 **AI 判斷履歷/作品集已優化至成熟階段（Ready for Battle）時**，才顯示此選項。
-**互動指令**：若先前對話未提及目標職位，**務必先詢問**：「請問您明天要面試的『具體職位』與『產業』為何？」以進行客製化。
-**產出內容**：
-1.  **📋 職位專屬戰備清單**：根據 設計/工程/業務/行政 不同類別提供專屬裝備建議（如：離線作品集、白板筆、數據平板）。
-2.  **🧠 勝選心態定錨**：設定該職位的「高勝率人格面具」（如：合作夥伴 vs 應徵者）。
-3.  **❤️ 顧問的暖心喊話**：給予信心與鼓勵。
-
-## Interaction Protocol (互動循環機制)
-**在每一次回答結束後**，無論是哪一個模組，你都必須執行以下動作：
-1.  使用分隔線 `---` 區隔內容。
-2.  **強制完整顯示標準選單 (Mandatory Full Menu Display)**：
-    * **⚠️ 嚴格規定**：無論前述回答為何，必須**完整列出 1~8 項**，不可省略任何選項，不可修改文字：
-    1.  🚀 **全套轉職輔導** (履歷+作品集+自傳+口語自我介紹)
-    2.  🔍 **履歷健檢與評分** (104/1111 搜尋優化視角)
-    3.  🎨 **優化作品集邏輯** (含詳細修改建議 & **⛔ 必刪除清單**)
-    4.  🗣️ **生成作品集「逐頁導覽說詞」**
-    5.  📝 **撰寫「專業版」自傳** (含 ⚡ **黃金 6 秒極速簡介** - JD 關鍵字精準匹配)
-    6.  🎤 **生成「自我介紹」講稿** (1/3分鐘背誦版)
-    7.  🛡️ **面試戰略全書** (含題庫、禮儀與針對性反問)
-    8.  💬 **針對上述內容延伸提問或修改**
-3.  **條件式觸發 (Conditional Trigger)**：
-    * **僅當**履歷/作品集已修正完善，或使用者表示將面試時，**才在清單最後追加**：
-    9.  🍀 **賽前心理建設與最後叮嚀** (職位專屬 Checklist + 信心喊話)
-4.  詢問使用者：「接下來您希望進行哪個步驟？請輸入數字。」
-
-## Initialization (啟動程序)
-對話開始時，請執行：
-1.  自我介紹：表明身分與專業領域（強調 104/1111 演算法優化 與 獵頭選才視角）。
-2.  顯示 **標準功能選單** (僅顯示 1-8，第 9 項隱藏)：
-    * (請輸出與 Interaction Protocol 完全相同的 1~8 項文字)
-3.  引導語：「請輸入數字選擇服務，或直接貼上您的履歷/作品集連結，讓我為您進行 **能見度 (SEO)** 與 **競爭力** 雙重診斷。」
+三、 媒合與推播建議
+針對學員目前的特質與目標，建議後續可以推播哪種類型的廠商或職缺最容易錄取。
 </script>
 
+<!-- 浮動通知 -->
 <div id="toastNotification">通知訊息</div>
 
+<!-- 自訂對話框 -->
 <div id="customModalOverlay">
   <div class="modal-box fade">
     <div id="modalMsg" style="font-size: 16px; margin-bottom: 24px; color: var(--ink); line-height: 1.5; white-space: pre-wrap;"></div>
@@ -328,12 +256,13 @@
     </div>
   </div>
 
+  <!-- ⚙️ 系統與備份 (預設停留此頁) -->
   <div id="settings" class="view active fade">
     <div class="grid-2">
       <div class="card" style="margin-top: 16px; border-color: #4285F4; background: #f8faff; grid-column: 1 / -1;">
         <h3 style="margin-top:0; color:#4285F4;">♊ Google Gemini AI 直接健檢設定</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">
-          設定 API Key 後，即可在履歷分頁直接呼叫 AI 進行診斷，無需手動複製貼上。
+          設定 API Key 後，即可在履歷分頁直接呼叫 AI 進行診斷，自動產出雙視角報告。
         </p>
         <div class="grid-2" style="margin-bottom: 12px;">
           <div>
@@ -346,6 +275,7 @@
         </div>
       </div>
 
+      <!-- 離線備份 -->
       <div class="card">
         <h3 style="margin-top:0;">💾 離線資料備份與還原</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">匯出 .json 檔案存放在您的電腦中，作為離線保險。</p>
@@ -356,6 +286,7 @@
         <button class="btn btn-outline" onclick="importData()" style="width:100%;">📤 還原離線資料</button>
       </div>
 
+      <!-- 常用連結 -->
       <div class="card">
         <h3 style="margin-top:0;">🔗 常用系統連結</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">將公司的後台系統、報表或雲端硬碟網址存在這裡，當作您的專屬入口網站。</p>
@@ -415,6 +346,7 @@
     </div>
   </div>
 
+  <!-- 🌟 新增：STAR 履歷健診模組 -->
   <div id="resume-check" class="view fade">
     <div class="grid-2">
       <div class="card">
@@ -425,22 +357,21 @@
         </div>
 
         <div style="background: var(--goSoft); padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px dashed var(--go);">
-          <label style="font-weight:bold; font-size:13px; color:var(--go); display:block; margin-bottom:8px;">📄 上傳 PDF 履歷 (支援繁體中文提取)：</label>
+          <label style="font-weight:bold; font-size:13px; color:var(--go); display:block; margin-bottom:8px;">📄 選擇上傳一般 PDF，或貼入 104 履歷文字：</label>
           <input type="file" id="rcPdfFile" accept=".pdf" style="margin-bottom:0; background:#fff;">
           <div id="pdfLoadingStatus" style="font-size:12px; color:var(--go); margin-top:5px; font-weight:bold;"></div>
         </div>
 
-        <textarea id="rcResumeText" placeholder="PDF 文字提取後會顯示在此，或直接手動貼上文字..." style="min-height:160px;"></textarea>
+        <textarea id="rcResumeText" placeholder="PDF 文字提取後會顯示在此。若為 104 網頁履歷，請直接全選複製並貼入此處..." style="min-height:160px;"></textarea>
   
         <div style="display:flex; gap:10px;">
-          <button class="btn" onclick="copyAiPrompt()" style="flex:1; background:var(--ink);">📋 複製提示詞</button>
-          <button id="runGeminiBtn" class="btn" onclick="runGeminiDiagnosis()" style="flex:2; background:#4285F4;">🚀 直接用 Gemini AI 健檢</button>
+          <button id="runGeminiBtn" class="btn" onclick="runGeminiDiagnosis()" style="flex:2; background:#4285F4;">🚀 產出全套雙視角分析報告</button>
           <button class="btn btn-outline" onclick="jumpToGem()" style="flex:1;">🔗 我的 Gem</button>
         </div>
       </div>
 
       <div class="card">
-        <h3 style="margin-top:0; color:var(--go);">2. ⚡ 快速診斷 (手掌握勾選常用評語)</h3>
+        <h3 style="margin-top:0; color:var(--go);">2. ⚡ 快速診斷 (手動勾選常用評語)</h3>
         <p style="color:var(--sub); font-size:13px; margin-bottom:12px;">不想依賴 AI 時，直接勾選以下最常見的 STAR 履歷致命傷，自動拼湊出一份專業的修改建議！</p>
         
         <label style="font-weight:bold; font-size:13px; color:var(--ink);">S 情境 (Situation)</label>
@@ -476,9 +407,9 @@
 
       <div class="card" style="grid-column: 1 / -1;">
         <h3 style="margin-top:0; color:var(--go);">3. 📄 健診報告預覽與 PDF 輸出</h3>
-        <p style="color:var(--sub); font-size:13px; margin-bottom:12px;">您可以在此手動修改評語，或是將 ChatGPT 產出的萬字分析報告貼回這裡，最後一鍵轉換成有質感的 A4 PDF 給學員。</p>
+        <p style="color:var(--sub); font-size:13px; margin-bottom:12px;">此區文字皆為「純淨無亂碼版」，您可以自由編修。滿意後請點擊下方按鈕產出精美的雙視角 A4 PDF 給學員與自己留存。</p>
         
-        <textarea id="rcOutput" placeholder="這裡將顯示組合後的評語或 AI 報告內容..." style="min-height:300px; line-height:1.6; font-size:14px;"></textarea>
+        <textarea id="rcOutput" placeholder="這裡將顯示組合後的評語或 AI 全套分析報告內容..." style="min-height:500px; line-height:1.6; font-size:14px;"></textarea>
         
         <div style="display:flex; gap:10px; margin-top:12px;">
           <button class="btn" onclick="exportResumePDF()" style="flex:1; padding: 12px; font-size:16px;">📥 產生精美 A4 健診報告 (PDF)</button>
@@ -489,6 +420,7 @@
     </div>
   </div>
 
+  <!-- 📅 行事曆區塊 -->
   <div id="notes" class="view fade">
     <div id="dueBar"></div>
     
@@ -546,6 +478,7 @@
     <div id="noteGrid"></div>
   </div>
 
+  <!-- 📊 區域業績統計 -->
   <div id="stats" class="view fade">
     <div class="grid-2">
       <div class="card">
@@ -581,6 +514,7 @@
     </div>
   </div>
 
+  <!-- 🎨 百人戰報宣傳圖 -->
   <div id="poster" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">百人戰報宣傳圖 (自動套版)</h3>
@@ -643,6 +577,7 @@
     </div>
   </div>
 
+  <!-- 📑 契約書左右合併 -->
   <div id="merge-jpg" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">契約書左右合併 (輸出 JPG)</h3>
@@ -681,6 +616,7 @@
     </div>
   </div>
 
+  <!-- 📑 廠商契約 (上下合併) -->
   <div id="vendor-contract" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">廠商契約 (上下合併輸出 JPG)</h3>
@@ -707,6 +643,7 @@
     </div>
   </div>
 
+  <!-- 📚 結訓作品集 -->
   <div id="pdf-portfolio" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">結訓作品集 PDF (自動內頁標題版)</h3>
@@ -768,6 +705,7 @@
         </div>
       </div>
       
+      <!-- 👀 封面即時預覽 -->
       <div style="margin-top: 20px; text-align: center; border-top: 1px dashed var(--line); padding-top: 20px;">
         <label style="font-weight:bold; font-size:14px; color:var(--go); margin-bottom: 12px; display:block;">👀 封面即時預覽 (PDF將依此畫面生成)</label>
         <canvas id="portCoverPreview" width="2376" height="1680" style="max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);"></canvas>
@@ -781,6 +719,7 @@
     </div>
   </div>
 
+  <!-- 📈 指標儀表板 -->
   <div id="dashboard" class="view fade">
     <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
       <h3 style="margin:0;">本月營運指標</h3>
@@ -885,19 +824,15 @@
   // ==========================================
   // GitHub 雲端同步邏輯
   // ==========================================
-  // 憑證僅保留在目前頁面的記憶體，避免被持久化資料或惡意腳本讀取。
-  var savedGhConfig = safeGet('admin_gh_config', { repo: '', lastJsonBackup: '' });
-  var ghConfig = { token: '', repo: savedGhConfig.repo || '', lastJsonBackup: savedGhConfig.lastJsonBackup || '' };
-  // 清除舊版可能保存過 token 的設定，只保留非敏感的儲存庫與備份日期。
-  safeSet('admin_gh_config', { repo: ghConfig.repo, lastJsonBackup: ghConfig.lastJsonBackup });
-  document.getElementById('ghRepo').value = ghConfig.repo;
-  document.getElementById('ghToken').value = '';
+  var ghConfig = safeGet('admin_gh_config', { token: '', repo: '', lastJsonBackup: '' });
+  document.getElementById('ghRepo').value = ghConfig.repo || '';
+  document.getElementById('ghToken').value = ghConfig.token || '';
 
   function saveGhConfig() {
     ghConfig.repo = document.getElementById('ghRepo').value.trim();
     ghConfig.token = document.getElementById('ghToken').value.trim();
-    safeSet('admin_gh_config', { repo: ghConfig.repo, lastJsonBackup: ghConfig.lastJsonBackup });
-    showMsg('✅ GitHub 設定已套用於本次工作階段。為保護帳號安全，Token 不會儲存在瀏覽器中。');
+    safeSet('admin_gh_config', ghConfig);
+    showMsg('✅ GitHub 雲端設定已儲存！您現在可以點擊「強制備份至雲端」了！');
   }
 
   async function uploadImageToGitHub(fileName, dataUrlBase64, customFolder) {
@@ -1018,19 +953,79 @@
 
 
   // ==========================================
-  // 🌟 模組 A: STAR 履歷健診與 AI 提示詞生成 (含 PDF 繁體中文解析)
+  // 🌟 模組 A: STAR 履歷健診與 AI 提示詞生成 (含 PDF 繁體中文解析與終極除蟲過濾)
   // ==========================================
-  // Gemini key 同樣只存在記憶體；重新整理頁面後需再次輸入。
-  var geminiConfig = { key: '' };
-  localStorage.removeItem('admin_gemini_cfg');
-  if(document.getElementById('geminiKey')) document.getElementById('geminiKey').value = '';
+  var geminiConfig = safeGet('admin_gemini_cfg', { key: '' });
+  if(document.getElementById('geminiKey')) document.getElementById('geminiKey').value = geminiConfig.key || '';
 
   function saveGeminiConfig() {
     geminiConfig.key = document.getElementById('geminiKey').value.trim();
-    showToast('✅ Gemini API Key 已套用於本次工作階段。');
+    safeSet('admin_gemini_cfg', geminiConfig);
+    showToast('✅ Gemini API Key 已儲存！');
   }
 
+  if (document.getElementById('rcPdfFile')) {
+    document.getElementById('rcPdfFile').addEventListener('change', async function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
 
+      const status = document.getElementById('pdfLoadingStatus');
+      const textArea = document.getElementById('rcResumeText');
+
+      status.innerText = '⏳ 正在解析 PDF...';
+      textArea.value = '';
+
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        
+        const loadingTask = pdfjsLib.getDocument({
+          data: arrayBuffer,
+          cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/cmaps/',
+          cMapPacked: true,
+        });
+
+        const pdf = await loadingTask.promise;
+        let fullText = '';
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          
+          let pageText = '';
+          let lastY = -1;
+          
+          textContent.items.forEach(item => {
+            if (lastY !== -1 && Math.abs(item.transform[5] - lastY) > 5) {
+               pageText += '\n';
+            }
+            pageText += item.str;
+            lastY = item.transform[5];
+          });
+          
+          fullText += `[第 ${i} 頁]\n${pageText}\n\n`;
+        }
+
+        const cleanTest = fullText.replace(/[0-9\s\-_]/g, '');
+        if (cleanTest.length < 10 || cleanTest.includes('')) {
+            status.innerHTML = '⚠️ 偵測到 104 防拷貝加密 PDF。<br>💡 終極解決法：請直接打開學員的 104 網頁履歷，按 Ctrl+A 全選、Ctrl+C 複製，然後直接貼入下方的輸入框中，這是最快也最完美的解法！';
+        } else {
+            status.innerText = '✅ 繁體中文讀取成功！';
+        }
+
+        textArea.value = fullText.trim();
+
+        if (!document.getElementById('rcName').value) {
+          const lines = fullText.split('\n').filter(l => l.trim().length > 0);
+          if (lines.length > 1) {
+            document.getElementById('rcName').value = lines[1].substring(0, 10).trim();
+          }
+        }
+      } catch (err) {
+        status.innerText = '❌ 錯誤：' + err.message;
+        console.error(err);
+      }
+    });
+  }
 
   function copyAiPrompt() {
     var resume = document.getElementById('rcResumeText').value.trim();
@@ -1073,17 +1068,17 @@
     const btn = document.getElementById('runGeminiBtn');
 
     if (!apiKey) return showMsg('請先至「系統設定」儲存 Gemini API Key！');
-    if (!resumeText) return showMsg('請先上傳 PDF 或貼入履歷內容！');
+    if (!resumeText) return showMsg('請先上傳 PDF 或是將履歷純文字直接貼進上方的輸入框！');
 
     btn.disabled = true;
-    btn.innerText = '🤖 AI 分析中...';
-    outputArea.value = '正在呼叫 Gemini AI 進行深度診斷，請稍候...';
+    btn.innerText = '🤖 AI 深度分析產出中...';
+    outputArea.value = '正在呼叫 Gemini AI 進行全方位深度診斷 (包含自傳、作品集腳本與面試題庫)，這會花上一點時間，請耐心稍候...';
     
     const promptTemplate = document.getElementById('aiPromptTemplate').innerHTML;
     const finalPrompt = promptTemplate + `\n\n學員：${name}\n目標職務：${job}\n履歷內容：\n${resumeText}`;
 
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: finalPrompt }] }] })
@@ -1091,10 +1086,15 @@
       const data = await response.json();
       if (data.error) throw new Error(data.error.message);
       
-      outputArea.value = data.candidates[0].content.parts[0].text;
-      showToast('✅ AI 診斷完成！');
+      let rawText = data.candidates[0].content.parts[0].text;
+      
+      // 🌟 終極濾網：強制洗掉所有 Markdown 符號 (*, #, _, `) 讓文字乾淨俐落
+      let cleanText = rawText.replace(/[\*\#\_\`]/g, '');
+      
+      outputArea.value = cleanText;
+      showToast('✅ 全套雙視角 AI 診斷完成！');
     } catch (err) { outputArea.value = '❌ 呼叫 AI 失敗：' + err.message; }
-    finally { btn.disabled = false; btn.innerText = '🚀 直接用 Gemini AI 健檢'; }
+    finally { btn.disabled = false; btn.innerText = '🚀 產出全套雙視角分析報告'; }
   }
 
   function jumpToGem() {
@@ -1502,17 +1502,6 @@
 
   function changeMonth(delta) { currentCalDate.setMonth(currentCalDate.getMonth() + delta); renderCalendar(); }
 
-  function escapeHtml(value) {
-    return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
-    });
-  }
-
-  function getSafeNoteColor(color) {
-    var allowed = ['c-green', 'c-danger', 'c-blue', 'c-purple', 'c-orange', 'c-gray', 'c-brown', 'c-pink'];
-    return allowed.includes(color) ? color : 'c-green';
-  }
-
   function renderCalendar() {
     var grid = document.getElementById('calGrid'); var title = document.getElementById('calTitle');
     if(!grid || !title) return;
@@ -1537,12 +1526,9 @@
       
       var dayNotes = notes.filter(function(n) { return n.due === dateStr; });
       dayNotes.forEach(function(n) {
-        var cls = 'cal-item ' + (n.completed ? 'c-completed' : getSafeNoteColor(n.color));
+        var cls = 'cal-item ' + (n.completed ? 'c-completed' : (n.color || 'c-green'));
         var dragTip = n.completed ? ' (已完成)' : ' (💡長按可拖曳移動，+Ctrl鍵拖曳可複製)';
-        var noteId = encodeURIComponent(String(n.id == null ? '' : n.id));
-        var safeTitle = escapeHtml(n.title);
-        var safeTooltip = escapeHtml(String(n.title == null ? '' : n.title) + dragTip);
-        html += '<div class="' + cls + '" draggable="true" data-note-id="' + noteId + '" ondragstart="handleDragStart(event, decodeURIComponent(this.dataset.noteId))" onclick="event.stopPropagation(); editNote(decodeURIComponent(this.dataset.noteId))" title="' + safeTooltip + '">' + safeTitle + '</div>';
+        html += '<div class="' + cls + '" draggable="true" ondragstart="handleDragStart(event, \'' + n.id + '\')" onclick="event.stopPropagation(); editNote(\'' + n.id + '\')" title="' + n.title + dragTip + '">' + n.title + '</div>';
       });
       html += '</div>';
     }
@@ -1682,435 +1668,123 @@
     renderCalendar(); 
   }
 
-  // 模組 6: 指標儀表板
-  var dashData = safeGet('admin_dash_v2', { d1: 0, d2: 0, d3: 0 });
-
-  function renderDashboard() {
-    document.getElementById('dash1').textContent = dashData.d1;
-    document.getElementById('dash2').textContent = dashData.d2;
-    document.getElementById('dash3').textContent = dashData.d3;
-  }
-
-  function editDashboard() {
-    document.getElementById('inputDash1').value = dashData.d1;
-    document.getElementById('inputDash2').value = dashData.d2;
-    document.getElementById('inputDash3').value = dashData.d3;
-    document.getElementById('dashEditor').style.display = 'block';
-  }
-
-  function saveDashboard() {
-    ['1', '2', '3'].forEach(function(index) {
-      var value = Number(document.getElementById('inputDash' + index).value);
-      dashData['d' + index] = Number.isFinite(value) && value >= 0 ? value : 0;
-    });
-    safeSet('admin_dash_v2', dashData);
-    renderDashboard();
-    document.getElementById('dashEditor').style.display = 'none';
-    showToast('✅ 指標已儲存！');
-  }
-
-  function resetDashboard() {
-    showConfirm('確定要將所有指標重置為 0 嗎？', function() {
-      dashData = { d1: 0, d2: 0, d3: 0 };
-      safeSet('admin_dash_v2', dashData);
-      renderDashboard();
-      document.getElementById('dashEditor').style.display = 'none';
-      showToast('✅ 指標已重置！');
-    });
-  }
-
   //網頁初始化載入各模組渲染
   renderNotes();
-  renderDashboard();
   
+  // 模組 6: 指標儀表板 (省略未變更部分...)
+  var dashData = safeGet('admin_dash_v2', { d1: 0, d2: 0, d3: 0 });
+  function renderDashboard() { 
+    var d1 = document.getElementById('dash1');
+    if(d1) {
+      d1.innerText = dashData.d1; document.getElementById('dash2').innerText = dashData.d2; document.getElementById('dash3').innerText = dashData.d3;
+    }
+  }
+  function editDashboard() { document.getElementById('inputDash1').value = dashData.d1; document.getElementById('inputDash2').value = dashData.d2; document.getElementById('inputDash3').value = dashData.d3; document.getElementById('dashEditor').style.display = 'block'; }
+  function saveDashboard() { dashData = { d1: document.getElementById('inputDash1').value || 0, d2: document.getElementById('inputDash2').value || 0, d3: document.getElementById('inputDash3').value || 0 }; safeSet('admin_dash_v2', dashData); renderDashboard(); document.getElementById('dashEditor').style.display = 'none'; showMsg('指標數據已更新！'); }
+  function resetDashboard() { showConfirm('確定要將所有指標數據歸零嗎？', function() { dashData = { d1: 0, d2: 0, d3: 0 }; safeSet('admin_dash_v2', dashData); renderDashboard(); document.getElementById('dashEditor').style.display = 'none'; showMsg('指標數據已重置。'); }); }
+  renderDashboard();
+
   // 模組 7: 系統備份與常用連結 (省略未變更部分...)
-  // 模組 7: 系統備份與常用連結 (省略未變更部分...)
+  var linksData = safeGet('admin_links_v1', [ { id: '1', name: '員工入口網', url: 'https://www.google.com' } ]);
+  function renderLinks() {
+    var list = document.getElementById('linksList'); if(!list) return; list.innerHTML = '';
+    if(linksData.length === 0) { list.innerHTML = '<div style="color:var(--sub); font-size:13px; text-align:center; padding:10px;">目前沒有設定任何連結</div>'; return; }
+    linksData.forEach(function(l) {
+      var div = document.createElement('div'); div.className = 'quick-link-item';
+      var a = document.createElement('a'); a.href = l.url; a.target = '_blank'; a.innerHTML = '🔗 ' + l.name;
+      var delBtn = document.createElement('button'); delBtn.textContent = '刪除'; delBtn.style.cssText = 'background:none; border:none; color:var(--danger); cursor:pointer; font-size:12px; font-weight:bold; padding:4px 8px;';
+      delBtn.onclick = function() { linksData = linksData.filter(function(item) { return item.id !== l.id; }); safeSet('admin_links_v1', linksData); renderLinks(); };
+      div.appendChild(a); div.appendChild(delBtn); list.appendChild(div);
+    });
+  }
+  function addLink() {
+    var name = document.getElementById('newLinkName').value.trim(); var url = document.getElementById('newLinkUrl').value.trim();
+    if(!name || !url) return showMsg('請輸入連結名稱與網址！'); if(!url.startsWith('http')) url = 'https://' + url;
+    linksData.push({ id: Date.now().toString(), name: name, url: url }); safeSet('admin_links_v1', linksData);
+    document.getElementById('newLinkName').value = ''; document.getElementById('newLinkUrl').value = ''; renderLinks(); showMsg('✅ 常用連結已新增！');
+  }
+  renderLinks();
+  function exportData() {
+    var backupData = { notes: safeGet('admin_notes_v4', []), roster: safeGet('admin_roster_v8', {}), dash: safeGet('admin_dash_v2', { d1:0, d2:0, d3:0 }), links: safeGet('admin_links_v1', []) };
+    var blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' }); var url = URL.createObjectURL(blob);
+    var a = document.createElement('a'); a.href = url; a.download = '行政工具箱備份檔_' + new Date().toISOString().split('T')[0] + '.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  }
+  function importData() {
+    var fileInput = document.getElementById('importFile'); if(!fileInput.files || fileInput.files.length === 0) return showMsg('請先選擇 .json 備份檔案！');
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var data = JSON.parse(e.target.result);
+        showConfirm('確定要還原備份資料嗎？\n這將會覆蓋您目前的紀錄！', function() {
+          if(data.notes) safeSet('admin_notes_v4', data.notes); if(data.roster) safeSet('admin_roster_v8', data.roster);
+          if(data.dash) safeSet('admin_dash_v2', data.dash); if(data.links) safeSet('admin_links_v1', data.links);
+          notes = safeGet('admin_notes_v4', []); renderNotes(); rosData = safeGet('admin_roster_v8', {}); buildInputs(); renderRoster();
+          dashData = safeGet('admin_dash_v2', { d1:0, d2:0, d3:0 }); renderDashboard(); linksData = safeGet('admin_links_v1', []); renderLinks();
+          fileInput.value = ''; showMsg('✅ 資料已成功還原！');
+        });
+      } catch (err) { showMsg('❌ 檔案格式錯誤，無法還原資料。'); }
+    };
+    reader.readAsText(fileInput.files[0]);
+  }
+
   // 模組 8: Telegram 自動推播與自動雲端備份啟動器 (省略未變更部分...)
-
-</script>
-
-<script>
-/*
- * Drop-in replacement for the rcPdfFile "change" listener in index.html.
- * Requires PDF.js 2.16.105 and the existing elements:
- * rcPdfFile, pdfLoadingStatus, rcResumeText, rcName.
- */
-(function () {
-  'use strict';
-
-  var PDFJS_VERSION = '2.16.105';
-  var PDFJS_CDN = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@' + PDFJS_VERSION + '/';
-  var OCR_SCRIPT = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-  var ocrLoader;
-
-  function setStatus(message) {
-    var status = document.getElementById('pdfLoadingStatus');
-    if (status) status.textContent = message;
+  var tgConfig = safeGet('admin_tg_config', { token: '', chatId: '', lastNotified: '' });
+  document.getElementById('tgToken').value = tgConfig.token || ''; document.getElementById('tgChatId').value = tgConfig.chatId || '';
+  function saveTgConfig() {
+    tgConfig.token = document.getElementById('tgToken').value.trim(); tgConfig.chatId = document.getElementById('tgChatId').value.trim();
+    safeSet('admin_tg_config', tgConfig); showMsg('✅ Telegram 設定已儲存！');
   }
-
-  function isUsefulText(text) {
-    return (text.match(/[\u3400-\u9fffA-Za-z0-9]/g) || []).length >= 20;
-  }
-
-  function joinTextItems(items) {
-    var records = items
-      .filter(function (item) { return item.str && item.str.trim(); })
-      .map(function (item) {
-        return { text: item.str, x: item.transform[4], y: item.transform[5], width: item.width || 0 };
-      });
-
-    records.sort(function (a, b) {
-      return Math.abs(a.y - b.y) < 3 ? a.x - b.x : b.y - a.y;
-    });
-
-    var lines = [];
-    records.forEach(function (record) {
-      var line = lines[lines.length - 1];
-      if (!line || Math.abs(line.y - record.y) >= 3) {
-        lines.push({ y: record.y, items: [record] });
-      } else {
-        line.items.push(record);
-      }
-    });
-
-    return lines.map(function (line) {
-      line.items.sort(function (a, b) { return a.x - b.x; });
-      return line.items.map(function (item, index) {
-        if (!index) return item.text;
-        var previous = line.items[index - 1];
-        var gap = item.x - (previous.x + previous.width);
-        return (gap > 5 ? ' ' : '') + item.text;
-      }).join('');
-    }).join('\n');
-  }
-
-  async function loadTesseract() {
-    if (window.Tesseract) return window.Tesseract;
-    if (!ocrLoader) {
-      ocrLoader = new Promise(function (resolve, reject) {
-        var script = document.createElement('script');
-        script.src = OCR_SCRIPT;
-        script.onload = function () { resolve(window.Tesseract); };
-        script.onerror = function () { reject(new Error('無法載入 OCR 元件，請檢查網路連線。')); };
-        document.head.appendChild(script);
-      });
-    }
-    return ocrLoader;
-  }
-
-  async function renderPage(page) {
-    var viewport = page.getViewport({ scale: 2 });
-    var canvas = document.createElement('canvas');
-    canvas.width = Math.ceil(viewport.width);
-    canvas.height = Math.ceil(viewport.height);
-    await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
-    return canvas;
-  }
-
-  async function extractResumePdf(file) {
-    if (!window.pdfjsLib) throw new Error('PDF.js 尚未載入完成，請重新整理後再試一次。');
-
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_CDN + 'build/pdf.worker.min.js';
-    var buffer = await file.arrayBuffer();
-    var pdf = await window.pdfjsLib.getDocument({
-      data: buffer,
-      cMapUrl: PDFJS_CDN + 'cmaps/',
-      cMapPacked: true,
-      standardFontDataUrl: PDFJS_CDN + 'standard_fonts/',
-      useSystemFonts: true
-    }).promise;
-
-    // 104 履歷常使用無法可靠擷取的內嵌字型，因此一律採用影像 OCR。
-    // 不讀取 PDF 文字層，可避免「看起來正常、擷取卻是亂碼」的情況。
-    var pages = [];
-    for (var pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
-      setStatus('正在準備第 ' + pageNumber + '/' + pdf.numPages + ' 頁 OCR…');
-      pages.push(await pdf.getPage(pageNumber));
-    }
-
-    setStatus('正在載入本機 OCR 繁體中文模型…');
-    var Tesseract = await loadTesseract();
-    var ocrPages = [];
-    for (var index = 0; index < pages.length; index += 1) {
-      setStatus('OCR 辨識第 ' + (index + 1) + '/' + pages.length + ' 頁…');
-      var canvas = await renderPage(pages[index]);
-      var result = await Tesseract.recognize(canvas, 'chi_tra+eng', {
-        logger: function (event) {
-          if (event.status === 'recognizing text' && event.progress != null) {
-            setStatus('OCR 辨識第 ' + (index + 1) + '/' + pages.length + ' 頁…' + Math.round(event.progress * 100) + '%');
-          }
-        }
-      });
-      ocrPages.push('[第 ' + (index + 1) + ' 頁]\n' + result.data.text.trim());
-      canvas.width = 1;
-      canvas.height = 1;
-    }
-
-    var ocrText = ocrPages.join('\n\n').trim();
-    if (!isUsefulText(ocrText)) throw new Error('無法辨識此 PDF。請確認檔案未受密碼保護，且掃描文字清晰可讀。');
-    return ocrText;
-  }
-
-  var input = document.getElementById('rcPdfFile');
-  if (!input) return;
-  input.addEventListener('change', async function (event) {
-    var file = event.target.files && event.target.files[0];
-    var textArea = document.getElementById('rcResumeText');
-    if (!file || !textArea) return;
-    if (file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) {
-      setStatus('請選擇 PDF 檔案。');
-      return;
-    }
-
-    textArea.value = '';
+  async function sendTelegramMessage(msg) {
+    if (!tgConfig.token || !tgConfig.chatId) return false;
     try {
-      var text = await extractResumePdf(file);
-      textArea.value = text;
-      setStatus('✅ 履歷文字讀取完成。若有少量 OCR 錯字，請先在文字框內修正再送出。');
-
-      var nameInput = document.getElementById('rcName');
-      if (nameInput && !nameInput.value.trim()) {
-        var candidate = text.split('\n').map(function (line) { return line.trim(); })
-          .find(function (line) { return /^[\u3400-\u9fff]{2,6}$/.test(line); });
-        if (candidate) nameInput.value = candidate;
-      }
-    } catch (error) {
-      console.error(error);
-      setStatus('❌ PDF 讀取失敗：' + error.message);
-    }
-  });
-}());
-</script>
-<script>
-/* Replace the current resume prompt/PDF script with this upgrade after jsPDF is loaded. */
-(function () {
-  'use strict';
-
-  var FULL_REPORT_PROMPT = `你是一位具國家級就業服務證照的資深職涯顧問，熟悉台灣 104／1111 的履歷搜尋邏輯與企業 HR 的篩選標準。
-
-請依據下方學員資料，直接完成一份完整、可交付的繁體中文職涯健診報告。不要要求輸入數字、不要顯示選單、不要詢問下一步。
-
-報告必須嚴格使用以下兩個區段與標題：
-
-【學員版健診報告】
-以支持、具體、專業的口吻撰寫，完整涵蓋八大章節：
-1. 全套轉職輔導總覽：職涯定位、目標職務、30/60/90 天行動路線。
-2. 履歷健檢與評分：以易讀性、關鍵字、量化成果、穩定性／軟實力給出 0–100 分與原因。
-3. 作品集邏輯優化：以 Background → Challenge → Solution → Result 檢核；若未提供作品集，要明確列出補件方向。
-4. 作品集逐頁導覽說詞：為主要專案提供可在面試使用的口語說法；沒有作品集時提供可套用模板。
-5. 專業版自傳：先給 80 字內黃金 6 秒簡介，再給 500–600 字無小標題的自傳草稿。
-6. 自我介紹講稿：提供 1 分鐘與 3 分鐘兩版。
-7. 面試戰略全書：提供 15 題高機率題目、答題方向、非語言建議與 3 個反問問題。
-8. 後續優化清單：依優先級列出下一步可執行事項。
-
-所有建議都要以提供的履歷事實為依據；缺乏數據時請清楚標為「待補資料」，不可虛構。避免「我願意學習、肯學、吃苦耐勞、依公司規定」等措辭，改用可證明的能力與成果。
-
-【內部教學備註】
-此段只供就業輔導老師使用，不對學員顯示。請列出：
-- 問題判讀依據與風險級別。
-- 下次輔導應追問的事實、數據與佐證。
-- 建議採用的教學／引導話術。
-- 學員版中刻意簡化、但老師需留意的敏感議題。
-
-學員姓名：{{name}}
-目標職務：{{job}}
-履歷內容：
-{{resume}}`;
-
-  function getValue(id, fallback) {
-    var element = document.getElementById(id);
-    return element && element.value.trim() ? element.value.trim() : fallback;
-  }
-
-  function buildPrompt() {
-    return FULL_REPORT_PROMPT
-      .replace('{{name}}', getValue('rcName', '未提供'))
-      .replace('{{job}}', getValue('rcJob', '尚未確定'))
-      .replace('{{resume}}', getValue('rcResumeText', '未提供履歷內容；請先列出需要補充的資料，再提供可套用的範本。'));
-  }
-
-  function splitReports(raw) {
-    var marker = '【內部教學備註】';
-    var position = raw.indexOf(marker);
-    if (position < 0) return { student: raw, internal: raw + '\n\n' + marker + '\n尚未依新版提示詞產出內部備註。' };
-    return { student: raw.slice(0, position).trim(), internal: raw.trim() };
-  }
-
-  function loadLogoFile(file) {
-    if (!file) return Promise.resolve(null);
-    return new Promise(function (resolve, reject) {
-      var reader = new FileReader();
-      reader.onload = function () {
-        var image = new Image();
-        image.onload = function () { resolve(image); };
-        image.onerror = function () { reject(new Error('Logo 圖檔無法讀取。')); };
-        image.src = reader.result;
-      };
-      reader.onerror = function () { reject(new Error('Logo 圖檔無法讀取。')); };
-      reader.readAsDataURL(file);
-    });
-  }
-
-  function wrapCanvasText(ctx, text, maxWidth) {
-    var lines = [];
-    String(text).split('\n').forEach(function (paragraph) {
-      if (!paragraph) { lines.push(''); return; }
-      var line = '';
-      Array.from(paragraph).forEach(function (character) {
-        if (ctx.measureText(line + character).width > maxWidth && line) {
-          lines.push(line);
-          line = character;
-        } else {
-          line += character;
-        }
+      var res = await fetch('https://api.telegram.org/bot' + tgConfig.token + '/sendMessage', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: tgConfig.chatId, text: msg })
       });
-      if (line) lines.push(line);
-    });
-    return lines;
+      return res.ok;
+    } catch(e) { return false; }
   }
-
-  function drawHeader(ctx, canvas, edition, logo) {
-    ctx.fillStyle = edition === '內部教學版' ? '#1D4E89' : '#0E7A66';
-    ctx.fillRect(0, 0, canvas.width, 170);
-    if (logo) {
-      var maxWidth = 220, maxHeight = 110;
-      var ratio = Math.min(maxWidth / logo.width, maxHeight / logo.height);
-      ctx.drawImage(logo, 70, 30, logo.width * ratio, logo.height * ratio);
-    } else {
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = '700 34px "Microsoft JhengHei", sans-serif';
-      ctx.fillText('聯成電腦', 70, 100);
-    }
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '700 44px "Microsoft JhengHei", sans-serif';
-    ctx.textAlign = 'right';
-    ctx.fillText(edition, canvas.width - 70, 100);
-    ctx.textAlign = 'left';
+  async function testTgNotification() {
+    tgConfig.token = document.getElementById('tgToken').value.trim(); tgConfig.chatId = document.getElementById('tgChatId').value.trim();
+    safeSet('admin_tg_config', tgConfig); 
+    if (!tgConfig.token || !tgConfig.chatId) return showMsg('請先填寫 Token 與 Chat ID');
+    var ok = await sendTelegramMessage('🤖 這是一則來自【每月行政工具箱】的測試訊息！\n您的 Telegram 串接已成功！🎉');
+    if (ok) showMsg('✅ 測試推播已發送，請檢查您的 Telegram！'); else showMsg('❌ 發送失敗，請確認 Token 與 Chat ID。');
   }
-
-  function buildPdf(text, edition, studentName, job, logo) {
-    var jsPDF = window.jspdf && window.jspdf.jsPDF;
-    if (!jsPDF) throw new Error('PDF 元件尚未載入。');
-    var doc = new jsPDF('p', 'mm', 'a4');
-    var canvas = document.createElement('canvas');
-    canvas.width = 1240; canvas.height = 1754;
-    var ctx = canvas.getContext('2d');
-    var lines;
-    var pageNumber = 0;
-    var index = 0;
-
-    ctx.font = '28px "PingFang TC", "Microsoft JhengHei", sans-serif';
-    lines = wrapCanvasText(ctx, text, 1040);
-    while (index < lines.length) {
-      ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-      drawHeader(ctx, canvas, edition, logo);
-      ctx.fillStyle = '#20251F';
-      ctx.font = '700 30px "Microsoft JhengHei", sans-serif';
-      ctx.fillText('學員：' + studentName + '　目標職務：' + job, 80, 225);
-      ctx.font = '26px "PingFang TC", "Microsoft JhengHei", sans-serif';
-      var y = 290;
-      while (index < lines.length && y < 1610) {
-        var line = lines[index++];
-        if (/^【.+】$/.test(line) || /^\d+\.\s/.test(line)) {
-          ctx.fillStyle = edition === '內部教學版' ? '#1D4E89' : '#0E7A66';
-          ctx.font = '700 29px "Microsoft JhengHei", sans-serif';
-        } else {
-          ctx.fillStyle = '#20251F';
-          ctx.font = '26px "PingFang TC", "Microsoft JhengHei", sans-serif';
-        }
-        ctx.fillText(line, 100, y);
-        y += line ? 42 : 24;
-      }
-      ctx.fillStyle = '#7C766A';
-      ctx.font = '20px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('聯成電腦｜職涯健診報告｜第 ' + (pageNumber + 1) + ' 頁', canvas.width / 2, 1690);
-      ctx.textAlign = 'left';
-      if (pageNumber) doc.addPage();
-      doc.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 210, 297);
-      pageNumber += 1;
-    }
-    return doc;
-  }
-
-  async function exportBothReports() {
-    var output = getValue('rcOutput', '');
-    if (!output) throw new Error('請先完成健診報告。');
-    var logoInput = document.getElementById('rcCompanyLogo');
-    var logo = await loadLogoFile(logoInput && logoInput.files[0]);
-    var reports = splitReports(output);
-    var name = getValue('rcName', '未命名學員');
-    var job = getValue('rcJob', '未填寫');
-    buildPdf(reports.student, '學員版', name, job, logo).save('聯成電腦_學員版職涯健診_' + name + '.pdf');
-    buildPdf(reports.internal, '內部教學版', name, job, logo).save('聯成電腦_內部教學職涯健診_' + name + '.pdf');
-  }
-
-  function installUi() {
-    var template = document.getElementById('aiPromptTemplate');
-    if (template) template.textContent = FULL_REPORT_PROMPT;
-    var output = document.getElementById('rcOutput');
-    if (!output) return;
-    var controls = output.parentElement.querySelector('div[style*="display:flex"]');
-    if (controls && !document.getElementById('rcCompanyLogo')) {
-      var label = document.createElement('label');
-      label.style.cssText = 'display:block; width:100%; margin:10px 0 0; font-size:13px; color:#7C766A;';
-      label.textContent = '聯成電腦官方 Logo（PNG/JPG，將嵌入兩份 PDF）：';
-      var input = document.createElement('input');
-      input.id = 'rcCompanyLogo'; input.type = 'file'; input.accept = 'image/png,image/jpeg';
-      input.style.marginTop = '6px';
-      label.appendChild(input);
-      controls.parentElement.insertBefore(label, controls);
-    }
-    var exportButton = controls && controls.querySelector('button[onclick*="exportResumePDF"]');
-    if (exportButton) {
-      exportButton.textContent = '📥 產生學員版＋內部教學版 PDF';
-      exportButton.onclick = async function () {
-        var status = document.getElementById('rcStatus');
-        try {
-          status.textContent = '正在產生兩份 PDF，請稍候…';
-          await exportBothReports();
-          status.textContent = '✅ 已下載學員版與內部教學版 PDF。';
-        } catch (error) {
-          console.error(error);
-          status.textContent = '❌ PDF 產生失敗：' + error.message;
-        }
-      };
-    }
-  }
-
-  window.copyAiPrompt = function () {
-    navigator.clipboard.writeText(buildPrompt()).then(function () {
-      if (typeof showToast === 'function') showToast('✅ 完整八大項健診提示詞已複製！');
-    });
-  };
-  window.runGeminiDiagnosis = async function () {
-    var apiKey = getValue('geminiKey', '');
-    var output = document.getElementById('rcOutput');
-    var button = document.getElementById('runGeminiBtn');
-    if (!apiKey) throw new Error('請先輸入 Gemini API Key。');
-    if (!getValue('rcResumeText', '')) throw new Error('請先上傳或貼上履歷內容。');
-    button.disabled = true;
-    button.textContent = '🤖 正在產生完整健診報告…';
-    output.value = '正在產生學員版與內部教學備註，請稍候…';
-    try {
-      var response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + encodeURIComponent(apiKey), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: buildPrompt() }] }] })
+  async function checkAndSendTodayRemindersAndBackup() {
+    var today = new Date(); var todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    if (tgConfig.token && tgConfig.chatId && tgConfig.lastNotified !== todayStr) {
+      today.setHours(0,0,0,0);
+      var urgentNotes = notes.filter(function(n) {
+        if(!n.due || n.completed) return false; 
+        var dueDate = new Date(n.due); dueDate.setHours(0,0,0,0); 
+        var diff = Math.ceil((dueDate - today) / 86400000);
+        var isImp = n.important !== false;
+        var isUrg = n.urgent !== false;
+        var isQ4 = (!isImp && !isUrg);
+        if (isQ4 && diff < 0) return false;
+        return diff === 1 || diff === 0 || diff === -1;
       });
-      var data = await response.json();
-      if (!response.ok || data.error) throw new Error((data.error && data.error.message) || 'Gemini 回應失敗。');
-      output.value = data.candidates[0].content.parts[0].text;
-      if (typeof showToast === 'function') showToast('✅ 完整健診報告已完成！');
-    } finally {
-      button.disabled = false;
-      button.textContent = '🚀 直接用 Gemini AI 健檢';
+      if (urgentNotes.length > 0) {
+        var msg = '⚠️ 【每日行政提醒】 ⚠️\n\n';
+        urgentNotes.forEach(function(n) {
+          var dueDate = new Date(n.due); dueDate.setHours(0,0,0,0); 
+          var diff = Math.ceil((dueDate - today) / 86400000);
+          var statusStr = '';
+          if (diff === 1) statusStr = '🔜 [明天到期]';
+          else if (diff === 0) statusStr = '🔔 [今天到期]';
+          else if (diff === -1) statusStr = '🚨 [逾期 1 天]';
+          msg += statusStr + ' ' + n.title + '\n';
+        });
+        var ok = await sendTelegramMessage(msg);
+        if (ok) { tgConfig.lastNotified = todayStr; safeSet('admin_tg_config', tgConfig); }
+      }
     }
-  };
-  window.exportResumePDF = exportBothReports;
-  installUi();
-}());
+    if (ghConfig.token && ghConfig.repo && ghConfig.lastJsonBackup !== todayStr) {
+      setTimeout(function() { syncToCloud(true); }, 2000);
+    }
+  }
+  setTimeout(checkAndSendTodayRemindersAndBackup, 3000);
 </script>
 </body>
 </html>
-
