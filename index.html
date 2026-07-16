@@ -4,12 +4,14 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>臻的行政百寶箱</title>
-<!-- 載入 jsPDF 用於結訓作品集 PDF 生成 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<!-- 載入 PDF.js 用於解析學員上傳的 PDF 作品與履歷 -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-<script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
-<!-- 🌟 載入觸控拖拉引擎：讓手機瀏覽器也能完美支援行事曆觸控長按拖曳 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const CMAP_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/';
+  const CMAP_PACKED = true;
+  const STANDARD_FONT_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/standard_fonts/';
+</script>
 <script src="https://unpkg.com/drag-drop-touch"></script>
 
 <style>
@@ -169,7 +171,6 @@
 </head>
 <body>
 
-<!-- 🌟 隱藏存放使用者專屬 AI 顧問提示詞的模板塊，此為重構後的「全套報告」版本 -->
 <script type="text/template" id="aiPromptTemplate">
 # Role: 全方位職涯策略顧問 (AI Career Strategist)
 
@@ -185,7 +186,7 @@
 
 ## 報告產出結構要求 (必須包含以下兩大區塊，並嚴格依序生成所有內容)
 
-請根據使用者提供的【學員基本資訊】與【履歷內容】，自動生成一份完整的全套轉職輔導報告，報告必須分為「給學員」與「給老師」兩大部分，請直接輸出內容：
+請根據使用者提供的【學員基本資訊】、【履歷內容】與【作品集檔案內容/圖片】，自動生成一份完整的全套轉職輔導報告，請直接輸出內容：
 
 【第一部分：給學員的實戰修改建議】
 
@@ -225,10 +226,8 @@
 針對學員目前的特質與目標，建議後續可以推播哪種類型的廠商或職缺最容易錄取。
 </script>
 
-<!-- 浮動通知 -->
 <div id="toastNotification">通知訊息</div>
 
-<!-- 自訂對話框 -->
 <div id="customModalOverlay">
   <div class="modal-box fade">
     <div id="modalMsg" style="font-size: 16px; margin-bottom: 24px; color: var(--ink); line-height: 1.5; white-space: pre-wrap;"></div>
@@ -256,7 +255,6 @@
     </div>
   </div>
 
-  <!-- ⚙️ 系統與備份 (預設停留此頁) -->
   <div id="settings" class="view active fade">
     <div class="grid-2">
       <div class="card" style="margin-top: 16px; border-color: #4285F4; background: #f8faff; grid-column: 1 / -1;">
@@ -275,7 +273,6 @@
         </div>
       </div>
 
-      <!-- 離線備份 -->
       <div class="card">
         <h3 style="margin-top:0;">💾 離線資料備份與還原</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">匯出 .json 檔案存放在您的電腦中，作為離線保險。</p>
@@ -286,7 +283,6 @@
         <button class="btn btn-outline" onclick="importData()" style="width:100%;">📤 還原離線資料</button>
       </div>
 
-      <!-- 常用連結 -->
       <div class="card">
         <h3 style="margin-top:0;">🔗 常用系統連結</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">將公司的後台系統、報表或雲端硬碟網址存在這裡，當作您的專屬入口網站。</p>
@@ -346,27 +342,34 @@
     </div>
   </div>
 
-  <!-- 🌟 新增：STAR 履歷健診模組 -->
   <div id="resume-check" class="view fade">
     <div class="grid-2">
-      <div class="card">
-        <h3 style="margin-top:0; color:var(--go);">1. 🤖 深度分析 (Gemini AI 模式)</h3>
-        <div style="display:flex; gap:8px; margin-bottom: 12px;">
-          <input type="text" id="rcName" placeholder="學員姓名" style="flex:1; margin-bottom:0;">
-          <input type="text" id="rcJob" placeholder="目標職務" style="flex:1; margin-bottom:0;">
+      <div class="card" style="grid-column: 1 / -1;">
+        <h3 style="margin-top:0; color:var(--go);">1. 🤖 深度分析資料輸入 (多模態上傳區)</h3>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom: 12px;">
+          <input type="text" id="rcName" placeholder="學員姓名" style="flex:1; min-width:150px; margin-bottom:0;">
+          <input type="text" id="rcJob" placeholder="目標職務 (重要！將影響關鍵字比對)" style="flex:2; min-width:200px; margin-bottom:0;">
         </div>
 
-        <div style="background: var(--goSoft); padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px dashed var(--go);">
-          <label style="font-weight:bold; font-size:13px; color:var(--go); display:block; margin-bottom:8px;">📄 選擇上傳一般 PDF，或貼入 104 履歷文字：</label>
-          <input type="file" id="rcPdfFile" accept=".pdf" style="margin-bottom:0; background:#fff;">
-          <div id="pdfLoadingStatus" style="font-size:12px; color:var(--go); margin-top:5px; font-weight:bold;"></div>
+        <div class="grid-2">
+          <div style="background: var(--goSoft); padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px dashed var(--go);">
+            <label style="font-weight:bold; font-size:13px; color:var(--go); display:block; margin-bottom:8px;">📄 上傳履歷 (一般 PDF，104履歷請用貼的)：</label>
+            <input type="file" id="rcPdfFile" accept=".pdf" style="margin-bottom:0; background:#fff;">
+            <div id="pdfLoadingStatus" style="font-size:12px; color:var(--go); margin-top:5px; font-weight:bold;"></div>
+          </div>
+          
+          <div style="background: var(--goldSoft); padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px dashed var(--gold);">
+            <label style="font-weight:bold; font-size:13px; color:var(--gold); display:block; margin-bottom:8px;">📁 上傳作品集 (最多5個，支援 pdf, jpg, png, txt, py, java)：</label>
+            <input type="file" id="rcPortfolioFiles" accept=".pdf,.jpg,.jpeg,.png,.txt,.py,.java" multiple style="margin-bottom:0; background:#fff;">
+            <div id="portfolioLoadingStatus" style="font-size:12px; color:var(--gold); margin-top:5px; font-weight:bold;"></div>
+          </div>
         </div>
 
-        <textarea id="rcResumeText" placeholder="PDF 文字提取後會顯示在此。若為 104 網頁履歷，請直接全選複製並貼入此處..." style="min-height:160px;"></textarea>
+        <textarea id="rcResumeText" placeholder="履歷文字提取後會顯示在此。若為 104 網頁履歷，請直接全選複製並貼入此處..." style="min-height:160px;"></textarea>
   
         <div style="display:flex; gap:10px;">
-          <button id="runGeminiBtn" class="btn" onclick="runGeminiDiagnosis()" style="flex:2; background:#4285F4;">🚀 產出全套雙視角分析報告</button>
-          <button class="btn btn-outline" onclick="jumpToGem()" style="flex:1;">🔗 我的 Gem</button>
+          <button class="btn btn-outline" onclick="copyAiPrompt()" style="flex:1;">📋 複製提示詞</button>
+          <button id="runGeminiBtn" class="btn" onclick="runGeminiDiagnosis()" style="flex:2; background:#4285F4; font-size:16px;">🚀 產出全套雙視角分析報告 (含作品集健檢)</button>
         </div>
       </div>
 
@@ -402,17 +405,17 @@
           <option value="⚠️ 有寫出結果，但與「行動」缺乏因果連結，建議強化個人行動對結果的直接影響。">⚠️ 結果與行動脫節</option>
         </select>
         
-        <button class="btn btn-outline" onclick="generateQuickFeedback()" style="width:100%;">⬇️ 組合上述評語至下方報告</button>
+        <button class="btn btn-outline" onclick="generateQuickFeedback()" style="width:100%;">⬇️ 組合上述評語至右方報告</button>
       </div>
 
-      <div class="card" style="grid-column: 1 / -1;">
+      <div class="card">
         <h3 style="margin-top:0; color:var(--go);">3. 📄 健診報告預覽與 PDF 輸出</h3>
-        <p style="color:var(--sub); font-size:13px; margin-bottom:12px;">此區文字皆為「純淨無亂碼版」，您可以自由編修。滿意後請點擊下方按鈕產出精美的雙視角 A4 PDF 給學員與自己留存。</p>
+        <p style="color:var(--sub); font-size:13px; margin-bottom:12px;">此區文字皆為「純淨無亂碼版」，您可以自由編修。滿意後請點擊下方按鈕產出精美的雙視角 A4 PDF。</p>
         
-        <textarea id="rcOutput" placeholder="這裡將顯示組合後的評語或 AI 全套分析報告內容..." style="min-height:500px; line-height:1.6; font-size:14px;"></textarea>
+        <textarea id="rcOutput" placeholder="這裡將顯示組合後的評語或 AI 全套分析報告內容..." style="min-height:350px; line-height:1.6; font-size:14px;"></textarea>
         
         <div style="display:flex; gap:10px; margin-top:12px;">
-          <button class="btn" onclick="exportResumePDF()" style="flex:1; padding: 12px; font-size:16px;">📥 產生精美 A4 健診報告 (PDF)</button>
+          <button class="btn" onclick="exportResumePDF()" style="flex:1; padding: 12px; font-size:16px;">📥 產生精美 A4 健診報告</button>
           <button class="btn btn-outline" onclick="document.getElementById('rcOutput').value=''" style="padding:0 24px;">清除重填</button>
         </div>
         <div id="rcStatus" style="margin-top:12px; font-weight:bold; color:var(--go); font-size: 14px; text-align:center;"></div>
@@ -420,7 +423,6 @@
     </div>
   </div>
 
-  <!-- 📅 行事曆區塊 -->
   <div id="notes" class="view fade">
     <div id="dueBar"></div>
     
@@ -478,7 +480,6 @@
     <div id="noteGrid"></div>
   </div>
 
-  <!-- 📊 區域業績統計 -->
   <div id="stats" class="view fade">
     <div class="grid-2">
       <div class="card">
@@ -514,7 +515,6 @@
     </div>
   </div>
 
-  <!-- 🎨 百人戰報宣傳圖 -->
   <div id="poster" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">百人戰報宣傳圖 (自動套版)</h3>
@@ -577,7 +577,6 @@
     </div>
   </div>
 
-  <!-- 📑 契約書左右合併 -->
   <div id="merge-jpg" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">契約書左右合併 (輸出 JPG)</h3>
@@ -616,7 +615,6 @@
     </div>
   </div>
 
-  <!-- 📑 廠商契約 (上下合併) -->
   <div id="vendor-contract" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">廠商契約 (上下合併輸出 JPG)</h3>
@@ -643,7 +641,6 @@
     </div>
   </div>
 
-  <!-- 📚 結訓作品集 -->
   <div id="pdf-portfolio" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">結訓作品集 PDF (自動內頁標題版)</h3>
@@ -705,7 +702,6 @@
         </div>
       </div>
       
-      <!-- 👀 封面即時預覽 -->
       <div style="margin-top: 20px; text-align: center; border-top: 1px dashed var(--line); padding-top: 20px;">
         <label style="font-weight:bold; font-size:14px; color:var(--go); margin-bottom: 12px; display:block;">👀 封面即時預覽 (PDF將依此畫面生成)</label>
         <canvas id="portCoverPreview" width="2376" height="1680" style="max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);"></canvas>
@@ -719,7 +715,6 @@
     </div>
   </div>
 
-  <!-- 📈 指標儀表板 -->
   <div id="dashboard" class="view fade">
     <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
       <h3 style="margin:0;">本月營運指標</h3>
@@ -953,7 +948,7 @@
 
 
   // ==========================================
-  // 🌟 模組 A: STAR 履歷健診與 AI 提示詞生成 (含 PDF 繁體中文解析與終極除蟲過濾)
+  // 🌟 模組 A: STAR 履歷健診與 AI 提示詞生成 (支援 PDF 與作品集多模態解析)
   // ==========================================
   var geminiConfig = safeGet('admin_gemini_cfg', { key: '' });
   if(document.getElementById('geminiKey')) document.getElementById('geminiKey').value = geminiConfig.key || '';
@@ -964,6 +959,7 @@
     showToast('✅ Gemini API Key 已儲存！');
   }
 
+  // 1. 履歷 PDF 解析 (維持原版邏輯)
   if (document.getElementById('rcPdfFile')) {
     document.getElementById('rcPdfFile').addEventListener('change', async function(e) {
       const file = e.target.files[0];
@@ -977,10 +973,9 @@
 
       try {
         const arrayBuffer = await file.arrayBuffer();
-        
         const loadingTask = pdfjsLib.getDocument({
           data: arrayBuffer,
-          cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/cmaps/',
+          cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
           cMapPacked: true,
         });
 
@@ -993,21 +988,17 @@
           
           let pageText = '';
           let lastY = -1;
-          
           textContent.items.forEach(item => {
-            if (lastY !== -1 && Math.abs(item.transform[5] - lastY) > 5) {
-               pageText += '\n';
-            }
+            if (lastY !== -1 && Math.abs(item.transform[5] - lastY) > 5) pageText += '\n';
             pageText += item.str;
             lastY = item.transform[5];
           });
-          
           fullText += `[第 ${i} 頁]\n${pageText}\n\n`;
         }
 
         const cleanTest = fullText.replace(/[0-9\s\-_]/g, '');
         if (cleanTest.length < 10 || cleanTest.includes('')) {
-            status.innerHTML = '⚠️ 偵測到 104 防拷貝加密 PDF。<br>💡 終極解決法：請直接打開學員的 104 網頁履歷，按 Ctrl+A 全選、Ctrl+C 複製，然後直接貼入下方的輸入框中，這是最快也最完美的解法！';
+            status.innerHTML = '⚠️ 偵測到 104 防拷貝加密 PDF。<br>💡 終極破解法：請直接打開學員的 104 網頁履歷，按 Ctrl+A 全選、Ctrl+C 複製，然後直接貼入下方的輸入框中，這是最快也最完美的解法！';
         } else {
             status.innerText = '✅ 繁體中文讀取成功！';
         }
@@ -1022,6 +1013,83 @@
         }
       } catch (err) {
         status.innerText = '❌ 錯誤：' + err.message;
+      }
+    });
+  }
+
+  // 2. 🌟 全新：多模態作品集解析引擎 (支援 txt, py, java, pdf, jpg, png)
+  var portfolioParts = []; 
+  var portfolioTextForPrompt = "";
+
+  if (document.getElementById('rcPortfolioFiles')) {
+    document.getElementById('rcPortfolioFiles').addEventListener('change', async function(e) {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+      if (files.length > 5) {
+        showMsg('⚠️ 最多只能上傳 5 個檔案喔！');
+        e.target.value = '';
+        return;
+      }
+
+      const status = document.getElementById('portfolioLoadingStatus');
+      status.innerText = '⏳ 正在解析作品集檔案...';
+      portfolioParts = [];
+      portfolioTextForPrompt = "";
+
+      try {
+        for (let i = 0; i < files.length; i++) {
+          let file = files[i];
+          let ext = file.name.split('.').pop().toLowerCase();
+
+          if (['txt', 'py', 'java'].includes(ext)) {
+            let text = await file.text();
+            portfolioTextForPrompt += `\n--- 作品檔案：${file.name} ---\n${text}\n`;
+            portfolioParts.push({ text: `\n--- 作品檔案：${file.name} ---\n${text}\n` });
+          } 
+          else if (ext === 'pdf') {
+            let arrayBuffer = await file.arrayBuffer();
+            let loadingTask = pdfjsLib.getDocument({
+              data: arrayBuffer,
+              cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+              cMapPacked: true
+            });
+            let pdf = await loadingTask.promise;
+            let pdfText = '';
+            for (let j = 1; j <= pdf.numPages; j++) {
+              let page = await pdf.getPage(j);
+              let textContent = await page.getTextContent();
+              let pageText = '';
+              let lastY = -1;
+              textContent.items.forEach(item => {
+                if (lastY !== -1 && Math.abs(item.transform[5] - lastY) > 5) pageText += '\n';
+                pageText += item.str;
+                lastY = item.transform[5];
+              });
+              pdfText += `[第 ${j} 頁]\n${pageText}\n\n`;
+            }
+            portfolioTextForPrompt += `\n--- 作品檔案(PDF)：${file.name} ---\n${pdfText}\n`;
+            portfolioParts.push({ text: `\n--- 作品檔案(PDF)：${file.name} ---\n${pdfText}\n` });
+          } 
+          else if (['jpg', 'jpeg', 'png'].includes(ext)) {
+            // 轉換為 Base64 供 Gemini 視覺引擎讀取
+            let reader = new FileReader();
+            let base64Promise = new Promise(resolve => {
+              reader.onload = () => resolve(reader.result.split(',')[1]);
+              reader.readAsDataURL(file);
+            });
+            let base64Data = await base64Promise;
+            portfolioParts.push({
+              inlineData: {
+                mimeType: file.type,
+                data: base64Data
+              }
+            });
+            portfolioTextForPrompt += `\n--- 作品圖片：${file.name} (圖片已作為附件直接發送給 AI 進行視覺診斷) ---\n`;
+          }
+        }
+        status.innerText = '✅ 作品集讀取完成！AI 已準備好進行診斷。';
+      } catch (err) {
+        status.innerText = '❌ 讀取失敗：' + err.message;
         console.error(err);
       }
     });
@@ -1041,8 +1109,10 @@
       '【學員基本資訊】\n' +
       '姓名：' + name + '\n' +
       '目標職務：' + job + '\n\n' +
-      '【學員履歷內容如下，請依照上述原則進行深度診斷與重寫建議】：\n' +
-      (resume ? resume : '(未提供履歷內文，請直接針對目標職務給予通用撰寫建議與常見地雷)');
+      '【學員履歷內容】：\n' +
+      (resume ? resume : '(未提供履歷內文)') + '\n\n' +
+      '【學員作品集內容】：\n' +
+      (portfolioTextForPrompt ? portfolioTextForPrompt : '(未提供作品集檔案)');
       
     var ta = document.createElement('textarea');
     ta.value = finalPrompt;
@@ -1050,7 +1120,7 @@
     ta.select();
     try { 
       document.execCommand('copy'); 
-      showConfirm('✅ 超強 AI 提示詞與履歷已成功複製到剪貼簿！\n\n是否為您直接開啟 ChatGPT 網頁？\n(開啟後請直接貼上對話框即可)', function() {
+      showConfirm('✅ 超強 AI 提示詞與履歷(含作品文字)已成功複製到剪貼簿！\n(請注意：若有上傳圖片，圖片無法透過複製貼上給一般版 ChatGPT，建議直接使用系統內的 Gemini 健檢功能)\n\n是否為您直接開啟 ChatGPT 網頁？', function() {
         window.open('https://chatgpt.com/', '_blank');
       });
     } catch(e) {
@@ -1068,33 +1138,39 @@
     const btn = document.getElementById('runGeminiBtn');
 
     if (!apiKey) return showMsg('請先至「系統設定」儲存 Gemini API Key！');
-    if (!resumeText) return showMsg('請先上傳 PDF 或是將履歷純文字直接貼進上方的輸入框！');
+    if (!resumeText && portfolioParts.length === 0) return showMsg('請先上傳履歷或作品集，或是將文字直接貼進輸入框！');
 
     btn.disabled = true;
-    btn.innerText = '🤖 AI 深度分析產出中...';
-    outputArea.value = '正在呼叫 Gemini AI 進行全方位深度診斷 (包含自傳、作品集腳本與面試題庫)，這會花上一點時間，請耐心稍候...';
+    btn.innerText = '🤖 AI 深度分析與視覺診斷產出中...';
+    outputArea.value = '正在呼叫 Gemini AI 進行全方位深度診斷 (若有上傳圖片，AI 正在分析視覺排版設計)，這會花上一點時間，請耐心稍候...';
     
     const promptTemplate = document.getElementById('aiPromptTemplate').innerHTML;
-    const finalPrompt = promptTemplate + `\n\n學員：${name}\n目標職務：${job}\n履歷內容：\n${resumeText}`;
+    const finalPromptText = promptTemplate + `\n\n學員：${name}\n目標職務：${job}\n履歷內容：\n${resumeText ? resumeText : '(未提供)'}\n\n【作品集檔案內容/圖片如下】：\n${portfolioTextForPrompt ? portfolioTextForPrompt : '(未提供)'}`;
+
+    // 🌟 將文字與附加的檔案(圖片/PDF)打包給多模態引擎
+    let apiParts = [{ text: finalPromptText }];
+    if (portfolioParts.length > 0) {
+      apiParts = apiParts.concat(portfolioParts);
+    }
 
     try {
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: finalPrompt }] }] })
+        body: JSON.stringify({ contents: [{ parts: apiParts }] })
       });
       const data = await response.json();
       if (data.error) throw new Error(data.error.message);
       
       let rawText = data.candidates[0].content.parts[0].text;
       
-      // 🌟 終極濾網：強制洗掉所有 Markdown 符號 (*, #, _, `) 讓文字乾淨俐落
+      // 終極濾網：強制洗掉所有 Markdown 符號
       let cleanText = rawText.replace(/[\*\#\_\`]/g, '');
       
       outputArea.value = cleanText;
       showToast('✅ 全套雙視角 AI 診斷完成！');
     } catch (err) { outputArea.value = '❌ 呼叫 AI 失敗：' + err.message; }
-    finally { btn.disabled = false; btn.innerText = '🚀 產出全套雙視角分析報告'; }
+    finally { btn.disabled = false; btn.innerText = '🚀 產出全套雙視角分析報告 (含作品集健檢)'; }
   }
 
   function jumpToGem() {
