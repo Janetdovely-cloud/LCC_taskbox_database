@@ -4,7 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>臻的行政百寶箱</title>
+<!-- 載入 jsPDF 用於結訓作品集 PDF 生成 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- 載入 PDF.js 用於解析學員上傳的 PDF 作品與履歷 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -12,6 +14,7 @@
   const CMAP_PACKED = true;
   const STANDARD_FONT_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/standard_fonts/';
 </script>
+<!-- 載入觸控拖拉引擎：讓手機瀏覽器也能完美支援行事曆觸控長按拖曳 -->
 <script src="https://unpkg.com/drag-drop-touch"></script>
 
 <style>
@@ -170,6 +173,7 @@
 </head>
 <body>
 
+<!-- 🌟 隱藏存放使用者專屬 AI 顧問提示詞的模板塊 -->
 <script type="text/template" id="aiPromptTemplate">
 # Role: 全方位職涯策略顧問 (AI Career Strategist)
 
@@ -253,6 +257,7 @@
     </div>
   </div>
 
+  <!-- ⚙️ 系統與備份 -->
   <div id="settings" class="view active fade">
     <div class="grid-2">
       <div class="card" style="margin-top: 16px; border-color: #4285F4; background: #f8faff; grid-column: 1 / -1;">
@@ -271,6 +276,7 @@
         </div>
       </div>
 
+      <!-- 離線備份 -->
       <div class="card">
         <h3 style="margin-top:0;">💾 離線資料備份與還原</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">匯出 .json 檔案存放在您的電腦中，作為離線保險。</p>
@@ -281,6 +287,7 @@
         <button class="btn btn-outline" onclick="importData()" style="width:100%;">📤 還原離線資料</button>
       </div>
 
+      <!-- 常用連結 -->
       <div class="card">
         <h3 style="margin-top:0;">🔗 常用系統連結</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">將公司的後台系統、報表或雲端硬碟網址存在這裡，當作您的專屬入口網站。</p>
@@ -336,6 +343,7 @@
     </div>
   </div>
 
+  <!-- 🌟 新增：STAR 履歷健診模組 -->
   <div id="resume-check" class="view fade">
     <div class="grid-2">
       <div class="card" style="grid-column: 1 / -1;">
@@ -367,6 +375,7 @@
         </div>
       </div>
 
+      <!-- 快速手動診斷 -->
       <div class="card">
         <h3 style="margin-top:0; color:var(--go);">2. ⚡ 快速診斷 (手動勾選常用評語)</h3>
         <p style="color:var(--sub); font-size:13px; margin-bottom:12px;">不想依賴 AI 時，直接勾選以下最常見的 STAR 履歷致命傷，自動拼湊出一份專業的修改建議！</p>
@@ -417,6 +426,7 @@
     </div>
   </div>
 
+  <!-- 📅 行事曆區塊 -->
   <div id="notes" class="view fade">
     <div id="dueBar"></div>
     <div class="cal-wrap">
@@ -471,6 +481,7 @@
     <div id="noteGrid"></div>
   </div>
 
+  <!-- 📊 區域業績統計 -->
   <div id="stats" class="view fade">
     <div class="grid-2">
       <div class="card">
@@ -502,6 +513,7 @@
     </div>
   </div>
 
+  <!-- 🎨 百人戰報宣傳圖 -->
   <div id="poster" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">百人戰報宣傳圖 (自動套版)</h3>
@@ -559,6 +571,7 @@
     </div>
   </div>
 
+  <!-- 📑 契約書左右合併 -->
   <div id="merge-jpg" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">契約書左右合併 (輸出 JPG)</h3>
@@ -577,6 +590,7 @@
     </div>
   </div>
 
+  <!-- 📑 廠商契約 -->
   <div id="vendor-contract" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">廠商契約 (上下合併輸出 JPG)</h3>
@@ -592,6 +606,7 @@
     </div>
   </div>
 
+  <!-- 📚 結訓作品集 -->
   <div id="pdf-portfolio" class="view fade">
     <div class="card">
       <h3 style="margin-top:0;">結訓作品集 PDF (自動內頁標題版)</h3>
@@ -631,6 +646,7 @@
     </div>
   </div>
 
+  <!-- 📈 指標儀表板 -->
   <div id="dashboard" class="view fade">
     <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
       <h3 style="margin:0;">本月營運指標</h3>
@@ -951,22 +967,42 @@
       // 1. 將所有文字打平成「渲染行指令」陣列
       var renderItems = [];
       var rawLines = text.split('\n');
+      var currentState = 'normal';
       
       rawLines.forEach(function(rawLine) {
-        if(rawLine.trim() === '') { renderItems.push({ type: 'empty' }); return; }
+        var line = rawLine.trim();
+        if (line === '') { currentState = 'normal'; renderItems.push({ type: 'empty', text: '' }); return; }
+
+        var type = 'normal';
+        if (line.match(/^【第[一二三]部分/)) { type = 'main'; currentState = 'normal'; }
+        else if (line.match(/^[一二三四五六七八九]、/)) { type = 'sub'; currentState = 'normal'; }
+        else if (line.includes('綜合競爭力評分') && /\d/.test(line)) { type = 'score'; currentState = 'normal'; }
+        else if (line.match(/^【?[STAR]/i) || line.match(/^【?(情境|任務|行動|結果)/) || line.match(/^[STAR]\s*[:：]?\s*/i) || line.match(/^[STAR]行動/i)) { type = 'star'; currentState = 'star'; }
+        else if (line.match(/^[\-\*]\s/) || line.match(/^\(\d+\)/) || line.match(/^☑/)) { type = 'list'; }
+
+        var effectiveType = type;
+        if ((type === 'normal' || type === 'list') && currentState === 'star') effectiveType = 'star';
+
+        var fontStr = '28px "PingFang TC", "Microsoft JhengHei", sans-serif';
+        var textColor = '#333333'; var xOffset = margin; var dMaxWidth = maxWidth; var lineHeight = 44;
+
+        if (effectiveType === 'main') { fontStr = 'bold 32px "PingFang TC", sans-serif'; textColor = '#ffffff'; xOffset = margin + 20; lineHeight = 56; dMaxWidth = maxWidth - 40;}
+        else if (effectiveType === 'sub') { fontStr = 'bold 30px "PingFang TC", sans-serif'; textColor = '#2563EB'; xOffset = margin + 20; dMaxWidth = maxWidth - 20;}
+        else if (effectiveType === 'score') { fontStr = 'bold 28px "PingFang TC", sans-serif'; textColor = '#ffffff'; xOffset = margin + 20; dMaxWidth = maxWidth - 40; }
+        else if (effectiveType === 'star') { 
+            if (type === 'star') { fontStr = 'bold 28px "PingFang TC", sans-serif'; textColor = '#0E7A66'; }
+            xOffset = margin + 20; dMaxWidth = maxWidth - 40; 
+        }
         
-        var type = 'normal'; var textColor = '#333333'; var fontStr = '28px "PingFang TC", "Microsoft JhengHei", sans-serif';
-        var xOffset = margin; var dMaxWidth = maxWidth; var lineHeight = 44;
+        if (type === 'list') {
+            line = line.replace(/^[\-\*]\s*/, '☑ ');
+            if (effectiveType === 'normal') { xOffset = margin + 30; dMaxWidth = maxWidth - 30; }
+            else { xOffset += 10; dMaxWidth -= 10; } 
+        }
 
-        if (rawLine.match(/^【第[一二三]部分/)) { type = 'main'; fontStr = 'bold 32px "PingFang TC", sans-serif'; textColor = '#ffffff'; xOffset = margin + 20; lineHeight = 56; }
-        else if (rawLine.match(/^[一二三四五六七八九]、/)) { type = 'sub'; fontStr = 'bold 30px "PingFang TC", sans-serif'; textColor = '#2563EB'; xOffset = margin + 20; }
-        else if (!rawLine.match(/^[一二三四五六七八九]、/) && rawLine.includes('綜合競爭力評分') && /\d/.test(rawLine)) { type = 'score'; fontStr = 'bold 28px "PingFang TC", sans-serif'; textColor = '#ffffff'; xOffset = margin + 20; dMaxWidth = maxWidth - 40; lineHeight = 50; }
-        else if (rawLine.match(/^【?[STAR]/i) || rawLine.match(/^【?(情境|任務|行動|結果)/)) { type = 'star'; xOffset = margin + 20; dMaxWidth = maxWidth - 40; }
-        else if (rawLine.match(/^[\-\*]\s/) || rawLine.match(/^\(\d+\)/) || rawLine.match(/^☑/)) { type = 'list'; rawLine = rawLine.replace(/^[\-\*]\s*/, '☑ '); xOffset = margin + 30; dMaxWidth = maxWidth - 30; }
-
-        var wrapped = getWrappedLines(rawLine, dMaxWidth, fontStr);
-        wrapped.forEach(function(wLine, idx) {
-            renderItems.push({ text: wLine, type: type, fontStr: fontStr, textColor: textColor, xOffset: xOffset, lineHeight: lineHeight, isFirst: (idx === 0), isLast: (idx === wrapped.length - 1), dMaxWidth: dMaxWidth });
+        var wrapped = getWrappedLines(line, dMaxWidth, fontStr);
+        wrapped.forEach(function(wLine) {
+            renderItems.push({ text: wLine, effectiveType: effectiveType, fontStr: fontStr, textColor: textColor, xOffset: xOffset, lineHeight: lineHeight });
         });
       });
 
@@ -995,34 +1031,41 @@
 
         while(itemIndex < renderItems.length && !pageFull) {
             var item = renderItems[itemIndex];
+            
             if (item.type === 'empty') { currentY += 20; itemIndex++; if (currentY > yLimit) pageFull = true; continue; }
 
-            // 換頁預判斷：如果快到底了，但這行是重要標題，就直接強迫換頁，避免標題被孤立在頁底
-            var neededSpace = item.lineHeight + (item.isFirst && item.type !== 'normal' ? 12 : 0) + (item.isLast && item.type !== 'normal' ? 12 : 0);
-            if (currentY + neededSpace > yLimit) { pageFull = true; break; }
+            var prevItem = (itemIndex > 0) ? renderItems[itemIndex - 1] : null;
+            var nextItem = (itemIndex < renderItems.length - 1) ? renderItems[itemIndex + 1] : null;
+            
+            var isBlockStart = !prevItem || prevItem.effectiveType !== item.effectiveType || prevItem.type === 'empty';
+            var isBlockEnd = !nextItem || nextItem.effectiveType !== item.effectiveType || nextItem.type === 'empty';
 
-            // 繪製逐行背景框 (就算跨頁也會無縫銜接)
-            var bgX = margin; var bgW = maxWidth; var bgY = currentY - (item.isFirst ? 8 : 0); var bgH = item.lineHeight + (item.isFirst ? 8 : 0) + (item.isLast ? 8 : 0);
-            if (item.type === 'main') {
+            if (currentY + item.lineHeight > yLimit) { pageFull = true; break; }
+
+            var bgX = margin; var bgW = maxWidth; var bgY = currentY - (isBlockStart ? 16 : 0); 
+            var bgH = item.lineHeight + (isBlockStart ? 16 : 0) + (isBlockEnd ? 16 : 0);
+            
+            if (currentY + bgH > yLimit + 20) { bgH = (yLimit + 20) - bgY; isBlockEnd = false; }
+
+            if (item.effectiveType === 'main') {
                 let grad = ctx.createLinearGradient(bgX, bgY, bgX + bgW, bgY); grad.addColorStop(0, '#4F46E5'); grad.addColorStop(1, '#9333EA');
                 ctx.fillStyle = grad; ctx.fillRect(bgX, bgY, bgW, bgH);
-            } else if (item.type === 'sub') {
-                ctx.fillStyle = '#2563EB'; ctx.fillRect(bgX, bgY + 4, 8, bgH - 8);
-            } else if (item.type === 'score') {
+            } else if (item.effectiveType === 'sub') {
+                ctx.fillStyle = '#2563EB'; ctx.fillRect(bgX, currentY, 8, item.lineHeight); 
+            } else if (item.effectiveType === 'score') {
                 let grad = ctx.createLinearGradient(bgX, bgY, bgX + bgW, bgY); grad.addColorStop(0, '#73B82D'); grad.addColorStop(1, '#F2A900');
                 ctx.fillStyle = grad; ctx.fillRect(bgX, bgY, bgW, bgH);
-            } else if (item.type === 'star') {
+            } else if (item.effectiveType === 'star') {
                 ctx.fillStyle = '#EFF6FF'; ctx.fillRect(bgX, bgY, bgW, bgH); ctx.fillStyle = '#3B82F6'; ctx.fillRect(bgX, bgY, 6, bgH);
             }
 
-            // 繪製文字
             ctx.font = item.fontStr; ctx.fillStyle = item.textColor; ctx.fillText(item.text, item.xOffset, currentY);
 
             currentY += item.lineHeight;
-            if (item.isLast && item.type !== 'normal' && item.type !== 'list') currentY += 12;
+            if (isBlockEnd) currentY += 16;
             itemIndex++;
         }
-
+        
         ctx.fillStyle = '#7C766A'; ctx.font = '20px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Powered by AI Career Strategist & 臻的行政百寶箱  - Page ' + (pageCount+1), canvas.width/2, 1700);
         
         var dataUrl = canvas.toDataURL('image/jpeg', 0.95);
