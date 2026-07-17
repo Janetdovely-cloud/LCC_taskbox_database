@@ -1169,13 +1169,21 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: finalPrompt }] }] })
       });
-      const data = await response.json();
-      if (data.error) throw new Error(data.error.message);
-      
-      outputArea.value = data.candidates[0].content.parts[0].text;
-      showToast('✅ AI 診斷完成！');
-    } catch (err) { outputArea.value = '❌ 呼叫 AI 失敗：' + err.message; }
-    finally { btn.disabled = false; btn.innerText = '🚀 直接用 Gemini AI 健檢'; }
+
+      const responseText = await response.text();
+      try {
+        const data = JSON.parse(responseText);
+        if (data.error) throw new Error(data.error.message);
+        
+        outputArea.value = data.candidates[0].content.parts[0].text;
+        showToast('✅ AI 診斷完成！');
+      } catch (jsonError) {
+        // 如果回應不是 JSON，直接顯示 HTML 錯誤內容
+        throw new Error("收到的回應不是有效的 JSON 格式。Google API 可能回傳了錯誤頁面，詳細資訊如下：\n\n" + responseText);
+      }
+    } catch (err) { 
+      outputArea.value = '❌ 呼叫 AI 失敗：\n' + err.message; 
+    } finally { btn.disabled = false; btn.innerText = '🚀 直接用 Gemini AI 健檢'; }
   }
 
   function jumpToGem() {
