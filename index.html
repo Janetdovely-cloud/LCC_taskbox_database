@@ -162,6 +162,7 @@
     h1 { font-size: 24px; margin-bottom: 12px; }
     .tab { padding: 8px 14px; font-size: 13px; }
     .grid-2, .grid-3, .matrix-grid { grid-template-columns: 1fr; gap: 12px; }
+    
     .cal-grid { width: 750px; }
     .cal-th { font-size: 12px; padding: 6px 2px; }
     .cal-td { min-height: 70px; padding: 2px; }
@@ -275,6 +276,7 @@
         </div>
       </div>
 
+      <!-- 離線備份 -->
       <div class="card">
         <h3 style="margin-top:0;">💾 離線資料備份與還原</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">匯出 .json 檔案存放在您的電腦中，作為離線保險。</p>
@@ -284,6 +286,7 @@
         <button class="btn btn-outline" onclick="importData()" style="width:100%;">📤 還原離線資料</button>
       </div>
 
+      <!-- 常用連結 -->
       <div class="card">
         <h3 style="margin-top:0;">🔗 常用系統連結</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">將公司的後台系統、報表或雲端硬碟網址存在這裡，當作您的專屬入口網站。</p>
@@ -371,6 +374,7 @@
         </div>
       </div>
 
+      <!-- 快速手動診斷 -->
       <div class="card">
         <h3 style="margin-top:0; color:var(--go);">2. ⚡ 快速診斷 (手動勾選常用評語)</h3>
         <p style="color:var(--sub); font-size:13px; margin-bottom:12px;">不想依賴 AI 時，直接勾選以下最常見的 STAR 履歷致命傷，自動拼湊出一份專業的修改建議！</p>
@@ -888,14 +892,11 @@
       if (data.error) throw new Error(data.error.message);
       
       let rawText = data.candidates[0].content.parts[0].text;
-      
-      // 🌟 終極濾網：精準移除粗體與標題符號，完美保留列表星星號
-      let cleanText = rawText.replace(/\*\*/g, '').replace(/[\#\_\`]/g, '');
-      
+      let cleanText = rawText.replace(/[\*\#\_\`]/g, '');
       outputArea.value = cleanText;
       showToast('✅ 全套雙視角 AI 診斷完成！');
     } catch (err) { outputArea.value = '❌ 呼叫 AI 失敗：' + err.message; }
-    finally { btn.disabled = false; btn.innerText = '🚀 產出全套雙視角分析報告 (Gemini 2.5 Flash)'; }
+    finally { btn.disabled = false; btn.innerText = '🚀 產出全套雙視角分析報告'; }
   }
 
   function generateQuickFeedback() {
@@ -956,38 +957,41 @@
       // 將所有文字轉換為「渲染行指令」
       var renderItems = [];
       var rawLines = text.split('\n');
+      var currentState = 'normal';
       
       rawLines.forEach(function(rawLine) {
         var line = rawLine.trim();
-        if (line === '') { renderItems.push({ type: 'spacer', height: 20 }); return; }
+        if (line === '') { currentState = 'normal'; renderItems.push({ type: 'empty', text: '' }); return; }
 
-        var isMainTitle = line.match(/^【第[一二三]部分/);
-        var isSubTitle = line.match(/^[一二三四五六七八九]、/);
-        var isScore = line.includes('綜合競爭力評分');
-        var isStar = line.match(/^【?[STAR]/i) || line.match(/^【?(情境|任務|行動|結果)/) || line.match(/^[STAR]\s*[:：]?\s*/i) || line.match(/^[STAR]行動/i);
-        var isList = line.match(/^[\-\*]\s/) || line.match(/^\(\d+\)/) || line.match(/^☑/);
+        var type = 'normal';
+        if (line.match(/^【第[一二三]部分/)) { type = 'main'; currentState = 'normal'; }
+        else if (line.match(/^[一二三四五六七八九]、/)) { type = 'sub'; currentState = 'normal'; }
+        else if (line.includes('綜合競爭力評分') && /\d/.test(line)) { type = 'score'; currentState = 'normal'; }
+        else if (line.match(/^【?[STAR]/i) || line.match(/^【?(情境|任務|行動|結果)/) || line.match(/^[STAR]\s*[:：]?\s*/i) || line.match(/^[STAR]行動/i)) { type = 'star'; currentState = 'star'; }
+        else if (line.match(/^[\-\*]\s/) || line.match(/^\(\d+\)/) || line.match(/^☑/)) { type = 'list'; }
+
+        var effectiveType = type;
+        if ((type === 'normal' || type === 'list') && currentState === 'star') effectiveType = 'star';
 
         var fontStr = '26px "PingFang TC", "Microsoft JhengHei", sans-serif';
         var textColor = '#333333';
         var xOffset = margin;
         var lineHeight = 42;
         var maxWidthAdjust = 0;
-        var effectiveType = 'normal';
 
         // 🌟 採用極簡顧問風格排版，去除大面積背景色塊
-        if (isMainTitle) {
-            fontStr = 'bold 36px "PingFang TC", sans-serif'; textColor = '#0E7A66'; lineHeight = 60; effectiveType = 'main';
-            renderItems.push({ type: 'spacer', height: 40 });
-        } else if (isSubTitle) {
-            fontStr = 'bold 30px "PingFang TC", sans-serif'; textColor = '#1A5276'; lineHeight = 50; effectiveType = 'sub'; xOffset = margin + 20; maxWidthAdjust = 20;
-            renderItems.push({ type: 'spacer', height: 30 });
-        } else if (isScore) {
-            fontStr = 'bold 28px "PingFang TC", sans-serif'; textColor = '#B23A2E'; lineHeight = 46; effectiveType = 'score';
-        } else if (isStar) {
-            fontStr = 'bold 26px "PingFang TC", sans-serif'; textColor = '#BE842B'; lineHeight = 44; effectiveType = 'star'; xOffset = margin + 20; maxWidthAdjust = 40;
-        } else if (isList) {
+        if (effectiveType === 'main') { fontStr = 'bold 36px "PingFang TC", sans-serif'; textColor = '#0E7A66'; lineHeight = 60; renderItems.push({ type: 'spacer', height: 40 }); }
+        else if (effectiveType === 'sub') { fontStr = 'bold 30px "PingFang TC", sans-serif'; textColor = '#1A5276'; lineHeight = 50; xOffset = margin + 20; maxWidthAdjust = 20; renderItems.push({ type: 'spacer', height: 30 }); }
+        else if (effectiveType === 'score') { fontStr = 'bold 28px "PingFang TC", sans-serif'; textColor = '#B23A2E'; lineHeight = 46; }
+        else if (effectiveType === 'star') { 
+            if (type === 'star') { fontStr = 'bold 26px "PingFang TC", sans-serif'; textColor = '#0E7A66'; }
+            xOffset = margin + 20; maxWidthAdjust = 40; 
+        }
+        
+        if (type === 'list') {
             line = line.replace(/^[\-\*]\s*/, '☑ ');
-            xOffset = margin + 40; maxWidthAdjust = 40; effectiveType = 'list';
+            if (effectiveType === 'normal') { xOffset = margin + 40; maxWidthAdjust = 40; }
+            else { xOffset += 10; maxWidthAdjust -= 10; } 
         }
 
         var wrapped = getWrappedLines(line, maxWidth - maxWidthAdjust, fontStr);
@@ -1020,7 +1024,8 @@
           ctx.fillStyle = '#20251F'; ctx.font = 'bold 32px "PingFang TC", "Microsoft JhengHei", sans-serif'; ctx.fillText('學員：' + name + '    |    目標職務：' + job, 120, 250);
           currentY = 380;
         } else {
-          drawLCCLogo(canvas.width - 320, 40, 0.6);
+          // 🛡️ 將 Logo 移至右上角，並微調位置
+          drawLCCLogo(canvas.width - 320, 15, 0.6); 
           ctx.strokeStyle = '#E7DFD0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(margin, 100); ctx.lineTo(canvas.width - margin, 100); ctx.stroke();
           currentY = 140;
         }
