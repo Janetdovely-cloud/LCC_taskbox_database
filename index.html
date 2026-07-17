@@ -210,8 +210,8 @@
 (2) 3 分鐘起承轉合版講稿。
 
 五、 目標職缺契合度與面試戰略全書
-(1) 職缺合適性分析：若有提供「面試公司與職缺資訊」，請精準比對學員履歷，點出「符合優勢」與「潛在落差」。若無提供，請針對「目標職務」給予通用評估。
-(2) 面試題預測：針對該職缺(或公司)列出 3 至 5 題最容易被問到的精準面試題與建議回答方向。
+(1) 職缺合適性分析：若有提供「面試公司與職缺資訊」(可能為多筆)，請針對【每一間公司/職缺】逐一進行精準比對，點出學員的「符合優勢」與「潛在落差」。若無提供，請針對「目標職務」給予通用評估。
+(2) 專屬面試預測題：請針對上述【每一間公司/職缺】的業務特性，各列出 2 至 3 題最容易被問到的精準面試題與建議回答方向。
 (3) 提供情境感知型反問策略(讓學員提問面試官的問題)。
 
 --------------------------------------------------
@@ -352,10 +352,10 @@
           <input type="text" id="rcJob" placeholder="目標職務 (重要！將影響關鍵字比對)" style="flex:2; min-width:200px; margin-bottom:0;">
         </div>
         
-        <!-- 🌟 新增：面試公司與職缺 JD 區域 -->
-        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom: 12px;">
-          <input type="text" id="rcCompany" placeholder="面試公司 (選填)" style="flex:1; min-width:150px; margin-bottom:0;">
-          <textarea id="rcJD" placeholder="請貼上 104 職缺內容(JD)或網址，AI 將據此分析契合度並預測面試題！(選填)" style="flex:2; min-width:200px; margin-bottom:0; min-height:45px; padding:12px; border: 1px solid var(--line); border-radius: 8px; font-family: inherit; font-size: 15px; resize:vertical; background: #fafafa;"></textarea>
+        <!-- 🌟 更新：多筆面試公司與職缺 JD 區域 -->
+        <div style="display:flex; flex-direction:column; gap:8px; margin-bottom: 12px;">
+          <label style="font-weight:bold; font-size:13px; color:var(--go); margin-bottom:0;">🏢 多筆面試職缺同時分析 (選填)：</label>
+          <textarea id="rcJD" placeholder="請直接貼上「多筆」公司名稱與對應的 104 職缺內容(JD)。AI 將為您逐一分析每一間公司的契合度，並分別預測專屬面試題！" style="width:100%; margin-bottom:0; min-height:80px; padding:12px; border: 1px solid var(--line); border-radius: 8px; font-family: inherit; font-size: 14px; resize:vertical; background: #fff;"></textarea>
         </div>
 
         <div class="grid-2">
@@ -863,16 +863,13 @@
     var resume = document.getElementById('rcResumeText').value.trim();
     var name = document.getElementById('rcName').value.trim() || '未命名學員';
     var job = document.getElementById('rcJob').value.trim() || '目標職缺未定';
-    var company = document.getElementById('rcCompany') ? document.getElementById('rcCompany').value.trim() : '';
     var jd = document.getElementById('rcJD') ? document.getElementById('rcJD').value.trim() : '';
     
     var templateNode = document.getElementById('aiPromptTemplate');
     if(!templateNode) return showMsg('找不到提示詞模板');
     
     let jdInfo = '';
-    if (company || jd) {
-        jdInfo = `\n\n【面試公司與職缺資訊】\n面試公司：${company ? company : '(未提供)'}\n職缺內容/網址：\n${jd ? jd : '(未提供)'}`;
-    }
+    if (jd) jdInfo = `\n\n【面試公司與職缺資訊 (可能包含多筆)】\n${jd}`;
     
     var finalPrompt = templateNode.innerHTML.trim() + '\n\n==========================================\n【學員基本資訊】\n姓名：' + name + '\n目標職務：' + job + '\n\n【學員履歷內容】：\n' + (resume ? resume : '(未提供)') + '\n\n【學員作品集內容】：\n' + (portfolioTextForPrompt ? portfolioTextForPrompt : '(未提供)') + jdInfo;
     var ta = document.createElement('textarea'); ta.value = finalPrompt; document.body.appendChild(ta); ta.select();
@@ -885,7 +882,6 @@
     const resumeText = document.getElementById('rcResumeText').value.trim();
     const name = document.getElementById('rcName').value.trim() || '學員';
     const job = document.getElementById('rcJob').value.trim() || '目標職缺';
-    const company = document.getElementById('rcCompany') ? document.getElementById('rcCompany').value.trim() : '';
     const jd = document.getElementById('rcJD') ? document.getElementById('rcJD').value.trim() : '';
     const outputArea = document.getElementById('rcOutput');
     const btn = document.getElementById('runGeminiBtn');
@@ -897,9 +893,7 @@
     outputArea.value = '正在呼叫 Gemini AI 進行全方位深度診斷，請耐心稍候...';
     
     let jdInfo = '';
-    if (company || jd) {
-        jdInfo = `\n\n【面試公司與職缺資訊】\n面試公司：${company ? company : '(未提供)'}\n職缺內容/網址：\n${jd ? jd : '(未提供)'}`;
-    }
+    if (jd) jdInfo = `\n\n【面試公司與職缺資訊 (可能包含多筆)】\n${jd}`;
     
     const finalPromptText = document.getElementById('aiPromptTemplate').innerHTML + `\n\n學員：${name}\n目標職務：${job}\n履歷內容：\n${resumeText ? resumeText : '(未提供)'}\n\n【作品集檔案內容/圖片如下】：\n${portfolioTextForPrompt ? portfolioTextForPrompt : '(未提供)'}` + jdInfo;
     
@@ -1040,19 +1034,31 @@
           let grad = ctx.createLinearGradient(0, 0, canvas.width, 0); grad.addColorStop(0, '#0E7A66'); grad.addColorStop(1, '#1A5276');
           ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, 180);
           ctx.fillStyle = '#ffffff'; ctx.font = 'bold 56px "PingFang TC", "Microsoft JhengHei", sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText('STAR 職涯策略與履歷健診報告', 80, 90); ctx.textBaseline = 'top';
-          drawLCCLogo(canvas.width - 400, 50, 0.8);
+          drawLCCLogo(canvas.width - 380, 80, 0.8);
+          
           ctx.fillStyle = '#F6F1E8'; ctx.fillRect(80, 220, canvas.width - 160, 100);
-          ctx.fillStyle = '#20251F'; ctx.font = 'bold 32px "PingFang TC", "Microsoft JhengHei", sans-serif'; ctx.fillText('學員：' + name + '    |    目標職務：' + job, 120, 250);
+          
+          // 🛡️ 動態縮放職務名稱大小，確保不爆框
+          var headerText = '學員：' + name + '    |    目標職務：' + job;
+          var hFontSize = 32;
+          ctx.font = 'bold ' + hFontSize + 'px "PingFang TC", "Microsoft JhengHei", sans-serif';
+          while (ctx.measureText(headerText).width > (canvas.width - 240) && hFontSize > 16) {
+              hFontSize -= 2;
+              ctx.font = 'bold ' + hFontSize + 'px "PingFang TC", "Microsoft JhengHei", sans-serif';
+          }
+          ctx.fillStyle = '#20251F';
+          ctx.fillText(headerText, 120, 250);
+
           currentY = 380;
         } else {
-          // 🛡️ Logo Y軸大幅往上拉提 (15 -> -25) 貼齊視覺邊界
-          drawLCCLogo(canvas.width - 320, -25, 0.6); 
+          drawLCCLogo(canvas.width - 320, 20, 0.6); 
           ctx.strokeStyle = '#E7DFD0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(margin, 100); ctx.lineTo(canvas.width - margin, 100); ctx.stroke();
           currentY = 140;
         }
         
         var pageFull = false;
 
+        // 寫入文字
         while(itemIndex < renderItems.length && !pageFull) {
             var item = renderItems[itemIndex];
             
@@ -1065,6 +1071,7 @@
 
             if (currentY + item.lineHeight > yLimit) { pageFull = true; break; }
 
+            // 🎯 左側標示線，完美貼齊邊界
             if (item.effectiveType === 'main' && item.isFirst) {
                 ctx.fillStyle = '#0E7A66'; 
                 ctx.fillRect(margin, currentY + item.lineHeight + 6, maxWidth, 3);
@@ -1083,6 +1090,7 @@
             itemIndex++;
         }
         
+        // 頁尾
         ctx.fillStyle = '#7C766A'; ctx.font = '20px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Powered by AI Career Strategist & 臻的行政百寶箱  - Page ' + (pageCount+1), canvas.width/2, 1700);
         ctx.textAlign = 'left'; 
         
