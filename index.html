@@ -338,35 +338,46 @@
     </div>
   </div>
 
+  <!-- 🌟 新增：STAR 履歷健診模組 -->
   <div id="resume-check" class="view fade">
     <div class="grid-2">
-      <div class="card">
-        <h3 style="margin-top:0; color:var(--go);">1. 🤖 AI 深度分析 (整合職缺 JD)</h3>
-        <div style="display:flex; gap:8px; margin-bottom: 12px;">
-          <input type="text" id="rcName" placeholder="學員姓名" style="flex:1; margin-bottom:0;">
-          <input type="text" id="rcJob" placeholder="目標職務" style="flex:1; margin-bottom:0;">
+      <div class="card" style="grid-column: 1 / -1;">
+        <h3 style="margin-top:0; color:var(--go);">1. 🤖 深度分析資料輸入 (多模態上傳區)</h3>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom: 12px;">
+          <input type="text" id="rcName" placeholder="學員姓名" style="flex:1; min-width:150px; margin-bottom:0;">
+          <input type="text" id="rcJob" placeholder="目標職務 (重要！將影響關鍵字比對)" style="flex:2; min-width:200px; margin-bottom:0;">
         </div>
         
-        <input type="text" id="rcJobUrl" placeholder="🎯 目標職缺網址 (104/Indeed...)" style="margin-bottom: 8px;">
-        <textarea id="rcJobDesc" placeholder="🎯 或手動貼上職缺描述 (JD)..." style="min-height: 60px; font-size: 13px;"></textarea>
-        
-        <div style="background: var(--goSoft); padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px dashed var(--go);">
-          <label style="font-weight:bold; font-size:13px; color:var(--go); display:block; margin-bottom:8px;">📄 上傳 PDF 履歷 (支援繁體中文提取)：</label>
-          <input type="file" id="rcPdfFile" accept=".pdf" style="margin-bottom:0; background:#fff;">
-          <div id="pdfLoadingStatus" style="font-size:12px; color:var(--go); margin-top:5px; font-weight:bold;"></div>
+        <div style="display:flex; flex-direction:column; gap:8px; margin-bottom: 12px;">
+          <label style="font-weight:bold; font-size:13px; color:var(--go); margin-bottom:0;">🏢 多筆面試職缺同時分析 (選填)：</label>
+          <textarea id="rcJD" placeholder="請直接貼上「多筆」公司名稱與對應的 104 職缺內容(JD)。AI 將為您逐一分析每一間公司的契合度，並分別預測專屬面試題！" style="width:100%; margin-bottom:0; min-height:80px; padding:12px; border: 1px solid var(--line); border-radius: 8px; font-family: inherit; font-size: 14px; resize:vertical; background: #fff;"></textarea>
         </div>
 
-        <textarea id="rcResumeText" placeholder="PDF 文字提取後會顯示在此，或直接手動貼上文字..." style="min-height:160px;"></textarea>
+        <div class="grid-2">
+          <div style="background: var(--goSoft); padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px dashed var(--go);">
+            <label style="font-weight:bold; font-size:13px; color:var(--go); display:block; margin-bottom:8px;">📄 上傳履歷 (一般 PDF，104履歷請用貼的)：</label>
+            <input type="file" id="rcPdfFile" accept=".pdf" style="margin-bottom:0; background:#fff;">
+            <div id="pdfLoadingStatus" style="font-size:12px; color:var(--go); margin-top:5px; font-weight:bold;"></div>
+          </div>
+          
+          <div style="background: var(--goldSoft); padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px dashed var(--gold);">
+            <label style="font-weight:bold; font-size:13px; color:var(--gold); display:block; margin-bottom:8px;">📁 上傳作品集 (最多5個，支援 pdf, jpg, png, txt, py, java)：</label>
+            <input type="file" id="rcPortfolioFiles" accept=".pdf,.jpg,.jpeg,.png,.txt,.py,.java" multiple style="margin-bottom:0; background:#fff;">
+            <div id="portfolioLoadingStatus" style="font-size:12px; color:var(--gold); margin-top:5px; font-weight:bold;"></div>
+          </div>
+        </div>
+
+        <textarea id="rcResumeText" placeholder="履歷文字提取後會顯示在此。若為 104 網頁履歷，請直接全選複製並貼入此處..." style="min-height:160px;"></textarea>
   
         <div style="display:flex; gap:10px;">
-          <button class="btn" onclick="copyAiPrompt()" style="flex:1; background:var(--ink);">📋 複製提示詞</button>
-          <button id="runGeminiBtn" class="btn" onclick="runGeminiDiagnosis()" style="flex:2; background:#4285F4;">🚀 直接用 Gemini AI 健檢</button>
-          <button class="btn btn-outline" onclick="jumpToGem()" style="flex:1;">🔗 我的 Gem</button>
+          <button class="btn btn-outline" onclick="copyAiPrompt()" style="flex:1;">📋 複製提示詞</button>
+          <button id="runGeminiBtn" class="btn" onclick="runGeminiDiagnosis()" style="flex:2; background:#4285F4; font-size:16px;">🚀 產出全套雙視角分析報告 (Gemini 2.5 Flash)</button>
         </div>
       </div>
 
+      <!-- 快速手動診斷 -->
       <div class="card">
-        <h3 style="margin-top:0; color:var(--go);">2. ⚡ 快速診斷 (手掌握勾選常用評語)</h3>
+        <h3 style="margin-top:0; color:var(--go);">2. ⚡ 快速診斷 (手動勾選常用評語)</h3>
         <p style="color:var(--sub); font-size:13px; margin-bottom:12px;">不想依賴 AI 時，直接勾選以下最常見的 STAR 履歷致命傷，自動拼湊出一份專業的修改建議！</p>
         
         <label style="font-weight:bold; font-size:13px; color:var(--ink);">S 情境 (Situation)</label>
@@ -397,17 +408,17 @@
           <option value="⚠️ 有寫出結果，但與「行動」缺乏因果連結，建議強化個人行動對結果的直接影響。">⚠️ 結果與行動脫節</option>
         </select>
         
-        <button class="btn btn-outline" onclick="generateQuickFeedback()" style="width:100%;">⬇️ 組合上述評語至下方報告</button>
+        <button class="btn btn-outline" onclick="generateQuickFeedback()" style="width:100%;">⬇️ 組合上述評語至右方報告</button>
       </div>
 
       <div class="card" style="grid-column: 1 / -1;">
         <h3 style="margin-top:0; color:var(--go);">3. 📄 健診報告預覽與 PDF 輸出</h3>
-        <p style="color:var(--sub); font-size:13px; margin-bottom:12px;">您可以在此手動修改評語，或是將 ChatGPT 產出的萬字分析報告貼回這裡，最後一鍵轉換成有質感的 A4 PDF 給學員。</p>
+        <p style="color:var(--sub); font-size:13px; margin-bottom:12px;">此區文字皆為「純淨無亂碼版」，您可以自由編修。滿意後請點擊下方按鈕產出帶有視覺特效的超精美 A4 PDF。</p>
         
-        <textarea id="rcOutput" placeholder="這裡將顯示組合後的評語或 AI 報告內容..." style="min-height:300px; line-height:1.6; font-size:14px;"></textarea>
+        <textarea id="rcOutput" placeholder="這裡將顯示組合後的評語或 AI 全套分析報告內容..." style="min-height:500px; line-height:1.6; font-size:14px;"></textarea>
         
         <div style="display:flex; gap:10px; margin-top:12px;">
-          <button class="btn" onclick="exportResumePDF()" style="flex:1; padding: 12px; font-size:16px;">📥 產生精美 A4 健診報告 (PDF)</button>
+          <button class="btn" onclick="exportResumePDF()" style="flex:1; padding: 12px; font-size:16px;">📥 產生齊頭防跑版 A4 報告</button>
           <button class="btn btn-outline" onclick="document.getElementById('rcOutput').value=''" style="padding:0 24px;">清除重填</button>
         </div>
         <div id="rcStatus" style="margin-top:12px; font-weight:bold; color:var(--go); font-size: 14px; text-align:center;"></div>
