@@ -1049,15 +1049,9 @@
     var resume = document.getElementById('rcResumeText').value.trim();
     var name = document.getElementById('rcName').value.trim() || '未命名學員';
     var job = document.getElementById('rcJob').value.trim() || '目標職缺未定';
-    var jd = document.getElementById('rcJD') ? document.getElementById('rcJD').value.trim() : '';
-    
     var templateNode = document.getElementById('aiPromptTemplate');
     if(!templateNode) return showMsg('找不到提示詞模板');
-    
-    let jdInfo = '';
-    if (jd) jdInfo = `\n\n【面試公司與職缺資訊 (可能包含多筆)】\n${jd}`;
-    
-    var finalPrompt = templateNode.innerHTML.trim() + '\n\n==========================================\n【學員基本資訊】\n姓名：' + name + '\n目標職務：' + job + '\n\n【學員履歷內容】：\n' + (resume ? resume : '(未提供)') + '\n\n【學員作品集內容】：\n' + (portfolioTextForPrompt ? portfolioTextForPrompt : '(未提供)') + jdInfo;
+    var finalPrompt = templateNode.innerHTML.trim() + '\n\n==========================================\n【學員基本資訊】\n姓名：' + name + '\n目標職務：' + job + '\n\n【學員履歷內容】：\n' + (resume ? resume : '(未提供)') + '\n\n【學員作品集內容】：\n' + (portfolioTextForPrompt ? portfolioTextForPrompt : '(未提供)');
     var ta = document.createElement('textarea'); ta.value = finalPrompt; document.body.appendChild(ta); ta.select();
     try { document.execCommand('copy'); showConfirm('✅ AI 提示詞已複製！是否開啟 ChatGPT 網頁？', function() { window.open('https://chatgpt.com/', '_blank'); }); } catch(e) {}
     document.body.removeChild(ta);
@@ -1068,7 +1062,6 @@
     const resumeText = document.getElementById('rcResumeText').value.trim();
     const name = document.getElementById('rcName').value.trim() || '學員';
     const job = document.getElementById('rcJob').value.trim() || '目標職缺';
-    const jd = document.getElementById('rcJD') ? document.getElementById('rcJD').value.trim() : '';
     const outputArea = document.getElementById('rcOutput');
     const btn = document.getElementById('runGeminiBtn');
 
@@ -1078,11 +1071,7 @@
     btn.disabled = true; btn.innerText = '🤖 AI 深度分析與視覺診斷產出中...';
     outputArea.value = '正在呼叫 Gemini AI 進行全方位深度診斷，請耐心稍候...';
     
-    let jdInfo = '';
-    if (jd) jdInfo = `\n\n【面試公司與職缺資訊 (可能包含多筆)】\n${jd}`;
-    
-    const finalPromptText = document.getElementById('aiPromptTemplate').innerHTML + `\n\n學員：${name}\n目標職務：${job}\n履歷內容：\n${resumeText ? resumeText : '(未提供)'}\n\n【作品集檔案內容/圖片如下】：\n${portfolioTextForPrompt ? portfolioTextForPrompt : '(未提供)'}` + jdInfo;
-    
+    const finalPromptText = document.getElementById('aiPromptTemplate').innerHTML + `\n\n學員：${name}\n目標職務：${job}\n履歷內容：\n${resumeText ? resumeText : '(未提供)'}\n\n【作品集檔案內容/圖片如下】：\n${portfolioTextForPrompt ? portfolioTextForPrompt : '(未提供)'}`;
     let apiParts = [{ text: finalPromptText }];
     if (portfolioParts.length > 0) apiParts = apiParts.concat(portfolioParts);
 
@@ -1094,7 +1083,7 @@
       if (data.error) throw new Error(data.error.message);
       
       let rawText = data.candidates[0].content.parts[0].text;
-      let cleanText = rawText.replace(/\*\*/g, '').replace(/[\#\_\`]/g, '');
+      let cleanText = rawText.replace(/[\*\#\_\`]/g, '');
       outputArea.value = cleanText;
       showToast('✅ 全套雙視角 AI 診斷完成！');
     } catch (err) { outputArea.value = '❌ 呼叫 AI 失敗：' + err.message; }
@@ -1112,7 +1101,7 @@
     showToast('✅ 已自動組合評語至下方輸出框！');
   }
 
-  // 🌟 終極齊頭式防跑版排版 PDF 生成器 (附帶影像繪製功能修復)
+  // 🌟 終極齊頭式防跑版排版 PDF 生成器
   async function exportResumePDF() {
     var name = document.getElementById('rcName').value.trim() || '未命名學員';
     var job = document.getElementById('rcJob').value.trim() || '未填寫';
@@ -1146,8 +1135,8 @@
       function drawLCCLogo(x, y, scale) {
           ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
           ctx.font = '900 65px "PingFang TC", "Microsoft JhengHei", sans-serif';
-          ctx.fillStyle = '#1A1A1A'; ctx.fillText('聯成電腦', 105, 40);
-          ctx.fillStyle = '#73B82D'; ctx.fillText('聯成電腦', 100, 35);
+          ctx.fillStyle = '#1A1A1A'; ctx.fillText('聯成電腦', 105, 55);
+          ctx.fillStyle = '#73B82D'; ctx.fillText('聯成電腦', 100, 50);
           ctx.lineWidth = 15; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
           ctx.strokeStyle = '#1A1A1A'; ctx.beginPath(); ctx.moveTo(15, 45); ctx.lineTo(15, 15); ctx.lineTo(65, 15); ctx.lineTo(65, 50); ctx.stroke();
           ctx.strokeStyle = '#73B82D'; ctx.beginPath(); ctx.moveTo(10, 40); ctx.lineTo(10, 10); ctx.lineTo(60, 10); ctx.lineTo(60, 45); ctx.stroke();
@@ -1156,6 +1145,7 @@
           ctx.restore();
       }
 
+      // 將所有文字轉換為「渲染行指令」
       var renderItems = [];
       var rawLines = text.split('\n');
       var currentState = 'normal';
@@ -1180,6 +1170,8 @@
 
         var fontStr = '26px "PingFang TC", "Microsoft JhengHei", sans-serif';
         var textColor = '#333333';
+        
+        // 🎯 齊頭式設計：所有文字統一對齊基準線
         var xOffset = margin + 20; 
         var dMaxWidth = maxWidth - 20; 
         var lineHeight = 42;
@@ -1197,7 +1189,9 @@
             if (type === 'star') { fontStr = 'bold 26px "PingFang TC", sans-serif'; textColor = '#0E7A66'; }
         }
         
-        if (type === 'list') { line = line.replace(/^[\-\*]\s*/, '☑ '); }
+        if (type === 'list') {
+            line = line.replace(/^[\-\*]\s*/, '☑ ');
+        }
 
         var wrapped = getWrappedLines(line, dMaxWidth, fontStr);
         wrapped.forEach(function(wLine, idx) {
@@ -1207,9 +1201,11 @@
             });
         });
         
+        // 🎯 每一段落結束後，自動強制空行 (製造呼吸感)
         renderItems.push({ type: 'spacer', height: 24 });
       });
 
+      // 執行分頁渲染
       var itemIndex = 0; var pageCount = 0;
       while(itemIndex < renderItems.length) {
         ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1220,29 +1216,19 @@
           let grad = ctx.createLinearGradient(0, 0, canvas.width, 0); grad.addColorStop(0, '#0E7A66'); grad.addColorStop(1, '#1A5276');
           ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, 180);
           ctx.fillStyle = '#ffffff'; ctx.font = 'bold 56px "PingFang TC", "Microsoft JhengHei", sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText('STAR 職涯策略與履歷健診報告', 80, 90); ctx.textBaseline = 'top';
-          drawLCCLogo(canvas.width - 380, 80, 0.8);
-          
+          drawLCCLogo(canvas.width - 400, 50, 0.8);
           ctx.fillStyle = '#F6F1E8'; ctx.fillRect(80, 220, canvas.width - 160, 100);
-          
-          var headerText = '學員：' + name + '    |    目標職務：' + job;
-          var hFontSize = 32;
-          ctx.font = 'bold ' + hFontSize + 'px "PingFang TC", "Microsoft JhengHei", sans-serif';
-          while (ctx.measureText(headerText).width > (canvas.width - 240) && hFontSize > 16) {
-              hFontSize -= 2;
-              ctx.font = 'bold ' + hFontSize + 'px "PingFang TC", "Microsoft JhengHei", sans-serif';
-          }
-          ctx.fillStyle = '#20251F';
-          ctx.fillText(headerText, 120, 250);
-
+          ctx.fillStyle = '#20251F'; ctx.font = 'bold 32px "PingFang TC", "Microsoft JhengHei", sans-serif'; ctx.fillText('學員：' + name + '    |    目標職務：' + job, 120, 250);
           currentY = 380;
         } else {
-          drawLCCLogo(canvas.width - 320, -25, 0.6); 
+          drawLCCLogo(canvas.width - 320, 15, 0.6); 
           ctx.strokeStyle = '#E7DFD0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(margin, 100); ctx.lineTo(canvas.width - margin, 100); ctx.stroke();
           currentY = 140;
         }
         
         var pageFull = false;
 
+        // 寫入文字
         while(itemIndex < renderItems.length && !pageFull) {
             var item = renderItems[itemIndex];
             
@@ -1255,6 +1241,7 @@
 
             if (currentY + item.lineHeight > yLimit) { pageFull = true; break; }
 
+            // 🎯 左側標示線，完美貼齊邊界
             if (item.effectiveType === 'main' && item.isFirst) {
                 ctx.fillStyle = '#0E7A66'; 
                 ctx.fillRect(margin, currentY + item.lineHeight + 6, maxWidth, 3);
@@ -1273,6 +1260,7 @@
             itemIndex++;
         }
         
+        // 頁尾
         ctx.fillStyle = '#7C766A'; ctx.font = '20px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Powered by AI Career Strategist & 臻的行政百寶箱  - Page ' + (pageCount+1), canvas.width/2, 1700);
         ctx.textAlign = 'left'; 
         
@@ -1280,7 +1268,7 @@
         if (pageCount > 0) doc.addPage(); doc.addImage(dataUrl, 'JPEG', 0, 0, pdfW, pdfH); pageCount++;
       }
       
-      doc.save('職涯健診報告_[' + name + ']'+ job + '.pdf'); statusEl.innerText = '✅ PDF 成功產生並已下載！';
+      doc.save('職涯健診報告_[' + name + '].pdf'); statusEl.innerText = '✅ PDF 成功產生並已下載！';
     } catch(e) { console.error(e); statusEl.innerText = '❌ 產生失敗，請檢查內容。'; } finally { setTimeout(function(){ statusEl.innerText = ''; }, 3000); }
   }
 
