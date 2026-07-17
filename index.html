@@ -162,7 +162,6 @@
     h1 { font-size: 24px; margin-bottom: 12px; }
     .tab { padding: 8px 14px; font-size: 13px; }
     .grid-2, .grid-3, .matrix-grid { grid-template-columns: 1fr; gap: 12px; }
-    
     .cal-grid { width: 750px; }
     .cal-th { font-size: 12px; padding: 6px 2px; }
     .cal-td { min-height: 70px; padding: 2px; }
@@ -182,7 +181,7 @@
 目標是協助求職者重塑履歷、作品集與面試策略，將經歷翻譯成企業渴望的「即戰力」語言，提升曝光率與面試勝率。
 
 ## 格式絕對限制 (CRITICAL CONSTRAINTS - 系統核心層級)
-1. 絕對禁止使用任何 Markdown 符號（如星號 *、井字號 #、底線 _、引號 ` 等）。
+1. 絕對禁止使用任何 Markdown 符號（如星號 *、井字號 #、底線 _、引號 ` 等），但若為列表項目符號，請僅使用單一個橫槓 - 或星號 * 開頭加空白。
 2. 僅能使用標準純文字排版，例如全形括號【】、中文數字（一、二、三）或阿拉伯數字（1. 2. 3.）來進行條列與分段。任何導致粗體、標題渲染的符號皆嚴格禁止。
 3. 禁語替換機制：嚴禁出現「我願意學習、我肯學、吃苦耐勞、奴性強、依公司規定」。強制替換為「具備快速適應力、過往有快速掌握新技術的經驗、高配合度、勇於承擔挑戰、致力於目標達成」。
 4. 必須「一次性產出」完整的長篇報告，不需要與使用者一問一答。
@@ -276,18 +275,15 @@
         </div>
       </div>
 
-      <!-- 離線備份 -->
       <div class="card">
         <h3 style="margin-top:0;">💾 離線資料備份與還原</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">匯出 .json 檔案存放在您的電腦中，作為離線保險。</p>
         <button class="btn btn-outline" onclick="exportData()" style="width:100%; margin-bottom:20px;">📥 匯出離線備份檔 (.json)</button>
-        
         <label style="display:block; font-size:14px; font-weight:bold; margin-bottom:8px; color:var(--go);">上傳離線備份檔還原：</label>
         <input type="file" id="importFile" accept=".json" style="margin-bottom:12px;">
         <button class="btn btn-outline" onclick="importData()" style="width:100%;">📤 還原離線資料</button>
       </div>
 
-      <!-- 常用連結 -->
       <div class="card">
         <h3 style="margin-top:0;">🔗 常用系統連結</h3>
         <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">將公司的後台系統、報表或雲端硬碟網址存在這裡，當作您的專屬入口網站。</p>
@@ -371,11 +367,10 @@
   
         <div style="display:flex; gap:10px;">
           <button class="btn btn-outline" onclick="copyAiPrompt()" style="flex:1;">📋 複製提示詞</button>
-          <button id="runGeminiBtn" class="btn" onclick="runGeminiDiagnosis()" style="flex:2; background:#4285F4; font-size:16px;">🚀 產出全套雙視角分析報告 (含作品集健檢)</button>
+          <button id="runGeminiBtn" class="btn" onclick="runGeminiDiagnosis()" style="flex:2; background:#4285F4; font-size:16px;">🚀 產出全套雙視角分析報告 (Gemini 2.5 Flash)</button>
         </div>
       </div>
 
-      <!-- 快速手動診斷 -->
       <div class="card">
         <h3 style="margin-top:0; color:var(--go);">2. ⚡ 快速診斷 (手動勾選常用評語)</h3>
         <p style="color:var(--sub); font-size:13px; margin-bottom:12px;">不想依賴 AI 時，直接勾選以下最常見的 STAR 履歷致命傷，自動拼湊出一份專業的修改建議！</p>
@@ -418,7 +413,7 @@
         <textarea id="rcOutput" placeholder="這裡將顯示組合後的評語或 AI 全套分析報告內容..." style="min-height:500px; line-height:1.6; font-size:14px;"></textarea>
         
         <div style="display:flex; gap:10px; margin-top:12px;">
-          <button class="btn" onclick="exportResumePDF()" style="flex:1; padding: 12px; font-size:16px;">📥 產生高質感視覺化 A4 報告</button>
+          <button class="btn" onclick="exportResumePDF()" style="flex:1; padding: 12px; font-size:16px;">📥 產生防跑版・高質感 A4 報告</button>
           <button class="btn btn-outline" onclick="document.getElementById('rcOutput').value=''" style="padding:0 24px;">清除重填</button>
         </div>
         <div id="rcStatus" style="margin-top:12px; font-weight:bold; color:var(--go); font-size: 14px; text-align:center;"></div>
@@ -464,7 +459,6 @@
           </select>
           <input type="text" id="newNoteTitle" placeholder="事項標題 (必填)" style="flex:1 0 200px; min-width:200px; margin-bottom:0; padding:8px;">
         </div>
-        
         <textarea id="newNoteBody" placeholder="詳細內容 (選填)"></textarea>
         <div style="display:flex; gap:10px;">
           <input type="date" id="newNoteDate" style="flex:1;">
@@ -521,20 +515,16 @@
         <div>
           <label style="font-weight:bold; font-size:14px; color:var(--danger);">1. 宣傳圖底圖模板</label>
           <input type="file" id="pTpl" accept="image/*">
-          
           <label style="font-weight:bold; font-size:14px;">2. 感謝函文字內容</label>
           <textarea id="pQuote" rows="3" placeholder="例如：感謝聯成電腦..."></textarea>
           <div class="slider-group"><span style="width:50px;">大小</span><input type="range" id="pQuoteSize" min="20" max="80" value="36"></div>
           <div class="slider-group" style="margin-bottom:15px;"><span style="width:50px;">上下</span><input type="range" id="pQuoteY" min="-500" max="500" value="0"></div>
-
           <label style="font-weight:bold; font-size:14px;">3. 學員姓名</label>
           <input type="text" id="pName" placeholder="例如：張小明" style="margin-bottom:6px;">
           <div class="slider-group" style="margin-bottom:15px;"><span style="width:50px;">大小</span><input type="range" id="pNameSize" min="30" max="120" value="75"></div>
-          
           <label style="font-weight:bold; font-size:14px;">4. 錄取廠商</label>
           <input type="text" id="pComp" placeholder="例如：網銀國際股份有限公司" style="margin-bottom:6px;">
           <div class="slider-group"><span style="width:50px;">大小</span><input type="range" id="pCompSize" min="20" max="80" value="45"></div>
-
           <div class="slider-group" style="margin-top:8px; margin-bottom:15px; padding-top:8px; border-top:1px dashed #ccc;">
             <span style="width:110px; color:var(--go); font-weight:bold;">姓名/廠商 垂直微調</span>
             <input type="range" id="pInfoY" min="-500" max="500" value="0">
@@ -546,19 +536,15 @@
           <div class="slider-group"><span>縮放</span><input type="range" id="pLetterS" min="0.05" max="3" step="0.01" value="1"></div>
           <div class="slider-group"><span>左右</span><input type="range" id="pLetterX" min="-800" max="800" value="0"></div>
           <div class="slider-group"><span>上下</span><input type="range" id="pLetterY" min="-800" max="800" value="0"></div>
-          
           <label style="font-weight:bold; font-size:14px; margin-top:20px; display:block;">6. 合照</label>
           <input type="file" id="pPhoto" accept="image/*">
-          
           <div style="font-size:12px; color:var(--go); font-weight:bold; margin-top:10px; margin-bottom:4px;">➤ 照片內容微調</div>
           <div class="slider-group"><span>照片縮放</span><input type="range" id="pPhotoS" min="0.05" max="3" step="0.01" value="1"></div>
           <div class="slider-group"><span>照片左右</span><input type="range" id="pPhotoX" min="-1000" max="1000" value="0"></div>
           <div class="slider-group"><span>照片上下</span><input type="range" id="pPhotoY" min="-1000" max="1000" value="0"></div>
-          
           <div style="font-size:12px; color:var(--go); font-weight:bold; margin-top:10px; margin-bottom:4px;">➤ 圓框位置微調</div>
           <div class="slider-group"><span>圓框左右</span><input type="range" id="pFrameX" min="-500" max="500" value="0"></div>
           <div class="slider-group"><span>圓框上下</span><input type="range" id="pFrameY" min="-500" max="500" value="0"></div>
-
           <button class="btn" onclick="drawPromo()" style="width:100%; margin-top: 20px;">🎨 預覽 / 更新畫面</button>
         </div>
       </div>
@@ -902,11 +888,14 @@
       if (data.error) throw new Error(data.error.message);
       
       let rawText = data.candidates[0].content.parts[0].text;
-      let cleanText = rawText.replace(/[\*\#\_\`]/g, '');
+      
+      // 🌟 終極濾網：精準移除粗體與標題符號，完美保留列表星星號
+      let cleanText = rawText.replace(/\*\*/g, '').replace(/[\#\_\`]/g, '');
+      
       outputArea.value = cleanText;
       showToast('✅ 全套雙視角 AI 診斷完成！');
     } catch (err) { outputArea.value = '❌ 呼叫 AI 失敗：' + err.message; }
-    finally { btn.disabled = false; btn.innerText = '🚀 產出全套雙視角分析報告'; }
+    finally { btn.disabled = false; btn.innerText = '🚀 產出全套雙視角分析報告 (Gemini 2.5 Flash)'; }
   }
 
   function generateQuickFeedback() {
@@ -920,7 +909,7 @@
     showToast('✅ 已自動組合評語至下方輸出框！');
   }
 
-  // 🌟 終極高質感視覺排版 PDF 生成器 (防跑版黑科技 - 逐行渲染法)
+  // 🌟 終極高質感視覺排版 PDF 生成器 (防跑版黑科技 - 逐行精準預測渲染)
   async function exportResumePDF() {
     var name = document.getElementById('rcName').value.trim() || '未命名學員';
     var job = document.getElementById('rcJob').value.trim() || '未填寫';
@@ -964,61 +953,71 @@
           ctx.restore();
       }
 
-      // 1. 將所有文字打平成「渲染行指令」陣列
+      // 將所有文字轉換為「渲染行指令」
       var renderItems = [];
       var rawLines = text.split('\n');
-      var currentState = 'normal';
       
       rawLines.forEach(function(rawLine) {
         var line = rawLine.trim();
-        if (line === '') { currentState = 'normal'; renderItems.push({ type: 'empty', text: '' }); return; }
+        if (line === '') { renderItems.push({ type: 'spacer', height: 20 }); return; }
 
-        var type = 'normal';
-        if (line.match(/^【第[一二三]部分/)) { type = 'main'; currentState = 'normal'; }
-        else if (line.match(/^[一二三四五六七八九]、/)) { type = 'sub'; currentState = 'normal'; }
-        else if (line.includes('綜合競爭力評分') && /\d/.test(line)) { type = 'score'; currentState = 'normal'; }
-        else if (line.match(/^【?[STAR]/i) || line.match(/^【?(情境|任務|行動|結果)/) || line.match(/^[STAR]\s*[:：]?\s*/i) || line.match(/^[STAR]行動/i)) { type = 'star'; currentState = 'star'; }
-        else if (line.match(/^[\-\*]\s/) || line.match(/^\(\d+\)/) || line.match(/^☑/)) { type = 'list'; }
+        var isMainTitle = line.match(/^【第[一二三]部分/);
+        var isSubTitle = line.match(/^[一二三四五六七八九]、/);
+        var isScore = line.includes('綜合競爭力評分');
+        var isStar = line.match(/^【?[STAR]/i) || line.match(/^【?(情境|任務|行動|結果)/) || line.match(/^[STAR]\s*[:：]?\s*/i) || line.match(/^[STAR]行動/i);
+        var isList = line.match(/^[\-\*]\s/) || line.match(/^\(\d+\)/) || line.match(/^☑/);
 
-        var effectiveType = type;
-        if ((type === 'normal' || type === 'list') && currentState === 'star') effectiveType = 'star';
+        var fontStr = '26px "PingFang TC", "Microsoft JhengHei", sans-serif';
+        var textColor = '#333333';
+        var xOffset = margin;
+        var lineHeight = 42;
+        var maxWidthAdjust = 0;
+        var effectiveType = 'normal';
 
-        var fontStr = '28px "PingFang TC", "Microsoft JhengHei", sans-serif';
-        var textColor = '#333333'; var xOffset = margin; var dMaxWidth = maxWidth; var lineHeight = 44;
-
-        if (effectiveType === 'main') { fontStr = 'bold 32px "PingFang TC", sans-serif'; textColor = '#ffffff'; xOffset = margin + 20; lineHeight = 56; dMaxWidth = maxWidth - 40;}
-        else if (effectiveType === 'sub') { fontStr = 'bold 30px "PingFang TC", sans-serif'; textColor = '#2563EB'; xOffset = margin + 20; dMaxWidth = maxWidth - 20;}
-        else if (effectiveType === 'score') { fontStr = 'bold 28px "PingFang TC", sans-serif'; textColor = '#ffffff'; xOffset = margin + 20; dMaxWidth = maxWidth - 40; }
-        else if (effectiveType === 'star') { 
-            if (type === 'star') { fontStr = 'bold 28px "PingFang TC", sans-serif'; textColor = '#0E7A66'; }
-            xOffset = margin + 20; dMaxWidth = maxWidth - 40; 
-        }
-        
-        if (type === 'list') {
+        // 🌟 採用極簡顧問風格排版，去除大面積背景色塊
+        if (isMainTitle) {
+            fontStr = 'bold 36px "PingFang TC", sans-serif'; textColor = '#0E7A66'; lineHeight = 60; effectiveType = 'main';
+            renderItems.push({ type: 'spacer', height: 40 });
+        } else if (isSubTitle) {
+            fontStr = 'bold 30px "PingFang TC", sans-serif'; textColor = '#1A5276'; lineHeight = 50; effectiveType = 'sub'; xOffset = margin + 20; maxWidthAdjust = 20;
+            renderItems.push({ type: 'spacer', height: 30 });
+        } else if (isScore) {
+            fontStr = 'bold 28px "PingFang TC", sans-serif'; textColor = '#B23A2E'; lineHeight = 46; effectiveType = 'score';
+        } else if (isStar) {
+            fontStr = 'bold 26px "PingFang TC", sans-serif'; textColor = '#BE842B'; lineHeight = 44; effectiveType = 'star'; xOffset = margin + 20; maxWidthAdjust = 40;
+        } else if (isList) {
             line = line.replace(/^[\-\*]\s*/, '☑ ');
-            if (effectiveType === 'normal') { xOffset = margin + 30; dMaxWidth = maxWidth - 30; }
-            else { xOffset += 10; dMaxWidth -= 10; } 
+            xOffset = margin + 40; maxWidthAdjust = 40; effectiveType = 'list';
         }
 
-        var wrapped = getWrappedLines(line, dMaxWidth, fontStr);
-        wrapped.forEach(function(wLine) {
-            renderItems.push({ text: wLine, effectiveType: effectiveType, fontStr: fontStr, textColor: textColor, xOffset: xOffset, lineHeight: lineHeight });
+        var wrapped = getWrappedLines(line, maxWidth - maxWidthAdjust, fontStr);
+        wrapped.forEach(function(wLine, idx) {
+            renderItems.push({
+                type: 'text', effectiveType: effectiveType, text: wLine, fontStr: fontStr, textColor: textColor, x: xOffset, lineHeight: lineHeight,
+                isFirst: (idx === 0)
+            });
         });
+        
+        if (isMainTitle || isSubTitle) {
+            renderItems.push({ type: 'spacer', height: 10 });
+        }
       });
 
-      // 2. 執行分頁渲染
+      // 執行分頁渲染 (防跑版)
       var itemIndex = 0; var pageCount = 0;
       while(itemIndex < renderItems.length) {
         ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
         var currentY = 100;
         
+        // 繪製版頭
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top'; // 🛡️ 強制初始化對齊方式
         if (pageCount === 0) {
           let grad = ctx.createLinearGradient(0, 0, canvas.width, 0); grad.addColorStop(0, '#0E7A66'); grad.addColorStop(1, '#1A5276');
           ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, 180);
-          ctx.fillStyle = '#ffffff'; ctx.font = 'bold 56px "PingFang TC", "Microsoft JhengHei", sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText('STAR 職涯策略與履歷健診報告', 80, 90);
+          ctx.fillStyle = '#ffffff'; ctx.font = 'bold 56px "PingFang TC", "Microsoft JhengHei", sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText('STAR 職涯策略與履歷健診報告', 80, 90); ctx.textBaseline = 'top';
           drawLCCLogo(canvas.width - 400, 50, 0.8);
           ctx.fillStyle = '#F6F1E8'; ctx.fillRect(80, 220, canvas.width - 160, 100);
-          ctx.fillStyle = '#20251F'; ctx.font = 'bold 32px "PingFang TC", "Microsoft JhengHei", sans-serif'; ctx.fillText('學員：' + name + '    |    目標職務：' + job, 120, 270);
+          ctx.fillStyle = '#20251F'; ctx.font = 'bold 32px "PingFang TC", "Microsoft JhengHei", sans-serif'; ctx.fillText('學員：' + name + '    |    目標職務：' + job, 120, 250);
           currentY = 380;
         } else {
           drawLCCLogo(canvas.width - 320, 40, 0.6);
@@ -1026,47 +1025,43 @@
           currentY = 140;
         }
         
-        ctx.textBaseline = 'top';
         var pageFull = false;
 
+        // 寫入文字
         while(itemIndex < renderItems.length && !pageFull) {
             var item = renderItems[itemIndex];
             
-            if (item.type === 'empty') { currentY += 20; itemIndex++; if (currentY > yLimit) pageFull = true; continue; }
-
-            var prevItem = (itemIndex > 0) ? renderItems[itemIndex - 1] : null;
-            var nextItem = (itemIndex < renderItems.length - 1) ? renderItems[itemIndex + 1] : null;
-            
-            var isBlockStart = !prevItem || prevItem.effectiveType !== item.effectiveType || prevItem.type === 'empty';
-            var isBlockEnd = !nextItem || nextItem.effectiveType !== item.effectiveType || nextItem.type === 'empty';
+            if (item.type === 'spacer') { 
+                currentY += item.height; 
+                itemIndex++; 
+                if (currentY > yLimit) pageFull = true; 
+                continue; 
+            }
 
             if (currentY + item.lineHeight > yLimit) { pageFull = true; break; }
 
-            var bgX = margin; var bgW = maxWidth; var bgY = currentY - (isBlockStart ? 16 : 0); 
-            var bgH = item.lineHeight + (isBlockStart ? 16 : 0) + (isBlockEnd ? 16 : 0);
-            
-            if (currentY + bgH > yLimit + 20) { bgH = (yLimit + 20) - bgY; isBlockEnd = false; }
-
-            if (item.effectiveType === 'main') {
-                let grad = ctx.createLinearGradient(bgX, bgY, bgX + bgW, bgY); grad.addColorStop(0, '#4F46E5'); grad.addColorStop(1, '#9333EA');
-                ctx.fillStyle = grad; ctx.fillRect(bgX, bgY, bgW, bgH);
+            // 🛡️ 極簡重點標示繪製
+            if (item.effectiveType === 'main' && item.isFirst) {
+                ctx.fillStyle = '#0E7A66'; 
+                ctx.fillRect(margin, currentY + item.lineHeight + 6, maxWidth, 3);
             } else if (item.effectiveType === 'sub') {
-                ctx.fillStyle = '#2563EB'; ctx.fillRect(bgX, currentY, 8, item.lineHeight); 
-            } else if (item.effectiveType === 'score') {
-                let grad = ctx.createLinearGradient(bgX, bgY, bgX + bgW, bgY); grad.addColorStop(0, '#73B82D'); grad.addColorStop(1, '#F2A900');
-                ctx.fillStyle = grad; ctx.fillRect(bgX, bgY, bgW, bgH);
+                ctx.fillStyle = '#2563EB'; ctx.fillRect(margin, currentY + 4, 6, item.lineHeight - 8); 
             } else if (item.effectiveType === 'star') {
-                ctx.fillStyle = '#EFF6FF'; ctx.fillRect(bgX, bgY, bgW, bgH); ctx.fillStyle = '#3B82F6'; ctx.fillRect(bgX, bgY, 6, bgH);
+                ctx.fillStyle = '#BE842B'; ctx.fillRect(margin, currentY + 4, 4, item.lineHeight - 8);
             }
 
-            ctx.font = item.fontStr; ctx.fillStyle = item.textColor; ctx.fillText(item.text, item.xOffset, currentY);
+            ctx.font = item.fontStr; 
+            ctx.fillStyle = item.textColor; 
+            ctx.textAlign = 'left'; // 🛡️ 每一行強制靠左，徹底阻絕頁碼置中污染
+            ctx.fillText(item.text, item.x, currentY);
 
             currentY += item.lineHeight;
-            if (isBlockEnd) currentY += 16;
             itemIndex++;
         }
         
+        // 頁尾
         ctx.fillStyle = '#7C766A'; ctx.font = '20px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Powered by AI Career Strategist & 臻的行政百寶箱  - Page ' + (pageCount+1), canvas.width/2, 1700);
+        ctx.textAlign = 'left'; // 🛡️ 畫完頁碼立刻歸零
         
         var dataUrl = canvas.toDataURL('image/jpeg', 0.95);
         if (pageCount > 0) doc.addPage(); doc.addImage(dataUrl, 'JPEG', 0, 0, pdfW, pdfH); pageCount++;
