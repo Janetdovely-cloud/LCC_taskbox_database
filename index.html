@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<title>臻的行政百寶箱</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+</script>
+<style>
+  :root { --go: #0E7A66; --paper: #F6F1E8; }
+  body { background: var(--paper); font-family: sans-serif; padding: 20px; }
+  .card { background: #fff; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #E7DFD0; }
+  .btn { background: var(--go); color: #fff; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; }
+  .slider-group { margin: 10px 0; display: flex; align-items: center; gap: 10px; }
+  canvas { max-width: 100%; height: auto; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h3>🎨 百人戰報宣傳圖</h3>
+  <div class="grid-2">
+    <div>
+      <input type="file" id="pTpl" accept="image/*">
+      <textarea id="pQuote" placeholder="感謝詞"></textarea>
+      <div class="slider-group"><span>上下</span><input type="range" id="pQuoteY" min="-500" max="500" value="0"></div>
+      <input type="text" id="pName" placeholder="姓名">
+      <input type="text" id="pComp" placeholder="公司">
+    </div>
+    <div>
+      <input type="file" id="pLetter" accept="image/*">
+      <input type="file" id="pPhoto" accept="image/*">
+      <button class="btn" onclick="drawPromo()">🎨 預覽 / 更新畫面</button>
+    </div>
+  </div>
+  <canvas id="promoCanvas" width="1241" height="1754" style="display:none;"></canvas>
+  <img id="canvasPreview" style="display:none; width: 300px;">
+</div>
+
+<script>
+  // 繪圖核心函數
+  async function drawPromo() {
+    const canvas = document.getElementById('promoCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // 載入底圖
+    const tplFile = document.getElementById('pTpl').files[0];
+    if (!tplFile) { showMsg("請先上傳版型底圖"); return; }
+    
+    const img = await loadImage(URL.createObjectURL(tplFile));
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    
+    // 繪製文字
+    ctx.font = '36px sans-serif';
+    ctx.fillStyle = '#333';
+    ctx.fillText(document.getElementById('pQuote').value, 140, 580 + parseInt(document.getElementById('pQuoteY').value));
+    ctx.fillText(document.getElementById('pName').value, 140, 1000);
+    ctx.fillText(document.getElementById('pComp').value, 140, 1060);
+    
+    // 顯示預覽
+    const preview = document.getElementById('canvasPreview');
+    preview.src = canvas.toDataURL('image/jpeg');
+    preview.style.display = 'block';
+  }
+
+  function loadImage(src) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.src = src;
+    });
+  }
+
+  function showMsg(m) { alert(m); }
+</script>
+
+</body>
+</html>
