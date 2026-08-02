@@ -11,6 +11,7 @@
 
 <style>
 
+  /* 區域統計專用 */
 .rost-sub-wrapper {
   display: flex;
   flex-wrap: nowrap;          /* ⭐ 不換行 */
@@ -60,6 +61,51 @@
 .rost-sub-total .rost-sub-amount {
   color: #fff;
 }
+/* 區域統計專用-結束 */
+
+/* 行事曆記事項 */
+.cal-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: default;
+}
+
+/* 可點擊的文字 */
+.cal-item-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* 完成按鈕 */
+.cal-item-done {
+  flex-shrink: 0;
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.cal-item-done:hover {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+/* 已完成項目樣式（你已有，但確保） */
+.cal-item.c-completed {
+  text-decoration: line-through;
+  opacity: 0.55;
+}
+/* 行事曆記事項-結束 */
   
   :root {
     --paper: #F6F1E8; --card: #FFFFFF; --ink: #20251F; --sub: #7C766A; --line: #E7DFD0;
@@ -206,7 +252,7 @@
     .tab { padding: 8px 14px; font-size: 13px; }
     .grid-2, .grid-3, .matrix-grid { grid-template-columns: 1fr; gap: 12px; }
     
-    /* 限制手機版寬度，讓行事曆表格可以流暢左右滾動 */
+    /* 限制手機版寬度，讓表格可以流暢左右滾動 */
     .cal-grid { width: 750px; }
     .cal-th { font-size: 12px; padding: 6px 2px; }
     .cal-td { min-height: 70px; padding: 2px; }
@@ -1716,7 +1762,10 @@ renderRoster();
         var noteId = encodeURIComponent(String(n.id == null ? '' : n.id));
         var safeTitle = escapeHtml(n.title);
         var safeTooltip = escapeHtml(String(n.title == null ? '' : n.title) + dragTip);
-        html += '<div class="' + cls + '" draggable="true" data-note-id="' + noteId + '" ondragstart="handleDragStart(event, decodeURIComponent(this.dataset.noteId))" onclick="event.stopPropagation(); editNote(decodeURIComponent(this.dataset.noteId))" title="' + safeTooltip + '">' + safeTitle + '</div>';
+        html += '<div class="' + cls + '" draggable="true" data-note-id="' + noteId + '" ondragstart="handleDragStart(event, decodeURIComponent(this.dataset.noteId))" title="' + safeTooltip + '">'
+        + '<span class="cal-item-text" onclick="event.stopPropagation(); editNote(decodeURIComponent(this.parentElement.dataset.noteId))">' + safeTitle + '</span>'
+        + '<span class="cal-item-done" onclick="event.stopPropagation(); completeNote(decodeURIComponent(this.parentElement.dataset.noteId))">✅</span>'
+        + '</div>';
       });
       html += '</div>';
     }
