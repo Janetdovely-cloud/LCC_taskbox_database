@@ -10,6 +10,48 @@
 <script src="https://unpkg.com/drag-drop-touch"></script>
 
 <style>
+
+  .rost-sub-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.rost-sub-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 110px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,.05);
+}
+
+.rost-sub-title {
+  font-size: 12px;
+  color: var(--sub);
+  margin-bottom: 4px;
+}
+
+.rost-sub-amount {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.rost-sub-total {
+  background: var(--go);
+  border-color: var(--go);
+}
+
+.rost-sub-total .rost-sub-title,
+.rost-sub-total .rost-sub-amount {
+  color: #fff;
+}
+  
   :root {
     --paper: #F6F1E8; --card: #FFFFFF; --ink: #20251F; --sub: #7C766A; --line: #E7DFD0;
     --go: #0E7A66; --goSoft: #E1F0EC; --gold: #BE842B; --goldSoft: #F6ECD7;
@@ -1424,14 +1466,25 @@ REGIONS.forEach(function(r) {
   });
 });
 
-var subtotalHtml = REGIONS.map(function(r) {
-  return r.key + '：' + formatMoney(regionTotals[r.key]);
-}).join('　　　');
-
-subtotalHtml += '　　　<strong>合計：' + formatMoney(total) + '</strong>';
-
+// ===== 區域小計（卡片式，僅畫面顯示）=====
 var subEl = document.getElementById('rosSubtotals');
-if (subEl) subEl.innerHTML = subtotalHtml;
+if (subEl) {
+  var cards = REGIONS.map(function(r) {
+    return ''
+      + '<div class="rost-sub-card">'
+      + '<div class="rost-sub-title">' + r.key + '</div>'
+      + '<div class="rost-sub-amount">' + formatMoney(regionTotals[r.key]) + '</div>'
+      + '</div>';
+  }).join('');
+
+  cards += ''
+    + '<div class="rost-sub-card rost-sub-total">'
+    + '<div class="rost-sub-title">合計</div>'
+    + '<div class="rost-sub-amount">' + formatMoney(total) + '</div>'
+    + '</div>';
+
+  subEl.innerHTML = '<div class="rost-sub-wrapper">' + cards + '</div>';
+}
 // ==========================================
   
   safeSet('admin_roster_v8', rosData);
