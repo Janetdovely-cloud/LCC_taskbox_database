@@ -11,37 +11,46 @@
 
 <style>
 
-  .rost-sub-wrapper {
+.rost-sub-wrapper {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex-wrap: nowrap;          /* ⭐ 不換行 */
+  gap: 8px;
   justify-content: flex-end;
   margin-top: 12px;
+  min-width: 0;               /* ⭐ 允許被壓縮 */
 }
 
 .rost-sub-card {
   background: var(--paper);
   border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 10px 14px;
-  min-width: 110px;
+  border-radius: 10px;
+  padding: 6px 8px;           /* ⭐ 縮小內距 */
+  min-width: 0;               /* ⭐ 關鍵 */
+  flex: 1 1 0;                /* ⭐ 平均分配寬度 */
   text-align: center;
-  box-shadow: 0 2px 6px rgba(0,0,0,.05);
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  overflow: hidden;            /* ⭐ 防止爆版 */
 }
 
 .rost-sub-title {
-  font-size: 12px;
+  font-size: 11px;            /* ⭐ 縮小字體 */
   color: var(--sub);
-  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .rost-sub-amount {
-  font-size: 16px;
+  font-size: 14px;            /* ⭐ 縮小字體 */
   font-weight: 700;
   color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-variant-numeric: tabular-nums;
 }
 
+/* 合計卡高亮 */
 .rost-sub-total {
   background: var(--go);
   border-color: var(--go);
