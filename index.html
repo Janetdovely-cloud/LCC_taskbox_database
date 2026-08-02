@@ -163,12 +163,6 @@
   .btn-outline:hover { border-color: var(--ink); }
   .btn:disabled { background: #ccc; cursor: not-allowed; }
 
-   #doneNoteBtn {
-    background: var(--go);
-    color: #fff !important;
-    border-radius: 999px; /* 可選：膠囊按鈕 */
-  }
-
   .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
   .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
   
@@ -572,7 +566,6 @@
         <textarea id="newNoteBody" placeholder="詳細內容 (選填)"></textarea>
         <div style="display:flex; gap:10px;">
           <input type="date" id="newNoteDate" style="flex:1;">
-          <button id="doneNoteBtn" class="btn btn-outline" style="display:none; flex:0 0 auto; color:var(--go); border-color:var(--go);" onclick="completeNoteFromEdit()">✅ 完成</button>
           <button id="saveNoteBtn" class="btn" style="flex:0 0 auto;" onclick="saveNoteAction()">更新儲存</button>
           <button id="cancelNoteBtn" class="btn btn-outline" style="display:none; flex:0 0 auto;" onclick="cancelEditNote()">取消</button>        </div>
       </div>
@@ -1680,34 +1673,6 @@ renderRoster();
     document.getElementById('saveNoteBtn').textContent = '更新儲存';
     document.getElementById('cancelNoteBtn').style.display = 'block';
     document.getElementById('noteFormTitle').scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-    // ✅ 新增「完成」按鈕（僅編輯時出現）
-    var saveBtn = document.getElementById('saveNoteBtn');
-    var cancelBtn = document.getElementById('cancelNoteBtn');
-
-    // 避免重複建立
-    var doneBtn = document.getElementById('doneNoteBtn');
-    if (!doneBtn) {
-      doneBtn = document.createElement('button');
-      doneBtn.id = 'doneNoteBtn';
-      doneBtn.className = 'btn btn-outline';
-      doneBtn.style.color = 'var(--go)';
-      doneBtn.style.borderColor = 'var(--go)';
-      doneBtn.style.marginRight = '6px';
-      doneBtn.textContent = '✅ 完成';
-
-      doneBtn.onclick = function () {
-        if (!editingNoteId) return;
-        completeNote(editingNoteId);
-        cancelEditNote(); // 關閉編輯表單
-        showToast('✅ 已標示完成');
-      };
-    
-      // 插在「更新儲存」前面
-      saveBtn.parentNode.insertBefore(doneBtn, saveBtn);
-    }
-
-    doneBtn.style.display = 'inline-block';
   }
 
   function cancelEditNote() {
@@ -1716,9 +1681,6 @@ renderRoster();
     document.getElementById('newNoteTitle').value = ''; document.getElementById('newNoteBody').value = ''; document.getElementById('newNoteDate').value = ''; document.getElementById('newNoteColor').value = 'c-green';
     document.getElementById('newNoteImp').value = 'true'; document.getElementById('newNoteUrg').value = 'true';
     document.getElementById('saveNoteBtn').textContent = '儲存'; document.getElementById('cancelNoteBtn').style.display = 'none';
-
-    var doneBtn = document.getElementById('doneNoteBtn');
-    if (doneBtn) doneBtn.style.display = 'none';
   }
 
   function deleteNote(id) {
