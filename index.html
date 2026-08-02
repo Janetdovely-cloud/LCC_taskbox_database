@@ -260,6 +260,9 @@
     .cal-item { font-size: 10px; padding: 2px; letter-spacing: -0.3px; }
   }
 </style>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>  
+  
 </head>
 <body>
 
@@ -1063,40 +1066,83 @@
   }
 
   if (document.getElementById('rcPdfFile')) {
-    document.getElementById('rcPdfFile').addEventListener('change', async function(e) {
+    document.getElementById('rcPdfFile').addEventListener('change', async function (e) {
       const file = e.target.files[0];
       if (!file) return;
+  
       const status = document.getElementById('pdfLoadingStatus');
       const textArea = document.getElementById('rcResumeText');
       status.innerText = '⏳ 正在解析 PDF...';
       textArea.value = '';
+  
       try {
         const arrayBuffer = await file.arrayBuffer();
-        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer, cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/', cMapPacked: true });
+  
+        const loadingTask = pdfjsLib.getDocument({
+          data: arrayBuffer,
+          cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+          cMapPacked: true,
+          standardFontDataUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/standard_fonts/',
+          disableFontFace: true
+        });
+  
         const pdf = await loadingTask.promise;
         let fullText = '';
+  
+        // 先嘗試 PDF.js 抽字
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
           const textContent = await page.getTextContent();
-          let pageText = ''; let lastY = -1;
+  
+          let pageText = '', lastY = -1;
           textContent.items.forEach(item => {
             if (lastY !== -1 && Math.abs(item.transform[5] - lastY) > 5) pageText += '\n';
-            pageText += item.str; lastY = item.transform[5];
+            pageText += item.str;
+            lastY = item.transform[5];
           });
+  
           fullText += `[第 ${i} 頁]\n${pageText}\n\n`;
         }
-        const cleanTest = fullText.replace(/[0-9\s\-_]/g, '');
-        if (cleanTest.length < 10 || cleanTest.includes('')) {
-            status.innerHTML = '⚠️ 偵測到 104 防拷貝加密 PDF。<br>💡 終極破解法：請打開 104 網頁履歷，按 Ctrl+A 全選、Ctrl+C 複製，然後直接貼入下方的輸入框中，這是最快的解法！';
-        } else {
-            status.innerText = '✅ 繁體中文讀取成功！';
+  
+        // ✅ 判斷是否為「假文字 PDF」
+        const hasChinese = /[一-鿿]{2,}/.test(fullText);
+  
+        if (!hasChinese) {
+          status.innerText = '⚠️ 偵測到防拷貝 PDF，啟動 OCR 影像辨識...';
+          fullText = ''; // 清空亂碼
+  
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const viewport = page.getViewport({ scale: 2 }); // 300dpi 等級
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+  
+            await page.render({
+              canvasContext: canvas.getContext('2d'),
+              viewport
+            }).promise;
+  
+            const ocrResult = await ocrCanvas(canvas);
+            fullText += `[第 ${i} 頁 OCR]\n${ocrResult}\n\n`;
+          }
         }
+  
         textArea.value = fullText.trim();
+        status.innerText = '✅ 解析完成（已自動處理防拷貝 PDF）';
+  
+        // 自動抓姓名（簡單版）
         if (!document.getElementById('rcName').value) {
-          const lines = fullText.split('\n').filter(l => l.trim().length > 0);
-          if (lines.length > 1) document.getElementById('rcName').value = lines[1].substring(0, 10).trim();
+          const lines = fullText.split('\n').map(l => l.trim()).filter(Boolean);
+          if (lines.length > 1) {
+            document.getElementById('rcName').value = lines[1].slice(0, 10);
+          }
         }
-      } catch (err) { status.innerText = '❌ 錯誤：' + err.message; }
+  
+      } catch (err) {
+        console.error(err);
+        status.innerText = '❌ 解析失敗：' + err.message;
+      }
     });
   }
 
@@ -1195,6 +1241,21 @@
     var text = '【第一部分：給學員的實戰修改建議】\n\n一、 履歷健檢與綜合評分\n(1) 綜合競爭力評分：待評估\n(2) 易讀性掃描與致命傷點出：\n- 排版可再精簡\n\n(3) STAR 具體改寫示範：\n\n【S 情境描述】' + s + '\n\n【T 任務目標】' + t + '\n\n【A 行動策略】' + a + '\n\n【R 具體結果】' + r;
     document.getElementById('rcOutput').value = text;
     showToast('✅ 已自動組合評語至下方輸出框！');
+  }
+
+  async function ocrCanvas(canvas) {
+    const status = document.getElementById('pdfLoadingStatus');
+    status.innerText = '⏳ OCR 辨識中（首次會下載語言包，請稍候）...';
+  
+    const worker = await Tesseract.createWorker('chi_tra', 1, {
+      workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/worker.min.js',
+      langPath: 'https://tessdata.projectnaptha.com/4.0.0',
+      corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract-core.wasm.js'
+    });
+  
+    const { data } = await worker.recognize(canvas);
+    await worker.terminate();
+    return data.text;
   }
 
   // 🌟 終極齊頭式防跑版排版 PDF 生成器
