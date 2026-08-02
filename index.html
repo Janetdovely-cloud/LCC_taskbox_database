@@ -1243,7 +1243,34 @@
           footer: '20px sans-serif'
         }
       };
-  
+
+      // =========================
+      
+      // 📘 Outline（書籤）管理器
+      // =========================
+      var outline = [];
+      var outlineStack = [];
+      
+      function addOutline(title, level, page) {
+        var node = { title: title, page: page, children: [] };
+        if (level === 0) {
+          outline.push(node);
+          outlineStack = [node];
+        } else {
+          var parent = outlineStack[level - 1];
+          if (parent) parent.children.push(node);
+          outlineStack[level] = node;
+          outlineStack = outlineStack.slice(0, level + 1);
+        }
+      }
+      
+      function attachOutline(doc, nodes, parent) {
+        nodes.forEach(function(n) {
+          var ref = doc.outline.add(n.title, { pageNumber: n.page + 1 }, parent);
+          if (n.children.length) attachOutline(doc, n.children, ref);
+        });
+      }
+      
       // =========================
       // 🧱 Canvas 初始化
       // =========================
@@ -1304,7 +1331,21 @@
   
         if (type === 'star') mode = 'star';
         if (type === 'main' || type === 'sub') mode = 'normal';
-  
+
+        if (type === 'star') mode = 'star';
+        if (type === 'main' || type === 'sub') mode = 'normal';
+        
+        // ✅ 插入書籤（不影響排版）
+        if (type === 'main') {
+          addOutline(raw.replace(/^【|】$/g, ''), 0, page);
+        } else if (type === 'sub') {
+          addOutline(raw, 1, page);
+        } else if (type === 'star') {
+          addOutline(raw, 2, page);
+        }
+        
+        var eff = (type === 'normal' && mode === 'star') ? 'star' : type;
+        
         var eff = (type === 'normal' && mode === 'star') ? 'star' : type;
         var font = CFG.fonts[eff] || CFG.fonts.normal;
         var color = CFG.colors[eff] || CFG.colors.text;
@@ -1418,6 +1459,7 @@
         page++;
       }
   
+      attachOutline(doc, outline);
       doc.save('職涯健診報告_[' + name + '].pdf');
       statusEl.innerText = '✅ PDF 成功產生並已下載！';
     } catch (e) {
