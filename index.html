@@ -1272,163 +1272,217 @@
     } catch(e) { console.error(e); statusEl.innerText = '❌ 產生失敗，請檢查內容。'; } finally { setTimeout(function(){ statusEl.innerText = ''; }, 3000); }
   }
 
-  // ==========================================
-  // 模組 1: 區域業績統計
-  // ==========================================
-  var REGIONS = [
-    { key: '桃園', slogan: '桃園-桃園衝衝衝！做就對了！', people: ['譽人', '俊亨', '聖潔'] },
-    { key: '中壢', slogan: '中壢-問心無愧 !!! 我全兜要 !!!', people: ['世勳', '旻儒', '慧君'] },
-    { key: '新竹', slogan: '新竹-錢進新竹！勇奪第一', people: ['婷薇', '嘉祥', '思靜', '松源'] }
-  ];
-  var SOURCES = ['行銷', '引流', '舊生', '未報', '招牌'];
-  var rosData = safeGet('admin_roster_v8', {});
+// ==========================================
+// 模組 1: 區域業績統計（支援多筆明細）
+// ==========================================
+  
+function formatMoney(num) {
+  return Math.round(num).toLocaleString('zh-TW');
+}  
+var REGIONS = [
+  { key: '桃園', slogan: '桃園-桃園衝衝衝！做就對了！', people: ['譽人', '俊亨', '聖潔'] },
+  { key: '中壢', slogan: '中壢-問心無愧 !!! 我全兜要 !!!', people: ['世勳', '旻儒', '慧君'] },
+  { key: '新竹', slogan: '新竹-錢進新竹！勇奪第一', people: ['婷薇', '嘉祥', '思靜', '松源'] }
+];
+var SOURCES = ['行銷', '引流', '舊生', '未報', '招牌'];
 
-  function buildInputs() {
-    var wrap = document.getElementById('rosInputs');
-    if(!wrap) return;
-    wrap.innerHTML = '';
-    
-    REGIONS.forEach(function(r) {
-      var h = document.createElement('div'); 
-      h.style.cssText = 'color:var(--go); font-weight:bold; margin:15px 0 8px 0; font-size:14px;';
-      h.textContent = r.key + '區人員'; 
-      wrap.appendChild(h);
-      
-      r.people.forEach(function(p) {
-        var row = document.createElement('div'); 
-        row.style.cssText = 'display:flex; gap:10px; margin-bottom:8px; align-items:center;';
-        
-        var label = document.createElement('span'); 
-        label.textContent = p; label.style.cssText = 'width:60px; font-weight:bold; font-size:14px;';
-        
-        var select = document.createElement('select');
-        select.style.cssText = 'width:100px; margin-bottom:0; padding:8px;';
-        var emptyOpt = document.createElement('option'); emptyOpt.value = ''; emptyOpt.textContent = '來源'; select.appendChild(emptyOpt);
-        
-        SOURCES.forEach(function(opt) {
-          var o = document.createElement('option'); o.value = opt; o.textContent = opt;
-          if(rosData[p] && rosData[p].src === opt) o.selected = true;
-          select.appendChild(o);
-        });
-        
-        if (rosData[p] && rosData[p].src && !SOURCES.includes(rosData[p].src)) {
-          var customO = document.createElement('option'); customO.value = rosData[p].src; customO.textContent = rosData[p].src; customO.selected = true; select.appendChild(customO);
-        }
-        
-        var input = document.createElement('input'); input.type = 'number'; input.placeholder = '金額'; 
-        input.style.cssText = 'flex:1; margin-bottom:0; padding:8px;';
-        if(rosData[p] && rosData[p].amt) input.value = rosData[p].amt;
-        
-        var updateData = function() { rosData[p] = { src: select.value, amt: input.value }; };
-        input.oninput = updateData; select.onchange = updateData;
-        
-        row.appendChild(label); row.appendChild(select); row.appendChild(input);
-        wrap.appendChild(row);
+// 讀取資料（自動相容舊格式）
+var rosData = safeGet('admin_roster_v8', {});
+Object.keys(rosData).forEach(function(p) {
+  if (rosData[p] && !Array.isArray(rosData[p])) {
+    rosData[p] = [rosData[p]];
+  }
+});
+
+function ensureArray(p) {
+  if (!rosData[p]) rosData[p] = [];
+  if (!Array.isArray(rosData[p])) rosData[p] = [rosData[p]];
+}
+
+function buildInputs() {
+  var wrap = document.getElementById('rosInputs');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+
+  REGIONS.forEach(function(r) {
+    var h = document.createElement('div');
+    h.style.cssText = 'color:var(--go); font-weight:bold; margin:15px 0 8px 0; font-size:14px;';
+    h.textContent = r.key + '區人員';
+    wrap.appendChild(h);
+
+    r.people.forEach(function(p) {
+      ensureArray(p);
+      var first = rosData[p][0] || {};
+
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex; gap:10px; margin-bottom:8px; align-items:center;';
+
+      var label = document.createElement('span');
+      label.textContent = p;
+      label.style.cssText = 'width:60px; font-weight:bold; font-size:14px;';
+
+      var select = document.createElement('select');
+      select.style.cssText = 'width:100px; margin-bottom:0; padding:8px;';
+      var emptyOpt = document.createElement('option'); emptyOpt.value = ''; emptyOpt.textContent = '來源';
+      select.appendChild(emptyOpt);
+
+      SOURCES.forEach(function(opt) {
+        var o = document.createElement('option');
+        o.value = opt;
+        o.textContent = opt;
+        if (first.src === opt) o.selected = true;
+        select.appendChild(o);
+      });
+
+      if (first.src && !SOURCES.includes(first.src)) {
+        var customO = document.createElement('option');
+        customO.value = first.src;
+        customO.textContent = first.src;
+        customO.selected = true;
+        select.appendChild(customO);
+      }
+
+      var input = document.createElement('input');
+      input.type = 'number';
+      input.placeholder = '金額';
+      input.style.cssText = 'flex:1; margin-bottom:0; padding:8px;';
+      input.value = first.amt || '';
+
+      var updateData = function() {
+        ensureArray(p);
+        rosData[p][0] = {
+          src: select.value,
+          amt: input.value
+        };
+      };
+
+      input.oninput = updateData;
+      select.onchange = updateData;
+
+      row.appendChild(label);
+      row.appendChild(select);
+      row.appendChild(input);
+      wrap.appendChild(row);
+    });
+  });
+}
+
+function renderRoster() {
+  var dateInput = document.getElementById('rosDate').value.trim();
+  if (!dateInput) {
+    var today = new Date();
+    var dayNames = ['日', '一', '二', '三', '四', '五', '六'];
+    dateInput = (today.getMonth() + 1) + '/' + today.getDate() + '(' + dayNames[today.getDay()] + ')';
+  }
+
+  var report = '【熱情🌞、專業🏆、創新🚄】\n每日值班順序表 桃、中、竹\n日期：' + dateInput + '\n\n';
+  var total = 0;
+
+  REGIONS.forEach(function(reg) {
+    report += reg.slogan + '\n';
+    reg.people.forEach(function(p, i) {
+      ensureArray(p);
+      var list = rosData[p];
+
+      var line = (i + 1) + '.' + p + '- ';
+      if (list.length === 0) {
+        report += line + '\n';
+      } else {
+        line += list.map(function(item) {
+          return (item.src || '') + (item.amt || '');
+        }).join('、');
+        report += line + '\n';
+      }
+
+      list.forEach(function(item) {
+        if (item.amt) total += parseInt(item.amt) || 0;
       });
     });
-  }
+    report += '\n';
+  });
 
-  function renderRoster() {
-    var dateInput = document.getElementById('rosDate').value.trim();
-    if (!dateInput) {
-      var today = new Date();
-      var dayNames = ['日', '一', '二', '三', '四', '五', '六'];
-      dateInput = (today.getMonth() + 1) + '/' + today.getDate() + '(' + dayNames[today.getDay()] + ')';
-    }
-    
-    var report = '【熱情🌞、專業🏆、創新🚄】\n每日值班順序表 桃、中、竹\n日期：' + dateInput + '\n\n';
-    
-    var total = 0;
-    REGIONS.forEach(function(reg) {
-      report += reg.slogan + '\n';
-      reg.people.forEach(function(p, i) {
-        var d = rosData[p] || {src: '', amt: ''};
-        var tail = (d.src || '') + (d.amt ? d.amt : '');
-        report += (i+1) + '.' + p + '- ' + tail + '\n';
-        if(d.amt) total += parseInt(d.amt);
-      });
-      report += '\n';
-    });
-    report += '區域總計：' + total + ' 元';
-    
-    var repEl = document.getElementById('rosReport');
-    if(repEl) repEl.textContent = report;
-    safeSet('admin_roster_v8', rosData);
-  }
+  report += '區域總計：' + formatMoney(total) + ' 元';
 
-  function quickParse() {
-    var str = document.getElementById('rosQuick').value;
-    if(!str.trim()) return;
-    
-    var allNames = [];
-    REGIONS.forEach(function(r) { r.people.forEach(function(p) { allNames.push(p); }); });
-    
-    var s = str;
-    s = s.replace(/miffy/gi, '婷薇').replace(/米飛/g, '婷薇').replace(/小花/g, '語桐').replace(/小米/g, '旻儒');
-    
-    var hits = [];
-    for(var i=0; i<s.length; i++){
-      for(var j=0; j<allNames.length; j++){
-        var name = allNames[j];
-        if(s.startsWith(name, i)) hits.push({name: name, start: i});
+  var repEl = document.getElementById('rosReport');
+  if (repEl) repEl.textContent = report;
+
+  safeSet('admin_roster_v8', rosData);
+}
+
+function quickParse() {
+  var str = document.getElementById('rosQuick').value;
+  if (!str.trim()) return;
+
+  var allNames = [];
+  REGIONS.forEach(function(r) {
+    r.people.forEach(function(p) { allNames.push(p); });
+  });
+
+  var s = str;
+  s = s.replace(/miffy/gi, '婷薇')
+       .replace(/米飛/g, '婷薇')
+       .replace(/小花/g, '語桐')
+       .replace(/小米/g, '旻儒');
+
+  var hits = [];
+  for (var i = 0; i < s.length; i++) {
+    allNames.forEach(function(name) {
+      if (s.startsWith(name, i)) {
+        hits.push({ name: name, start: i });
       }
-    }
-    hits.sort(function(a,b){ return a.start - b.start; });
-    
-    for(var k=0; k<hits.length; k++) {
-      var startIdx = hits[k].start + hits[k].name.length;
-      var endIdx = (k+1 < hits.length) ? hits[k+1].start : s.length;
-      var dataStr = s.substring(startIdx, endIdx);
-      
-      var amt = 0;
-      var srcs = [];
-      var re = /([^\d]*)(\d[\d,]*)(?:\*(\d+))?/g;
-      var m;
-      while((m = re.exec(dataStr)) !== null) {
-        var srcRaw = m[1].replace(/[\-﹣－、,，\s]/g, '');
-        var baseNum = parseFloat(m[2].replace(/,/g, ''));
-        var mult = m[3] ? parseInt(m[3]) : 1;
-        if(!isNaN(baseNum) && baseNum > 0) {
-          amt += (baseNum * mult);
-          if(srcRaw) srcs.push(srcRaw);
+    });
+  }
+  hits.sort(function(a, b) { return a.start - b.start; });
+
+  for (var k = 0; k < hits.length; k++) {
+    var startIdx = hits[k].start + hits[k].name.length;
+    var endIdx = (k + 1 < hits.length) ? hits[k + 1].start : s.length;
+    var dataStr = s.substring(startIdx, endIdx);
+
+    var re = /([^\d]*)(\d[\d,]*)(?:\*(\d+))?/g;
+    var m;
+    while ((m = re.exec(dataStr)) !== null) {
+      var srcRaw = m[1].replace(/[\-﹣－、,，\s]/g, '');
+      var baseNum = parseFloat(m[2].replace(/,/g, ''));
+      var mult = m[3] ? parseInt(m[3]) : 1;
+      if (!isNaN(baseNum) && baseNum > 0) {
+        ensureArray(hits[k].name);
+        for (var n = 0; n < mult; n++) {
+          rosData[hits[k].name].push({
+            src: srcRaw,
+            amt: baseNum.toString()
+          });
         }
       }
-      
-      if(amt > 0) {
-        if(!rosData[hits[k].name]) rosData[hits[k].name] = {src: '', amt: 0};
-        var cur = rosData[hits[k].name];
-        cur.amt = (parseInt(cur.amt || 0) + amt).toString();
-        srcs.forEach(function(src) {
-          if(!cur.src.includes(src)) {
-            cur.src = cur.src ? cur.src + '、' + src : src;
-          }
-        });
-      }
     }
-    
-    buildInputs();
-    renderRoster();
-    document.getElementById('rosQuick').value = '';
-    showToast('已快速帶入資料！');
-  }
-
-  function copyReport() {
-    var ta = document.createElement('textarea');
-    ta.value = document.getElementById('rosReport').textContent;
-    document.body.appendChild(ta);
-    ta.select();
-    try { document.execCommand('copy'); showToast('✅ 報表已複製！'); } catch(e) {}
-    document.body.removeChild(ta);
-  }
-
-  function resetRoster() {
-    showConfirm('確定要清空今天的業績紀錄嗎？', function() {
-      rosData = {}; buildInputs(); renderRoster();
-    });
   }
 
   buildInputs();
   renderRoster();
+  document.getElementById('rosQuick').value = '';
+  showToast('已快速帶入資料！');
+}
+
+function copyReport() {
+  var ta = document.createElement('textarea');
+  ta.value = document.getElementById('rosReport').textContent;
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); showToast('✅ 報表已複製！'); } catch(e) {}
+  document.body.removeChild(ta);
+}
+
+function resetRoster() {
+  showConfirm('確定要清空今天的業績紀錄嗎？', function() {
+    rosData = {};
+    buildInputs();
+    renderRoster();
+  });
+}
+
+// 初始化
+buildInputs();
+renderRoster();
 
   // ==========================================
   // 模組 5: 記事提醒 (含行事曆、四象限與拖拉)
