@@ -1203,169 +1203,231 @@
     var job = document.getElementById('rcJob').value.trim() || '未填寫';
     var text = document.getElementById('rcOutput').value.trim();
     var statusEl = document.getElementById('rcStatus');
-    
     if (!text) return showMsg('請先在輸出框中輸入內容！');
     statusEl.innerText = '正在生成高畫質視覺化 A4 PDF，請稍候...';
-    
+  
     try {
-      var jsPDF = window.jspdf.jsPDF; 
-      var doc = new jsPDF('p', 'mm', 'a4'); 
-      var pdfW = 210; var pdfH = 297;
-      
+      var jsPDF = window.jspdf.jsPDF;
+      var doc = new jsPDF('p', 'mm', 'a4');
+  
+      // =========================
+      // 🎨 設定區（以後只改這裡）
+      // =========================
+      var CFG = {
+        dpr: 2,                      // Retina 解析度
+        pageW: 1240, pageH: 1754,   // Canvas 尺寸（A4 @150dpi）
+        margin: 100,
+        maxLineW: 1040,
+        topStartY: 380,             // 首頁正文起始 Y
+        contStartY: 140,            // 續頁正文起始 Y
+        bottomLimit: 1650,
+        spacer: 24,
+        colors: {
+          primary: '#0E7A66',
+          secondary: '#1A5276',
+          danger: '#B23A2E',
+          star: '#BE842B',
+          text: '#333333',
+          sub: '#7C766A',
+          bg: '#ffffff',
+          block: '#F6F1E8',
+          scoreBg: '#FFF5F5'
+        },
+        fonts: {
+          main: 'bold 36px "PingFang TC", "Microsoft JhengHei", sans-serif',
+          sub: 'bold 30px "PingFang TC", sans-serif',
+          score: 'bold 34px "PingFang TC", sans-serif',
+          star: 'bold 26px "PingFang TC", sans-serif',
+          normal: '26px "PingFang TC", "Microsoft JhengHei", sans-serif',
+          meta: 'bold 32px "PingFang TC", sans-serif',
+          footer: '20px sans-serif'
+        }
+      };
+  
+      // =========================
+      // 🧱 Canvas 初始化
+      // =========================
       var canvas = document.createElement('canvas');
-      canvas.width = 1240; canvas.height = 1754;
+      var dpr = CFG.dpr;
+      canvas.width = CFG.pageW * dpr;
+      canvas.height = CFG.pageH * dpr;
+      canvas.style.width = CFG.pageW + 'px';
+      canvas.style.height = CFG.pageH + 'px';
+  
       var ctx = canvas.getContext('2d');
-      var margin = 100; var maxWidth = canvas.width - (margin * 2); var yLimit = 1650;
-      
-      function getWrappedLines(textToWrap, maxW, fontStr) {
-          ctx.font = fontStr;
-          var lines = []; var words = textToWrap.split(''); var currentLine = '';
-          for (var i = 0; i < words.length; i++) {
-              var testLine = currentLine + words[i];
-              if (ctx.measureText(testLine).width > maxW && i > 0) { lines.push(currentLine); currentLine = words[i]; } 
-              else { currentLine = testLine; }
-          }
-          lines.push(currentLine); return lines;
-      }
-
-      function drawLCCLogo(x, y, scale) {
-          ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
-          ctx.font = '900 65px "PingFang TC", "Microsoft JhengHei", sans-serif';
-          ctx.fillStyle = '#1A1A1A'; ctx.fillText('聯成電腦', 105, 55);
-          ctx.fillStyle = '#73B82D'; ctx.fillText('聯成電腦', 100, 50);
-          ctx.lineWidth = 15; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-          ctx.strokeStyle = '#1A1A1A'; ctx.beginPath(); ctx.moveTo(15, 45); ctx.lineTo(15, 15); ctx.lineTo(65, 15); ctx.lineTo(65, 50); ctx.stroke();
-          ctx.strokeStyle = '#73B82D'; ctx.beginPath(); ctx.moveTo(10, 40); ctx.lineTo(10, 10); ctx.lineTo(60, 10); ctx.lineTo(60, 45); ctx.stroke();
-          ctx.strokeStyle = '#1A1A1A'; ctx.beginPath(); ctx.moveTo(40, 25); ctx.lineTo(85, 25); ctx.lineTo(85, 60); ctx.lineTo(40, 60); ctx.stroke();
-          ctx.strokeStyle = '#F2A900'; ctx.beginPath(); ctx.moveTo(35, 20); ctx.lineTo(80, 20); ctx.lineTo(80, 55); ctx.lineTo(35, 55); ctx.stroke();
-          ctx.restore();
-      }
-
-      // 將所有文字轉換為「渲染行指令」
-      var renderItems = [];
-      var rawLines = text.split('\n');
-      var currentState = 'normal';
-      
-      rawLines.forEach(function(rawLine) {
-        var line = rawLine.trim();
-        if (line === '') { 
-            currentState = 'normal'; 
-            renderItems.push({ type: 'spacer', height: 20 }); 
-            return; 
+      ctx.scale(dpr, dpr);
+      ctx.textRenderingOptimization = 'optimizeQuality';
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+  
+      // =========================
+      // 🧰 工具函式
+      // =========================
+      function wrapText(text, maxW, font) {
+        ctx.font = font;
+        var chars = text.split('');
+        var lines = [], cur = '';
+        for (var i = 0; i < chars.length; i++) {
+          var test = cur + chars[i];
+          if (ctx.measureText(test).width > maxW && i > 0) {
+            lines.push(cur); cur = chars[i];
+          } else cur = test;
         }
-
+        lines.push(cur);
+        return lines;
+      }
+  
+      function drawLCCLogo(x, y, s) {
+        ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+        ctx.font = '900 65px "PingFang TC", sans-serif';
+        ctx.fillStyle = '#1A1A1A'; ctx.fillText('聯成電腦', 105, 55);
+        ctx.fillStyle = '#73B82D'; ctx.fillText('聯成電腦', 100, 50);
+        ctx.restore();
+      }
+  
+      // =========================
+      // 📄 內容解析（STAR / 章節）
+      // =========================
+      var items = [];
+      var lines = text.split('\n');
+      var mode = 'normal';
+  
+      lines.forEach(function(l) {
+        var raw = l.trim();
+        if (!raw) { items.push({ type: 'spacer', h: CFG.spacer }); return; }
+  
         var type = 'normal';
-        if (line.match(/^【第[一二三]部分/)) { type = 'main'; currentState = 'normal'; }
-        else if (line.match(/^[一二三四五六七八九]、/)) { type = 'sub'; currentState = 'normal'; }
-        else if (line.includes('綜合競爭力評分') && /\d/.test(line)) { type = 'score'; currentState = 'normal'; }
-        else if (line.match(/^【?[STAR]/i) || line.match(/^【?(情境|任務|行動|結果)/) || line.match(/^[STAR]\s*[:：]?\s*/i) || line.match(/^[STAR]行動/i)) { type = 'star'; currentState = 'star'; }
-        else if (line.match(/^[\-\*]\s/) || line.match(/^\(\d+\)/) || line.match(/^☑/)) { type = 'list'; }
-
-        var effectiveType = type;
-        if ((type === 'normal' || type === 'list') && currentState === 'star') effectiveType = 'star';
-
-        var fontStr = '26px "PingFang TC", "Microsoft JhengHei", sans-serif';
-        var textColor = '#333333';
-        
-        // 🎯 齊頭式設計：所有文字統一對齊基準線
-        var xOffset = margin + 20; 
-        var dMaxWidth = maxWidth - 20; 
-        var lineHeight = 42;
-
-        if (effectiveType === 'main') { 
-            fontStr = 'bold 36px "PingFang TC", sans-serif'; textColor = '#0E7A66'; lineHeight = 60; 
-            renderItems.push({ type: 'spacer', height: 30 }); 
-        }
-        else if (effectiveType === 'sub') { 
-            fontStr = 'bold 30px "PingFang TC", sans-serif'; textColor = '#1A5276'; lineHeight = 50; 
-            renderItems.push({ type: 'spacer', height: 20 }); 
-        }
-        else if (effectiveType === 'score') { fontStr = 'bold 28px "PingFang TC", sans-serif'; textColor = '#B23A2E'; lineHeight = 46; }
-        else if (effectiveType === 'star') { 
-            if (type === 'star') { fontStr = 'bold 26px "PingFang TC", sans-serif'; textColor = '#0E7A66'; }
-        }
-        
-        if (type === 'list') {
-            line = line.replace(/^[\-\*]\s*/, '☑ ');
-        }
-
-        var wrapped = getWrappedLines(line, dMaxWidth, fontStr);
-        wrapped.forEach(function(wLine, idx) {
-            renderItems.push({
-                type: 'text', effectiveType: effectiveType, text: wLine, fontStr: fontStr, textColor: textColor, x: xOffset, lineHeight: lineHeight,
-                isFirst: (idx === 0)
-            });
+        if (raw.match(/^【第[一二三]部分/)) type = 'main';
+        else if (raw.match(/^[一二三四五六七八九]、/)) type = 'sub';
+        else if (raw.includes('綜合競爭力評分')) type = 'score';
+        else if (raw.match(/^(【)?(STAR|情境|任務|行動|結果)/i)) type = 'star';
+  
+        if (type === 'star') mode = 'star';
+        if (type === 'main' || type === 'sub') mode = 'normal';
+  
+        var eff = (type === 'normal' && mode === 'star') ? 'star' : type;
+        var font = CFG.fonts[eff] || CFG.fonts.normal;
+        var color = CFG.colors[eff] || CFG.colors.text;
+  
+        var prefix = '';
+        if (type === 'list') prefix = '☑ ';
+  
+        wrapText(prefix + raw, CFG.maxLineW - 20, font).forEach(function(txt, i) {
+          items.push({
+            type: eff,
+            text: txt,
+            font: font,
+            color: color,
+            isFirst: (i === 0),
+            indent: (type === 'list' || eff === 'star')
+          });
         });
-        
-        // 🎯 每一段落結束後，自動強制空行 (製造呼吸感)
-        renderItems.push({ type: 'spacer', height: 24 });
+  
+        items.push({ type: 'spacer', h: CFG.spacer });
       });
-
-      // 執行分頁渲染
-      var itemIndex = 0; var pageCount = 0;
-      while(itemIndex < renderItems.length) {
-        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        var currentY = 100;
-        
-        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-        if (pageCount === 0) {
-          let grad = ctx.createLinearGradient(0, 0, canvas.width, 0); grad.addColorStop(0, '#0E7A66'); grad.addColorStop(1, '#1A5276');
-          ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, 180);
-          ctx.fillStyle = '#ffffff'; ctx.font = 'bold 56px "PingFang TC", "Microsoft JhengHei", sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText('STAR 職涯策略與履歷健診報告', 80, 90); ctx.textBaseline = 'top';
-          drawLCCLogo(canvas.width - 400, 50, 0.8);
-          ctx.fillStyle = '#F6F1E8'; ctx.fillRect(80, 220, canvas.width - 160, 100);
-          ctx.fillStyle = '#20251F'; ctx.font = 'bold 32px "PingFang TC", "Microsoft JhengHei", sans-serif'; ctx.fillText('學員：' + name + '    |    目標職務：' + job, 120, 250);
-          currentY = 380;
+  
+      // =========================
+      // 🖨️ 分頁渲染
+      // =========================
+      var idx = 0, page = 0;
+      while (idx < items.length) {
+        ctx.fillStyle = CFG.colors.bg; ctx.fillRect(0, 0, CFG.pageW, CFG.pageH);
+        var y = (page === 0) ? CFG.topStartY : CFG.contStartY;
+  
+        // ---- 頁首 ----
+        if (page === 0) {
+          var grad = ctx.createLinearGradient(0, 0, CFG.pageW, 0);
+          grad.addColorStop(0, CFG.colors.primary);
+          grad.addColorStop(1, CFG.colors.secondary);
+          ctx.fillStyle = grad; ctx.fillRect(0, 0, CFG.pageW, 180);
+          ctx.fillStyle = '#fff'; ctx.font = CFG.fonts.main;
+          ctx.fillText('STAR 職涯策略與履歷健診報告', 80, 90);
+          drawLCCLogo(CFG.pageW - 400, 50, 0.8);
+          ctx.fillStyle = CFG.colors.block;
+          ctx.fillRect(80, 220, CFG.pageW - 160, 100);
+          ctx.fillStyle = '#20251F'; ctx.font = CFG.fonts.meta;
+          ctx.fillText('學員：' + name + '    |    目標職務：' + job, 120, 250);
         } else {
-          drawLCCLogo(canvas.width - 320, 15, 0.6); 
-          ctx.strokeStyle = '#E7DFD0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(margin, 100); ctx.lineTo(canvas.width - margin, 100); ctx.stroke();
-          currentY = 140;
+          ctx.strokeStyle = '#E7DFD0'; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(CFG.margin, 100); ctx.lineTo(CFG.pageW - CFG.margin, 100); ctx.stroke();
+          ctx.fillStyle = CFG.colors.primary;
+          ctx.font = 'bold 22px "PingFang TC", sans-serif';
+          ctx.fillText('STAR 履歷健診報告（續）', CFG.margin, 70);
+          drawLCCLogo(CFG.pageW - 320, 15, 0.6);
         }
-        
-        var pageFull = false;
-
-        // 寫入文字
-        while(itemIndex < renderItems.length && !pageFull) {
-            var item = renderItems[itemIndex];
-            
-            if (item.type === 'spacer') { 
-                currentY += item.height; 
-                itemIndex++; 
-                if (currentY > yLimit) pageFull = true; 
-                continue; 
-            }
-
-            if (currentY + item.lineHeight > yLimit) { pageFull = true; break; }
-
-            // 🎯 左側標示線，完美貼齊邊界
-            if (item.effectiveType === 'main' && item.isFirst) {
-                ctx.fillStyle = '#0E7A66'; 
-                ctx.fillRect(margin, currentY + item.lineHeight + 6, maxWidth, 3);
-            } else if (item.effectiveType === 'sub') {
-                ctx.fillStyle = '#2563EB'; ctx.fillRect(margin, currentY + 4, 6, item.lineHeight - 8); 
-            } else if (item.effectiveType === 'star') {
-                ctx.fillStyle = '#BE842B'; ctx.fillRect(margin, currentY + 4, 4, item.lineHeight - 8);
-            }
-
-            ctx.font = item.fontStr; 
-            ctx.fillStyle = item.textColor; 
-            ctx.textAlign = 'left';
-            ctx.fillText(item.text, item.x, currentY);
-
-            currentY += item.lineHeight;
-            itemIndex++;
+  
+        // ---- 內容 ----
+        while (idx < items.length) {
+          var it = items[idx];
+  
+          if (it.type === 'spacer') {
+            y += it.h;
+            idx++;
+            if (y > CFG.bottomLimit) break;
+            continue;
+          }
+  
+          // STAR 區塊保護（避免腰斬）
+          if (it.type === 'star' && it.isFirst && y > CFG.bottomLimit - 120) break;
+  
+          if (y + 42 > CFG.bottomLimit) break;
+  
+          // 左側裝飾線
+          if (it.type === 'main' && it.isFirst) {
+            ctx.fillStyle = CFG.colors.primary;
+            ctx.fillRect(CFG.margin, y + 36, CFG.maxLineW, 3);
+          } else if (it.type === 'sub') {
+            ctx.fillStyle = '#2563EB';
+            ctx.fillRect(CFG.margin, y + 4, 6, 34);
+          } else if (it.type === 'star') {
+            ctx.fillStyle = CFG.colors.star;
+            ctx.fillRect(CFG.margin, y + 4, 4, 34);
+          }
+  
+          // 分數區塊
+          if (it.type === 'score') {
+            ctx.fillStyle = CFG.colors.scoreBg;
+            ctx.fillRect(CFG.margin, y - 6, CFG.maxLineW, 44);
+            ctx.fillStyle = CFG.colors.danger;
+          } else {
+            ctx.fillStyle = it.color;
+          }
+  
+          ctx.font = it.font;
+          ctx.textAlign = 'left';
+          ctx.fillText(it.text, CFG.margin + 20, y);
+  
+          y += 42;
+          idx++;
         }
-        
-        // 頁尾
-        ctx.fillStyle = '#7C766A'; ctx.font = '20px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Powered by AI Career Strategist & 臻的行政百寶箱  - Page ' + (pageCount+1), canvas.width/2, 1700);
-        ctx.textAlign = 'left'; 
-        
-        var dataUrl = canvas.toDataURL('image/jpeg', 0.95);
-        if (pageCount > 0) doc.addPage(); doc.addImage(dataUrl, 'JPEG', 0, 0, pdfW, pdfH); pageCount++;
+  
+        // ---- 頁尾 ----
+        ctx.fillStyle = CFG.colors.sub;
+        ctx.font = CFG.fonts.footer;
+        ctx.textAlign = 'center';
+        ctx.fillText(
+          'Powered by AI Career Strategist & 臻的行政百寶箱  - Page ' + (page + 1),
+          CFG.pageW / 2,
+          1700
+        );
+  
+        // ---- 輸出 PDF ----
+        var img = canvas.toDataURL('image/png');
+        if (page > 0) doc.addPage();
+        doc.addImage(img, 'PNG', 0, 0, 210, 297);
+        page++;
       }
-      
-      doc.save('職涯健診報告_[' + name + '].pdf'); statusEl.innerText = '✅ PDF 成功產生並已下載！';
-    } catch(e) { console.error(e); statusEl.innerText = '❌ 產生失敗，請檢查內容。'; } finally { setTimeout(function(){ statusEl.innerText = ''; }, 3000); }
+  
+      doc.save('職涯健診報告_[' + name + '].pdf');
+      statusEl.innerText = '✅ PDF 成功產生並已下載！';
+    } catch (e) {
+      console.error(e);
+      statusEl.innerText = '❌ 產生失敗，請檢查內容。';
+    } finally {
+      setTimeout(function () { statusEl.innerText = ''; }, 3000);
+      canvas.width = canvas.height = 0;
+      canvas.remove();
+    }
   }
 
 // ==========================================
