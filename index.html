@@ -558,12 +558,7 @@
           <button class="btn btn-outline" onclick="generateBothPDFs()" style="flex:1; padding:12px; font-size:16px;"
             title="同時產出：給學員的完整報告 + 給輔導老師的內部備註">
             📄 學員報告＋內部備註（雙 PDF）
-          </button>
-
-          /* ===============================
-           雙 PDF 匯出（全域掛載）
-           =============================== */
-          
+          </button>          
         </div>
           <button class="btn btn-outline" onclick="document.getElementById('rcOutput').value=''" style="padding:0 24px;">清除重填</button>
         </div>
@@ -1274,44 +1269,44 @@
 
   // 🌟 終極齊頭式防跑版排版 PDF 生成器
   async function _renderResumePDF(options) {
+    // =========================
+    // ✅ 參數解構（相容單 / 雙 PDF）
+    // =========================
     const {
-      name = document.getElementById('rcName').value.trim() || '未命名學員',
-      job = document.getElementById('rcJob').value.trim() || '未填寫',
+      name: optName,
+      job: optJob,
       title = 'STAR 職涯策略與履歷健診報告',
-      subtitle = `學員：${name}　|　目標職務：${job}`,
-      content = document.getElementById('rcOutput').value.trim(),
-      filename = `職涯健診報告_${name}.pdf`
+      subtitle: optSubtitle,
+      content = '',
+      filename: optFilename
     } = options || {};
-    var statusEl = document.getElementById('rcStatus');
-    if (!text) return showMsg('請先在輸出框中輸入內容！');
+  
+    const name = optName || document.getElementById('rcName').value.trim() || '未命名學員';
+    const job = optJob || document.getElementById('rcJob').value.trim() || '未填寫';
+    const text = content || document.getElementById('rcOutput').value.trim(); // ✅ 關鍵
+    const subtitle = optSubtitle || `學員：${name}　|　目標職務：${job}`;
+    const filename = optFilename || `職涯健診報告_${name}.pdf`;
+  
+    const statusEl = document.getElementById('rcStatus');
+    if (!text) {
+      showMsg('請先在輸出框中輸入內容！');
+      return;
+    }
     statusEl.innerText = '正在生成高畫質視覺化 A4 PDF，請稍候...';
   
     try {
-      var jsPDF = window.jspdf.jsPDF;
-      var doc = new jsPDF('p', 'mm', 'a4');
+      const jsPDF = window.jspdf.jsPDF;
+      const doc = new jsPDF('p', 'mm', 'a4');
   
-      // =========================
-      // 🎨 設定區（以後只改這裡）
-      // =========================
-      var CFG = {
-        dpr: 2,                      // Retina 解析度
-        pageW: 1240, pageH: 1754,   // Canvas 尺寸（A4 @150dpi）
-        margin: 100,
-        maxLineW: 1040,
-        topStartY: 380,             // 首頁正文起始 Y
-        contStartY: 140,            // 續頁正文起始 Y
-        bottomLimit: 1650,
-        spacer: 24,
+      const CFG = {
+        dpr: 2,
+        pageW: 1240, pageH: 1754,
+        margin: 100, maxLineW: 1040,
+        topStartY: 380, contStartY: 140, bottomLimit: 1650, spacer: 24,
         colors: {
-          primary: '#0E7A66',
-          secondary: '#1A5276',
-          danger: '#B23A2E',
-          star: '#BE842B',
-          text: '#333333',
-          sub: '#7C766A',
-          bg: '#ffffff',
-          block: '#F6F1E8',
-          scoreBg: '#FFF5F5'
+          primary: '#0E7A66', secondary: '#1A5276', danger: '#B23A2E',
+          star: '#BE842B', text: '#333333', sub: '#7C766A',
+          bg: '#ffffff', block: '#F6F1E8', scoreBg: '#FFF5F5'
         },
         fonts: {
           main: 'bold 36px "PingFang TC", "Microsoft JhengHei", sans-serif',
@@ -1323,65 +1318,37 @@
           footer: '20px sans-serif'
         }
       };
-
+  
       // =========================
-      
-      // 📘 Outline（書籤）管理器
+      // 📘 Outline 書籤
       // =========================
-      var outline = [];
-      var outlineStack = [];
-      
-      function addOutline(title, level, page) {
-        var node = { title: title, page: page, children: [] };
-        if (level === 0) {
-          outline.push(node);
-          outlineStack = [node];
-        } else {
-          var parent = outlineStack[level - 1];
-          if (parent) parent.children.push(node);
-          outlineStack[level] = node;
-          outlineStack = outlineStack.slice(0, level + 1);
-        }
+      const outline = [];
+      function addOutline(title, level) {
+        outline.push({ title, level, y: null });
       }
-      
-      function attachOutline(doc, nodes, parent) {
-        nodes.forEach(function(n) {
-          var ref = doc.outline.add(n.title, { pageNumber: n.page + 1 }, parent);
-          if (n.children.length) attachOutline(doc, n.children, ref);
-        });
-      }
-      
+  
       // =========================
       // 🧱 Canvas 初始化
       // =========================
-      var canvas = document.createElement('canvas');
-      var dpr = CFG.dpr;
-      canvas.width = CFG.pageW * dpr;
-      canvas.height = CFG.pageH * dpr;
-      canvas.style.width = CFG.pageW + 'px';
-      canvas.style.height = CFG.pageH + 'px';
-  
-      var ctx = canvas.getContext('2d');
-      ctx.scale(dpr, dpr);
+      const canvas = document.createElement('canvas');
+      canvas.width = CFG.pageW * CFG.dpr;
+      canvas.height = CFG.pageH * CFG.dpr;
+      canvas.style.cssText = 'position:fixed;left:-9999px';
+      document.body.appendChild(canvas);
+      const ctx = canvas.getContext('2d');
+      ctx.scale(CFG.dpr, CFG.dpr);
       ctx.textRenderingOptimization = 'optimizeQuality';
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
   
-      // =========================
-      // 🧰 工具函式
-      // =========================
-      function wrapText(text, maxW, font) {
+      function wrapText(txt, maxW, font) {
         ctx.font = font;
-        var chars = text.split('');
-        var lines = [], cur = '';
-        for (var i = 0; i < chars.length; i++) {
-          var test = cur + chars[i];
-          if (ctx.measureText(test).width > maxW && i > 0) {
-            lines.push(cur); cur = chars[i];
-          } else cur = test;
+        const ch = [...txt], out = [], mw = maxW - 20, cur = '';
+        for (const c of ch) {
+          if (ctx.measureText(cur + c).width > mw && cur) { out.push(cur); cur = c; }
+          else cur += c;
         }
-        lines.push(cur);
-        return lines;
+        out.push(cur); return out;
       }
   
       function drawLCCLogo(x, y, s) {
@@ -1395,186 +1362,117 @@
       // =========================
       // 📄 內容解析（STAR / 章節）
       // =========================
-      var items = [];
-      var lines = text.split('\n');
-      var mode = 'normal';
+      const items = [];
+      const lines = text.split('\n');
+      let mode = 'normal';
   
-      lines.forEach(function(l) {
-        var raw = l.trim();
-        if (!raw) { items.push({ type: 'spacer', h: CFG.spacer }); return; }
+      lines.forEach(raw => {
+        const l = raw.trim();
+        if (!l) { items.push({ type:'spacer', h:CFG.spacer }); return; }
   
-        var type = 'normal';
-        if (raw.match(/^【第[一二三]部分/)) type = 'main';
-        else if (raw.match(/^[一二三四五六七八九]、/)) type = 'sub';
-        else if (raw.includes('綜合競爭力評分')) type = 'score';
-        else if (raw.match(/^(【)?(STAR|情境|任務|行動|結果)/i)) type = 'star';
+        let type = 'normal';
+        if (l.startsWith('【第')) type = 'main';
+        else if (/^[一二三四五六七八九十]、/.test(l)) type = 'sub';
+        else if (l.includes('綜合競爭力評分')) type = 'score';
+        else if (/^(【)?(STAR|情境|任務|行動|結果)/i.test(l)) type = 'star';
   
         if (type === 'star') mode = 'star';
-        if (type === 'main' || type === 'sub') mode = 'normal';
-
-        if (type === 'star') mode = 'star';
-        if (type === 'main' || type === 'sub') mode = 'normal';
-        
-        // ✅ 插入書籤（不影響排版）
-        if (type === 'main') {
-          addOutline(raw.replace(/^【|】$/g, ''), 0, page);
-        } else if (type === 'sub') {
-          addOutline(raw, 1, page);
-        } else if (type === 'star') {
-          addOutline(raw, 2, page);
-        }
-        
-        var eff = (type === 'normal' && mode === 'star') ? 'star' : type;
-        
-        var eff = (type === 'normal' && mode === 'star') ? 'star' : type;
-        var font = CFG.fonts[eff] || CFG.fonts.normal;
-        var color = CFG.colors[eff] || CFG.colors.text;
+        else if (type === 'main' || type === 'sub') mode = 'normal';
   
-        var prefix = '';
-        if (type === 'list') prefix = '☑ ';
+        const eff = (type === 'normal' && mode === 'star') ? 'star' : type;
+        const font = CFG.fonts[eff] || CFG.fonts.normal;
+        const color = CFG.colors[eff] || CFG.colors.text;
   
-        wrapText(prefix + raw, CFG.maxLineW - 20, font).forEach(function(txt, i) {
-          items.push({
-            type: eff,
-            text: txt,
-            font: font,
-            color: color,
-            isFirst: (i === 0),
-            indent: (type === 'list' || eff === 'star')
-          });
-        });
-  
-        items.push({ type: 'spacer', h: CFG.spacer });
+        wrapText(l, CFG.maxLineW, font).forEach((t, i) =>
+          items.push({ type: eff, text: t, font, color, isFirst: i === 0 })
+        );
+        items.push({ type:'spacer', h:CFG.spacer });
       });
   
       // =========================
       // 🖨️ 分頁渲染
       // =========================
-      var idx = 0, page = 0;
+      let idx = 0, page = 0;
       while (idx < items.length) {
-        ctx.fillStyle = CFG.colors.bg; ctx.fillRect(0, 0, CFG.pageW, CFG.pageH);
-        var y = (page === 0) ? CFG.topStartY : CFG.contStartY;
+        ctx.fillStyle = CFG.colors.bg; ctx.fillRect(0,0,CFG.pageW,CFG.pageH);
+        let y = page === 0 ? CFG.topStartY : CFG.contStartY;
   
-        // ---- 頁首 ----
         if (page === 0) {
-          var grad = ctx.createLinearGradient(0, 0, CFG.pageW, 0);
-          grad.addColorStop(0, CFG.colors.primary);
-          grad.addColorStop(1, CFG.colors.secondary);
-          ctx.fillStyle = grad; ctx.fillRect(0, 0, CFG.pageW, 180);
-          ctx.fillStyle = '#fff'; ctx.font = CFG.fonts.main;
-          ctx.fillText(title, 80, 90);
-          drawLCCLogo(CFG.pageW - 400, 50, 0.8);
-          ctx.fillStyle = CFG.colors.block;
-          ctx.fillRect(80, 220, CFG.pageW - 160, 100);
-          ctx.fillStyle = '#20251F'; ctx.font = CFG.fonts.meta;
-          ctx.fillText(subtitle, 120, 250);
+          const g = ctx.createLinearGradient(0,0,CFG.pageW,0);
+          g.addColorStop(0,CFG.colors.primary); g.addColorStop(1,CFG.colors.secondary);
+          ctx.fillStyle=g; ctx.fillRect(0,0,CFG.pageW,180);
+          ctx.fillStyle='#fff'; ctx.font=CFG.fonts.main; ctx.fillText(title,80,90);
+          drawLCCLogo(CFG.pageW-400,50,0.8);
+          ctx.fillStyle=CFG.colors.block; ctx.fillRect(80,220,CFG.pageW-160,100);
+          ctx.fillStyle='#20251F'; ctx.font=CFG.fonts.meta; ctx.fillText(subtitle,120,250);
         } else {
-          ctx.strokeStyle = '#E7DFD0'; ctx.lineWidth = 2;
-          ctx.beginPath(); ctx.moveTo(CFG.margin, 100); ctx.lineTo(CFG.pageW - CFG.margin, 100); ctx.stroke();
-          ctx.fillStyle = CFG.colors.primary;
-          ctx.font = 'bold 22px "PingFang TC", sans-serif';
-          ctx.fillText('STAR 履歷健診報告（續）', CFG.margin, 70);
-          drawLCCLogo(CFG.pageW - 320, 15, 0.6);
+          ctx.strokeStyle='#E7DFD0'; ctx.lineWidth=2;
+          ctx.beginPath(); ctx.moveTo(CFG.margin,100); ctx.lineTo(CFG.pageW-CFG.margin,100); ctx.stroke();
+          ctx.fillStyle=CFG.colors.primary; ctx.font='bold 22px "PingFang TC",sans-serif';
+          ctx.fillText('STAR 履歷健診報告（續）',CFG.margin,70);
+          drawLCCLogo(CFG.pageW-320,15,0.6);
         }
   
-        // ---- 內容 ----
         while (idx < items.length) {
-          var it = items[idx];
+          const it = items[idx];
+          if (it.type === 'spacer') { y+=it.h; idx++; if(y>CFG.bottomLimit) break; continue; }
+          if (y+42 > CFG.bottomLimit) break;
   
-          if (it.type === 'spacer') {
-            y += it.h;
-            idx++;
-            if (y > CFG.bottomLimit) break;
-            continue;
-          }
-  
-          // STAR 區塊保護（避免腰斬）
-          if (it.type === 'star' && it.isFirst && y > CFG.bottomLimit - 120) break;
-  
-          if (y + 42 > CFG.bottomLimit) break;
-  
-          // 左側裝飾線
           if (it.type === 'main' && it.isFirst) {
-            ctx.fillStyle = CFG.colors.primary;
-            ctx.fillRect(CFG.margin, y + 36, CFG.maxLineW, 3);
+            ctx.fillStyle=CFG.colors.primary; ctx.fillRect(CFG.margin,y+36,CFG.maxLineW,3);
           } else if (it.type === 'sub') {
-            ctx.fillStyle = '#2563EB';
-            ctx.fillRect(CFG.margin, y + 4, 6, 34);
+            ctx.fillStyle='#2563EB'; ctx.fillRect(CFG.margin,y+4,6,34);
           } else if (it.type === 'star') {
-            ctx.fillStyle = CFG.colors.star;
-            ctx.fillRect(CFG.margin, y + 4, 4, 34);
+            ctx.fillStyle=CFG.colors.star; ctx.fillRect(CFG.margin,y+4,4,34);
           }
   
-          // 分數區塊
-          if (it.type === 'score') {
-            ctx.fillStyle = CFG.colors.scoreBg;
-            ctx.fillRect(CFG.margin, y - 6, CFG.maxLineW, 44);
-            ctx.fillStyle = CFG.colors.danger;
-          } else {
-            ctx.fillStyle = it.color;
-          }
-  
-          ctx.font = it.font;
-          ctx.textAlign = 'left';
-          ctx.fillText(it.text, CFG.margin + 20, y);
-  
-          y += 42;
-          idx++;
+          ctx.font=it.font; ctx.fillStyle=it.color;
+          ctx.fillText(it.text, CFG.margin+20, y);
+          y+=42; idx++;
         }
   
-        // ---- 頁尾 ----
-        ctx.fillStyle = CFG.colors.sub;
-        ctx.font = CFG.fonts.footer;
-        ctx.textAlign = 'center';
-        ctx.fillText(
-          'Powered by AI Career Strategist & 臻的行政百寶箱  - Page ' + (page + 1),
-          CFG.pageW / 2,
-          1700
-        );
+        ctx.fillStyle=CFG.colors.sub; ctx.font=CFG.fonts.footer; ctx.textAlign='center';
+        ctx.fillText('Powered by AI Career Strategist & 臻的行政百寶箱 - Page '+(page+1), CFG.pageW/2,1700);
   
-        // ---- 輸出 PDF ----
-        var img = canvas.toDataURL('image/png');
-        if (page > 0) doc.addPage();
-        doc.addImage(img, 'PNG', 0, 0, 210, 297);
+        doc.addPageIf(page>0);
+        doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0,0,210,297);
         page++;
       }
   
-      attachOutline(doc, outline);
       doc.save(filename);
-      statusEl.innerText = '✅ PDF 成功產生並已下載！';
+      statusEl.innerText = '✅ PDF 已成功下載！';
+  
     } catch (e) {
       console.error(e);
       statusEl.innerText = '❌ 產生失敗，請檢查內容。';
     } finally {
-      setTimeout(function () { statusEl.innerText = ''; }, 3000);
-      canvas.width = canvas.height = 0;
-      canvas.remove();
+      setTimeout(() => statusEl && (statusEl.innerText=''), 3000);
+      if (canvas) { canvas.width=canvas.height=0; canvas.remove(); }
     }
-
-    // 舊按鈕繼續用這個（完全不動 HTML）
-    async function exportResumePDF() {
-      const name = document.getElementById('rcName').value.trim() || '未命名學員';
-      const job = document.getElementById('rcJob').value.trim() || '未填寫';
-      const content = document.getElementById('rcOutput').value.trim();
-      const statusEl = document.getElementById('rcStatus');
-
-      if (!content) return showMsg('請先在輸出框中輸入內容！');
-      statusEl.innerText = '正在生成高畫質視覺化 A4 PDF，請稍候...';
-
-      await _renderResumePDF({
-        name,
-        job,
-        content,
-        title: 'STAR 職涯策略與履歷健診報告',
-        subtitle: `學員：${name}　|　目標職務：${job}`,
-        filename: `職涯健診報告_${name}.pdf`
-      });
-
-      statusEl.innerText = '✅ PDF 成功產生並已下載！';
-      setTimeout(() => statusEl.innerText = '', 3000);
-    }    
-
-
+  }
+  
+      // 舊按鈕繼續用這個（完全不動 HTML）
+      async function exportResumePDF() {
+        const name = document.getElementById('rcName').value.trim() || '未命名學員';
+        const job = document.getElementById('rcJob').value.trim() || '未填寫';
+        const content = document.getElementById('rcOutput').value.trim();
+        const statusEl = document.getElementById('rcStatus');
+  
+        if (!content) return showMsg('請先在輸出框中輸入內容！');
+        statusEl.innerText = '正在生成高畫質視覺化 A4 PDF，請稍候...';
+  
+        await _renderResumePDF({
+          name,
+          job,
+          content,
+          title: 'STAR 職涯策略與履歷健診報告',
+          subtitle: `學員：${name}　|　目標職務：${job}`,
+          filename: `職涯健診報告_${name}.pdf`
+        });
+  
+        statusEl.innerText = '✅ PDF 成功產生並已下載！';
+        setTimeout(() => statusEl.innerText = '', 3000);
+      }    
   }
 
 // ==========================================
@@ -2416,6 +2314,10 @@ renderRoster();
     } catch (e) { status.innerText = '❌ 處理失敗: ' + e.message; }
   }
 
+  /* ===============================
+  雙 PDF 匯出（全域掛載）
+  =============================== */
+  
   window.generateBothPDFs = async function () {
     const name = document.getElementById('rcName').value.trim() || '未命名學員';
     const job = document.getElementById('rcJob').value.trim() || '未填寫';
