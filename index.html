@@ -559,6 +559,45 @@
             title="同時產出：給學員的完整報告 + 給輔導老師的內部備註">
             📄 學員報告＋內部備註（雙 PDF）
           </button>
+
+          /* ===============================
+           雙 PDF 匯出（全域掛載）
+           =============================== */
+          window.generateBothPDFs = async function () {
+            const name = document.getElementById('rcName').value.trim() || '未命名學員';
+            const job = document.getElementById('rcJob').value.trim() || '未填寫';
+            const aiRaw = document.getElementById('rcOutput').value;
+            const statusEl = document.getElementById('rcStatus');
+        
+            if (!aiRaw) {
+              showMsg('請先產生 AI 報告再匯出 PDF！');
+              return;
+            }
+        
+            statusEl.innerText = '正在生成雙 PDF，請稍候...';
+        
+            const { student, staff } = window.splitAIReport(aiRaw);
+        
+            await window._renderResumePDF({
+              name, job,
+              title: 'STAR 職涯健診報告',
+              subtitle: `學員：${name}　|　目標職務：${job}`,
+              content: student,
+              filename: `職涯健診報告_${name}.pdf`
+            });
+        
+            await window._renderResumePDF({
+              name, job,
+              title: '就業輔導內部備註',
+              subtitle: `學員：${name}　|　${new Date().toLocaleDateString()}`,
+              content: staff,
+              filename: `內部輔導備註_${name}.pdf`
+            });
+        
+            statusEl.innerText = '✅ 兩份 PDF 已成功下載！';
+            setTimeout(() => statusEl.innerText = '', 3000);
+          };
+          
         </div>
           <button class="btn btn-outline" onclick="document.getElementById('rcOutput').value=''" style="padding:0 24px;">清除重填</button>
         </div>
@@ -1569,43 +1608,7 @@
       setTimeout(() => statusEl.innerText = '', 3000);
     }    
 
-      /* ===============================
-     雙 PDF 匯出（全域掛載）
-     =============================== */
-    window.generateBothPDFs = async function () {
-      const name = document.getElementById('rcName').value.trim() || '未命名學員';
-      const job = document.getElementById('rcJob').value.trim() || '未填寫';
-      const aiRaw = document.getElementById('rcOutput').value;
-      const statusEl = document.getElementById('rcStatus');
-  
-      if (!aiRaw) {
-        showMsg('請先產生 AI 報告再匯出 PDF！');
-        return;
-      }
-  
-      statusEl.innerText = '正在生成雙 PDF，請稍候...';
-  
-      const { student, staff } = window.splitAIReport(aiRaw);
-  
-      await window._renderResumePDF({
-        name, job,
-        title: 'STAR 職涯健診報告',
-        subtitle: `學員：${name}　|　目標職務：${job}`,
-        content: student,
-        filename: `職涯健診報告_${name}.pdf`
-      });
-  
-      await window._renderResumePDF({
-        name, job,
-        title: '就業輔導內部備註',
-        subtitle: `學員：${name}　|　${new Date().toLocaleDateString()}`,
-        content: staff,
-        filename: `內部輔導備註_${name}.pdf`
-      });
-  
-      statusEl.innerText = '✅ 兩份 PDF 已成功下載！';
-      setTimeout(() => statusEl.innerText = '', 3000);
-    };
+
   }
 
 // ==========================================
