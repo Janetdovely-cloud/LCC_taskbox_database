@@ -1414,10 +1414,18 @@ window._renderResumePDF = async function (options) {
     statusEl.innerText = '✅ PDF 成功產生並已下載！';
 
   } catch (e) {
-    console.error(e); statusEl.innerText = '❌ 產生失敗，請檢查內容。';
+    console.error(e);
+    statusEl.innerText = '❌ 產生失敗，請檢查內容。';
   } finally {
-    setTimeout(() => statusEl && (statusEl.innerText=''), 3000);
-    if (canvas) { canvas.width=canvas.height=0; canvas.remove(); }
+    setTimeout(() => statusEl && (statusEl.innerText = ''), 3000);
+
+    // ✅ 安全移除 canvas（不會再 ReferenceError）
+    try {
+      if (typeof canvas !== 'undefined' && canvas) {
+        canvas.width = canvas.height = 0;
+        canvas.remove();
+      }
+    } catch (_) {}
   }
 };
 
